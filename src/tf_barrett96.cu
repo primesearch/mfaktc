@@ -36,19 +36,15 @@ along with mfaktc.  If not, see <http://www.gnu.org/licenses/>.
 extern __host__ void print_dez96(int96 a, char *buf);
 
 
-__device__ static int cmp_96(int96 a, int96 b)
-/* returns
--1 if a < b
-0  if a = b
-1  if a > b */
+__device__ static int cmp_ge_96(int96 a, int96 b)
+/* checks if a is greater or equal than b */
 {
-  if(a.d2 < b.d2)return -1;
-  if(a.d2 > b.d2)return 1;
-  if(a.d1 < b.d1)return -1;
-  if(a.d1 > b.d1)return 1;
-  if(a.d0 < b.d0)return -1;
-  if(a.d0 > b.d0)return 1;
-  return 0;
+  if(a.d2 == b.d2)
+  {
+    if(a.d1 == b.d1)return(a.d0 >= b.d0);
+    else            return(a.d1 >  b.d1);
+  }
+  else              return(a.d2 >  b.d2);
 }
 
 
@@ -63,8 +59,31 @@ res = a - b */
 
 
 __device__ static void mul_96(int96 *res, int96 a, int96 b)
-/* res = a * b */
+/* res = a * b (only lower 96 bits of the result) */
 {
+#if (__CUDA_ARCH__ >= 200) && (CUDART_VERSION >= 4010) /* multiply-add with carry is not available on CC 1.x devices and before CUDA 4.1 */
+  asm("{\n\t"
+      ".reg .u32 t1;\n\t"
+
+      "mul.lo.u32    %0, %3, %6;\n\t"       /* (a.d0 * b.d0).lo */
+
+      "mul.hi.u32    t1, %3, %6;\n\t"       /* (a.d0 * b.d0).hi */
+      "mad.lo.cc.u32 %1, %4, %6, t1;\n\t"   /* (a.d1 * b.d0).lo */
+      "mul.lo.u32    t1, %5, %6;\n\t"       /* (a.d2 * b.d0).lo */
+      "madc.hi.u32   %2, %4, %6, t1;\n\t"   /* (a.d1 * b.d0).hi */
+
+      "mad.lo.cc.u32 %1, %3, %7, %1;\n\t"   /* (a.d0 * b.d1).lo */
+      "madc.hi.u32   %2, %3, %7, %2;\n\t"   /* (a.d0 * b.d1).hi */
+
+      "mul.lo.u32    t1, %3, %8;\n\t"       /* (a.d0 * b.d2).lo */
+      "add.u32       %2, %2, t1;\n\t"
+
+      "mul.lo.u32    t1, %4, %7;\n\t"       /* (a.d1 * b.d1).lo */
+      "add.u32       %2, %2, t1;\n\t"
+      "}"
+      : "=r" (res->d0), "=r" (res->d1), "=r" (res->d2)
+      : "r" (a.d0), "r" (a.d1), "r" (a.d2), "r" (b.d0), "r" (b.d1), "r" (b.d2));
+#else
   res->d0 = __umul32  (a.d0, b.d0);
 
   res->d1 = __add_cc(__umul32hi(a.d0, b.d0), __umul32  (a.d1, b.d0));
@@ -76,6 +95,7 @@ __device__ static void mul_96(int96 *res, int96 a, int96 b)
   res->d2+= __umul32  (a.d0, b.d2);
 
   res->d2+= __umul32  (a.d1, b.d1);
+#endif
 }
 
 
@@ -120,6 +140,33 @@ res.d0 and res.d1 the result of mul_96_192_no_low() is 0 to 2 lower than
 of mul_96_192().
  */
 {
+#if (__CUDA_ARCH__ >= 200) && (CUDART_VERSION >= 4010) /* multiply-add with carry is not available on CC 1.x devices and before CUDA 4.1 */
+  asm("{\n\t"
+      "mul.lo.u32      %0, %6, %7;\n\t"       /* (a.d2 * b.d0).lo */
+      "mul.hi.u32      %1, %6, %7;\n\t"       /* (a.d2 * b.d0).hi */
+
+      "mad.hi.cc.u32   %0, %5, %7, %0;\n\t"   /* (a.d1 * b.d0).hi */
+      "madc.lo.cc.u32  %1, %6, %8, %1;\n\t"   /* (a.d2 * b.d1).lo */
+      "addc.u32        %2,  0,  0;\n\t"
+
+      "mad.hi.cc.u32   %0, %4, %8, %0;\n\t"   /* (a.d0 * b.d1).hi */
+      "madc.lo.cc.u32  %1, %5, %9, %1;\n\t"   /* (a.d1 * b.d2).lo */
+      "madc.hi.cc.u32  %2, %5, %9, %2;\n\t"   /* (a.d1 * b.d2).hi */
+      "addc.u32        %3,  0,  0;\n\t"
+
+      "mad.lo.cc.u32   %0, %4, %9, %0;\n\t"   /* (a.d0 * b.d2).lo */
+      "madc.hi.cc.u32  %1, %4, %9, %1;\n\t"   /* (a.d0 * b.d2).hi */
+      "madc.lo.cc.u32  %2, %6, %9, %2;\n\t"   /* (a.d2 * b.d2).lo */
+      "madc.hi.u32     %3, %6, %9, %3;\n\t"   /* (a.d2 * b.d2).hi */
+
+      "mad.lo.cc.u32   %0, %5, %8, %0;\n\t"   /* (a.d1 * b.d1).lo */
+      "madc.hi.cc.u32  %1, %5, %8, %1;\n\t"   /* (a.d1 * b.d1).hi */
+      "madc.hi.cc.u32  %2, %6, %8, %2;\n\t"   /* (a.d2 * b.d1).lo */
+      "addc.u32        %3, %3,  0;\n\t"
+      "}"
+      : "=r" (res->d2), "=r" (res->d3), "=r" (res->d4), "=r" (res->d5)
+      : "r" (a.d0), "r" (a.d1), "r" (a.d2), "r" (b.d0), "r" (b.d1), "r" (b.d2));
+#else
   res->d2 = __umul32  (a.d2, b.d0);
   res->d3 = __umul32hi(a.d2, b.d0);
   
@@ -141,6 +188,7 @@ of mul_96_192().
   res->d3 = __addc_cc(res->d3, __umul32hi(a.d1, b.d1));
   res->d4 = __addc_cc(res->d4, __umul32hi(a.d2, b.d1));
   res->d5 = __addc   (res->d5,                      0);
+#endif
 }
 
 
@@ -154,6 +202,26 @@ res.d0, res.d1 and res.d2 the result of mul_96_192_no_low() is 0 to 4 lower
 than of mul_96_192().
  */
 {
+#if (__CUDA_ARCH__ >= 200) && (CUDART_VERSION >= 4010) /* multiply-add with carry is not available on CC 1.x devices and before CUDA 4.1 */
+  asm("{\n\t"
+      "mul.hi.u32      %0, %5, %6;\n\t"       /* (a.d2 * b.d0).hi */
+      "mad.lo.cc.u32   %0, %5, %7, %0;\n\t"   /* (a.d2 * b.d1).lo */
+      "addc.u32        %1,  0,  0;\n\t"
+
+      "mad.lo.cc.u32   %0, %4, %8, %0;\n\t"   /* (a.d1 * b.d2).lo */
+      "madc.hi.u32     %1, %4, %8, %1;\n\t"   /* (a.d1 * b.d2).hi */
+
+      "mad.hi.cc.u32   %0, %3, %8, %0;\n\t"   /* (a.d0 * b.d2).hi */
+      "madc.lo.cc.u32  %1, %5, %8, %1;\n\t"   /* (a.d2 * b.d2).lo */
+      "madc.hi.u32     %2, %5, %8,  0;\n\t"   /* (a.d2 * b.d2).hi */
+
+      "mad.hi.cc.u32   %0, %4, %7, %0;\n\t"   /* (a.d1 * b.d1).hi */
+      "madc.hi.cc.u32  %1, %5, %7, %1;\n\t"   /* (a.d2 * b.d1).lo */
+      "addc.u32        %2, %2,  0;\n\t"
+      "}"
+      : "=r" (res->d3), "=r" (res->d4), "=r" (res->d5)
+      : "r" (a.d0), "r" (a.d1), "r" (a.d2), "r" (b.d0), "r" (b.d1), "r" (b.d2));
+#else
   res->d3 = __umul32hi(a.d2, b.d0);
   
   res->d3 = __add_cc (res->d3, __umul32  (a.d2, b.d1));
@@ -172,91 +240,166 @@ than of mul_96_192().
   res->d3 = __add_cc (res->d3, __umul32hi(a.d1, b.d1));
   res->d4 = __addc_cc(res->d4, __umul32hi(a.d2, b.d1));
   res->d5 = __addc   (res->d5,                      0);
+#endif
 }
 
 
 __device__ static void square_96_192(int192 *res, int96 a)
-/* res = a^2 */
+/* res = a^2
+assuming that a is < 2^95 (a.d2 < 2^31)! */
 {
-  unsigned int A01_lo, A01_hi;
-  unsigned int TWO_A02_lo, TWO_A02_hi, TWO_A02_c;
-  unsigned int A12_lo, A12_hi;
+#if (__CUDA_ARCH__ >= 200) && (CUDART_VERSION >= 4010) /* multiply-add with carry is not available on CC 1.x devices and before CUDA 4.1 */
+  asm("{\n\t"
+      ".reg .u32 a2, t1, t2;\n\t"
 
-/*  A01 = a.d0 * a.d1 */
-  A01_lo = __umul32  (a.d0, a.d1);
-  A01_hi = __umul32hi(a.d0, a.d1);
+      "mul.lo.u32      %0, %6, %6;\n\t"       /* (a.d0 * a.d0).lo */
+      "mul.hi.u32      %1, %6, %6;\n\t"       /* (a.d0 * a.d0).hi */
+      "mul.lo.u32      %2, %7, %7;\n\t"       /* (a.d1 * a.d1).lo */
+      "mul.hi.u32      %3, %7, %7;\n\t"       /* (a.d1 * a.d1).hi */
+      "mul.lo.u32      %4, %8, %8;\n\t"       /* (a.d2 * a.d2).lo */
+/* highest possible value for __umul32  (N, N) is 0xFFFFFFF9
+this occurs for N = {479772853, 1667710795, 2627256501, 3815194443}
+We'll use this knowledge later to avoid some two carry steps to %5 */
 
-/*  TWO_A02 = 2 * a.d0 * a.d2 */
-  TWO_A02_lo = __umul32  (a.d0, a.d2); TWO_A02_lo = __add_cc (TWO_A02_lo, TWO_A02_lo);
-  TWO_A02_hi = __umul32hi(a.d0, a.d2); TWO_A02_hi = __addc_cc(TWO_A02_hi, TWO_A02_hi);
-                                       TWO_A02_c  = __addc   (         0,          0);
+      "add.u32         a2, %8, %8;\n\t"       /* a2 = 2 * a.d2 */
+      
+      "mul.lo.u32      t1, %6, %7;\n\t"
+      "mul.hi.u32      t2, %6, %7;\n\t"
 
-/*  A12 = a.d1 * a.d2 */
-  A12_lo = __umul32  (a.d1, a.d2);
-  A12_hi = __umul32hi(a.d1, a.d2);
+      "add.cc.u32      %1, %1, t1;\n\t"       /* (a.d0 * a.d1).lo */
+      "addc.cc.u32     %2, %2, t2;\n\t"       /* (a.d0 * a.d1).hi */
+      "madc.hi.cc.u32  %3, %6, a2, %3;\n\t"   /* (a.d0 * a.d2).hi + (a.d2 * a.d0).hi */
+      "addc.u32        %4, %4,  0;\n\t"       /* %4 <= 0xFFFFFFFA => not carry to %5 needed, see above! */
 
-  res->d0 =           __umul32  (a.d0, a.d0);
-  res->d1 = __add_cc (__umul32hi(a.d0, a.d0),                 A01_lo);
-  res->d2 = __addc_cc(                A01_hi,             TWO_A02_lo);
-  res->d3 = __addc_cc(            TWO_A02_hi, __umul32hi(a.d1, a.d1));
-  res->d4 = __addc   (             TWO_A02_c, __umul32  (a.d2, a.d2));
-/*
-highest possible value for __umul32  (a.d2, a.d2) is 0xFFFFFFF9
-this occurs for a.d2 = {479772853, 1667710795, 2627256501, 3815194443}
-TWO_A02_c is 0 or 1 and we have at most 1 from carry of res->d3
-So the result is <= 0xFFFFFFFB and we don't need to carry the res->d5!
-*/
-  
-  res->d1 = __add_cc (               res->d1,                 A01_lo);
-  res->d2 = __addc_cc(               res->d2, __umul32  (a.d1, a.d1));
-  res->d3 = __addc_cc(               res->d3,                 A12_lo);
-  res->d4 = __addc_cc(               res->d4,                 A12_hi);
-  res->d5 = __addc   (__umul32hi(a.d2, a.d2),                      0);
-  
-  res->d2 = __add_cc (               res->d2,                 A01_hi);
-  res->d3 = __addc_cc(               res->d3,                 A12_lo);
-  res->d4 = __addc_cc(               res->d4,                 A12_hi);
-  res->d5 = __addc   (               res->d5,                      0);
+      "add.cc.u32      %1, %1, t1;\n\t"       /* (a.d1 * a.d0).lo */
+      "addc.cc.u32     %2, %2, t2;\n\t"       /* (a.d1 * a.d0).hi */
+      "addc.cc.u32     %3, %3,  0;\n\t"
+      "addc.u32        %4, %4,  0;\n\t"       /* %4 <= 0xFFFFFFFB => not carry to %5 needed, see above! */
+      
+      "mad.lo.cc.u32   %2, %6, a2, %2;\n\t"   /* (a.d0 * a.d2).lo + (a.d2 * a.d0).lo */
+      "madc.lo.cc.u32  %3, %7, a2, %3;\n\t"   /* (a.d1 * a.d2).lo + (a.d2 * a.d1).lo */
+      "madc.hi.cc.u32  %4, %7, a2, %4;\n\t"   /* (a.d1 * a.d2).hi + (a.d2 * a.d1).hi */
+      "madc.hi.u32     %5, %8, %8,  0;\n\t"   /* (a.d2 * a.d2).hi */
+      "}"
+      : "=r" (res->d0), "=r" (res->d1), "=r" (res->d2), "=r" (res->d3), "=r" (res->d4), "=r" (res->d5)
+      : "r" (a.d0), "r" (a.d1), "r" (a.d2));
+#else
+  asm("{\n\t"
+      ".reg .u32 a2, t1, t2, t3;\n\t"
+
+      "mul.lo.u32      %0, %6, %6;\n\t"       /* (a.d0 * a.d0).lo */
+      "mul.hi.u32      %1, %6, %6;\n\t"       /* (a.d0 * a.d0).hi */
+      "mul.lo.u32      %2, %7, %7;\n\t"       /* (a.d1 * a.d1).lo */
+      "mul.hi.u32      %3, %7, %7;\n\t"       /* (a.d1 * a.d1).hi */
+      "mul.lo.u32      %4, %8, %8;\n\t"       /* (a.d2 * a.d2).lo */
+/* highest possible value for __umul32  (N, N) is 0xFFFFFFF9
+this occurs for N = {479772853, 1667710795, 2627256501, 3815194443}
+We'll use this knowledge later to avoid some two carry steps to %5 */
+
+      "add.u32         a2, %8, %8;\n\t"       /* a2 = 2 * a.d2 */
+      
+      "mul.lo.u32      t1, %6, %7;\n\t"
+      "mul.hi.u32      t2, %6, %7;\n\t"
+
+      "add.cc.u32      %1, %1, t1;\n\t"       /* (a.d0 * a.d1).lo */
+      "addc.cc.u32     %2, %2, t2;\n\t"       /* (a.d0 * a.d1).hi */
+      "mul.hi.u32      t3, %6, a2;\n\t"       /* (a.d0 * a.d2).hi + (a.d2 * a.d0).hi */
+      "addc.cc.u32     %3, %3, t3;\n\t"
+      "addc.u32        %4, %4,  0;\n\t"       /* %4 <= 0xFFFFFFFA => not carry to %5 needed, see above! */
+
+      "add.cc.u32      %1, %1, t1;\n\t"       /* (a.d1 * a.d0).lo */
+      "addc.cc.u32     %2, %2, t2;\n\t"       /* (a.d1 * a.d0).hi */
+      "addc.cc.u32     %3, %3,  0;\n\t"
+      "addc.u32        %4, %4,  0;\n\t"       /* %4 <= 0xFFFFFFFB => not carry to %5 needed, see above! */
+      
+      "mul.lo.u32      t3, %6, a2;\n\t"       /* (a.d0 * a.d2).lo + (a.d2 * a.d0).lo */
+      "add.cc.u32      %2, %2, t3;\n\t"
+      "mul.lo.u32      t3, %7, a2;\n\t"       /* (a.d1 * a.d2).lo + (a.d2 * a.d1).lo */
+      "addc.cc.u32     %3, %3, t3;\n\t"
+      "mul.hi.u32      t3, %7, a2;\n\t"       /* (a.d1 * a.d2).hi + (a.d2 * a.d1).hi */
+      "addc.cc.u32     %4, %4, t3;\n\t"
+      "mul.hi.u32      t3, %8, %8;\n\t"       /* (a.d2 * a.d2).hi */
+      "addc.u32        %5, t3,  0;\n\t"
+      "}"
+      : "=r" (res->d0), "=r" (res->d1), "=r" (res->d2), "=r" (res->d3), "=r" (res->d4), "=r" (res->d5)
+      : "r" (a.d0), "r" (a.d1), "r" (a.d2));
+#endif
 }
 
 
 __device__ static void square_96_160(int192 *res, int96 a)
-/* res = a^2 */
-/* this is a stripped down version of square_96_192, it doesn't compute res.d5
+/* res = a^2
+this is a stripped down version of square_96_192, it doesn't compute res.d5
 and is a little bit faster.
 For correct results a must be less than 2^80 (a.d2 less than 2^16) */
 {
-  unsigned int A01_lo, A01_hi;
-  unsigned int A12_lo, A12_hi;
-  unsigned int tmp;
+#if (__CUDA_ARCH__ >= 200) && (CUDART_VERSION >= 4010) /* multiply-add with carry is not available on CC 1.x devices and before CUDA 4.1 */
+  asm("{\n\t"
+      ".reg .u32 t1, t2, t3;\n\t"
 
-/*  A01 = a.d0 * a.d1 */
-  A01_lo = __umul32  (a.d0, a.d1);
-  A01_hi = __umul32hi(a.d0, a.d1);
+      "mul.lo.u32     %0, %5, %5;\n\t"     /* (a.d0 * a.d0).lo */
+      "mul.hi.u32     %1, %5, %5;\n\t"     /* (a.d0 * a.d0).hi */
 
-/*  A12 = a.d1 * a.d2 */
-  A12_lo = __umul32  (a.d1, a.d2);
-  A12_hi = __umul32hi(a.d1, a.d2);
+      "mul.lo.u32     %4, %7, %7;\n\t"     /* (a.d2 * a.d2).lo */
 
-  res->d0 =           __umul32  (a.d0, a.d0);
-  res->d1 = __add_cc (__umul32hi(a.d0, a.d0),                 A01_lo);
+      "add.u32        t3, %7, %7;\n\t"     /* shl(a.d2) */
 
-/* a.d0 * a.d2 is added two times, a.d2 is always < 2^16 (a < 2^80) so it is
-save to multiply a.d2 by two and add the product of a.d0 * (a.d2 * 2) once. */
-  tmp = a.d2 << 1;
+      "mul.lo.u32     %2, %5, t3;\n\t"     /* 2(a.d0 * a.d2).lo */
+      "mul.hi.u32     %3, %5, t3;\n\t"     /* 2(a.d0 * a.d2).hi */
 
-  res->d2 = __addc_cc(                A01_hi, __umul32  (a.d0,  tmp));
-  res->d3 = __addc_cc( __umul32hi(a.d0, tmp), __umul32hi(a.d1, a.d1));
-  res->d4 = __addc   (                     0, __umul32  (a.d2, a.d2));
-  
-  res->d1 = __add_cc (               res->d1,                 A01_lo);
-  res->d2 = __addc_cc(               res->d2, __umul32  (a.d1, a.d1));
-  res->d3 = __addc_cc(               res->d3,                 A12_lo);
-  res->d4 = __addc   (               res->d4,                 A12_hi);
-  
-  res->d2 = __add_cc (               res->d2,                 A01_hi);
-  res->d3 = __addc_cc(               res->d3,                 A12_lo);
-  res->d4 = __addc   (               res->d4,                 A12_hi);
+      "mul.lo.u32     t1, %5, %6;\n\t"     /* (a.d0 * a.d1).lo */
+      "add.cc.u32     %1, %1, t1;\n\t"
+      "mul.hi.u32     t2, %5, %6;\n\t"     /* (a.d0 * a.d1).hi */
+      "addc.cc.u32    %2, %2, t2;\n\t"
+      "addc.u32       %3, %3,  0;\n\t"     /* %3 (res.d3) has some space left because a.d2 is < 2^16 */
+
+      "add.cc.u32     %1, %1, t1;\n\t"
+      "addc.cc.u32    %2, %2, t2;\n\t"
+      "madc.lo.cc.u32 %3, %6, t3, %3;\n\t" /* 2(a.d1 * a.d2).lo */
+      "madc.hi.u32    %4, %6, t3, %4;\n\t" /* 2(a.d1 * a.d2).hi */
+
+      "mad.lo.cc.u32  %2, %6, %6, %2;\n\t" /* (a.d1 * a.d1).lo */
+      "madc.hi.cc.u32 %3, %6, %6, %3;\n\t" /* (a.d1 * a.d1).hi */
+      "addc.u32       %4, %4,  0;\n\t"
+      "}"
+      : "=r"(res->d0), "=r"(res->d1), "=r"(res->d2), "=r"(res->d3), "=r"(res->d4)
+      : "r"(a.d0), "r"(a.d1), "r"(a.d2));
+#else
+  asm("{\n\t"
+      ".reg .u32 t1, t2, t3, t4;\n\t"
+
+      "mul.lo.u32    %0, %5, %5;\n\t" // (a.d0 * a.d0).lo
+      "mul.hi.u32    %1, %5, %5;\n\t" // (a.d0 * a.d0).hi
+
+      "mul.lo.u32    %4, %7, %7;\n\t" // (a.d2 * a.d2).lo
+      
+      "add.u32       t4, %7, %7;\n\t" // shl(a.d2)
+      
+      "mul.lo.u32    %2, %5, t4;\n\t" // 2(a.d0 * a.d2).lo
+      "mul.hi.u32    %3, %5, t4;\n\t" // 2(a.d0 * a.d2).hi
+      
+      "mul.lo.u32    t1, %5, %6;\n\t" // (a.d0 * a.d1).lo
+      "add.cc.u32    %1, %1, t1;\n\t"
+      "mul.hi.u32    t2, %5, %6;\n\t" // (a.d0 * a.d1).hi
+      "addc.cc.u32   %2, %2, t2;\n\t"
+      "addc.u32      %3, %3,  0;\n\t" // %3 (res.d3) has some space left because a.d2 is < 2^16
+      
+      "add.cc.u32    %1, %1, t1;\n\t"
+      "addc.cc.u32   %2, %2, t2;\n\t"
+      "mul.lo.u32    t3, %6, t4;\n\t" // 2(a.d1 * a.d2).lo
+      "addc.cc.u32   %3, %3, t3;\n\t"
+      "mul.hi.u32    t3, %6, t4;\n\t" // 2(a.d1 * a.d2).hi
+      "addc.u32      %4, %4, t3;\n\t"
+      
+      "mul.lo.u32    t1, %6, %6;\n\t" // (a.d1 * a.d1).lo
+      "add.cc.u32    %2, %2, t1;\n\t"
+      "mul.hi.u32    t1, %6, %6;\n\t" // (a.d1 * a.d1).hi
+      "addc.cc.u32   %3, %3, t1;\n\t"
+      "addc.u32      %4, %4,  0;\n\t"
+      "}"
+      : "=r"(res->d0), "=r"(res->d1), "=r"(res->d2), "=r"(res->d3), "=r"(res->d4)
+      : "r"(a.d0), "r"(a.d1), "r"(a.d2));
+#endif 
 }
 
 
@@ -492,7 +635,7 @@ __device__ static void div_192_96(int96 *res, int192 q, int96 n, float nf, unsig
 qi is allways a little bit too small, this is OK for all steps except the last
 one. Sometimes the result is a little bit bigger than n
 */
-  if(cmp_96(tmp96,n)>0)
+  if(cmp_ge_96(tmp96,n))
   {
     res->d0 = __add_cc (res->d0,  1);
     res->d1 = __addc_cc(res->d1,  0);
@@ -728,7 +871,7 @@ DIV_160_96 here. */
 qi is allways a little bit too small, this is OK for all steps except the last
 one. Sometimes the result is a little bit bigger than n
 */
-  if(cmp_96(tmp96,n)>0)
+  if(cmp_ge_96(tmp96,n))
   {
     res->d0 = __add_cc (res->d0,  1);
     res->d1 = __addc_cc(res->d1,  0);
@@ -736,10 +879,6 @@ one. Sometimes the result is a little bit bigger than n
   }
 }
 #undef DIV_160_96
-
-
-
-
 
 
 #ifndef CHECKS_MODBASECASE
@@ -755,8 +894,8 @@ assumes q < 6n (6n includes "optional mul 2")
 {
   float qf;
   unsigned int qi;
-  int72 nn;
-  
+  int96 nn;
+
   qf = __uint2float_rn(q.d2);
   qf = qf * 4294967296.0f + __uint2float_rn(q.d1);
   
@@ -788,20 +927,27 @@ are "out of range".
   }
 #endif
 
+#if (__CUDA_ARCH__ >= 200) && (CUDART_VERSION >= 4010) /* multiply-add with carry is not available on CC 1.x devices and before CUDA 4.1 */
+  nn.d0 =                          __umul32(n.d0, qi);
+  nn.d1 = __umad32hi_cc (n.d0, qi, __umul32(n.d1, qi));
+  nn.d2 = __umad32hic   (n.d1, qi, __umul32(n.d2, qi));
+#else
   nn.d0 =                                 __umul32(n.d0, qi);
   nn.d1 = __add_cc (__umul32hi(n.d0, qi), __umul32(n.d1, qi));
   nn.d2 = __addc   (__umul32hi(n.d1, qi), __umul32(n.d2, qi));
+#endif
   
   res->d0 = __sub_cc (q.d0, nn.d0);
   res->d1 = __subc_cc(q.d1, nn.d1);
   res->d2 = __subc   (q.d2, nn.d2);
 
 // perfect refinement not needed, barrett's modular reduction can handle numbers which are a little bit "too big".
-/*  if(cmp_96(*res,n)>0)
+/*  if(cmp_ge_96(*res,n))
   {
     sub_96(res, *res, n);
   }*/
 }
+
 
 #if __CUDA_ARCH__ >= 200
   #define KERNEL_MIN_BLOCKS 2
@@ -811,9 +957,9 @@ are "out of range".
 
 __global__ void
 #ifndef CHECKS_MODBASECASE
-__launch_bounds__(THREADS_PER_BLOCK, KERNEL_MIN_BLOCKS) mfakt_barrett92(unsigned int exp, int96 k, unsigned int *k_tab, int shiftcount, int192 b, unsigned int *RES, int bit_max64)
+__launch_bounds__(THREADS_PER_BLOCK, KERNEL_MIN_BLOCKS) mfaktc_barrett92(unsigned int exp, int96 k, unsigned int *k_tab, int shiftcount, int192 b, unsigned int *RES, int bit_max64)
 #else
-__launch_bounds__(THREADS_PER_BLOCK, KERNEL_MIN_BLOCKS) mfakt_barrett92(unsigned int exp, int96 k, unsigned int *k_tab, int shiftcount, int192 b, unsigned int *RES, int bit_max64, unsigned int *modbasecase_debug)
+__launch_bounds__(THREADS_PER_BLOCK, KERNEL_MIN_BLOCKS) mfaktc_barrett92(unsigned int exp, int96 k, unsigned int *k_tab, int shiftcount, int192 b, unsigned int *RES, int bit_max64, unsigned int *modbasecase_debug)
 #endif
 /*
 computes 2^exp mod f
@@ -857,9 +1003,8 @@ Precalculated here since it is the same for all steps in the following loop */
 
   ff=__int_as_float(0x3f7ffffb) / ff;		// just a little bit below 1.0f so we allways underestimate the quotient
         
-  tmp192.d5 = 0x40000000 >> (62 - (bit_max64 << 1));			// tmp192 = 2^(2*bit_max)
-  tmp192.d4 = 1 << (bit_max64 << 1);
-  tmp192.d3 = 0; tmp192.d2 = 0; tmp192.d1 = 0; tmp192.d0 = 0;
+  tmp192.d5 = 0x40000000 >> ((bit_max64_32-1) << 1);			// tmp192 = 2^(2*bit_max)
+  tmp192.d4 = 0; tmp192.d3 = 0; tmp192.d2 = 0; tmp192.d1 = 0; tmp192.d0 = 0;
 
 #ifndef CHECKS_MODBASECASE
   div_192_96(&u,tmp192,f,ff);						// u = floor(tmp192 / f)
@@ -887,8 +1032,6 @@ Precalculated here since it is the same for all steps in the following loop */
   mod_simple_96(&a, tmp96, f, ff);					// adjustment, plain barrett returns N = AB mod M where N < 3M!
 #else
   int limit = 6;
-  if(bit_max64 == 1) limit = 8;						// bit_max == 65, due to decreased accuracy of mul_96_192_no_low2() above we need a higher threshold
-  if(bit_max64 == 2) limit = 7;						// bit_max == 66, ...
   mod_simple_96(&a, tmp96, f, ff, bit_max64, limit, modbasecase_debug);
 #endif
   
@@ -919,18 +1062,23 @@ Precalculated here since it is the same for all steps in the following loop */
     mod_simple_96(&a, tmp96, f, ff);					// adjustment, plain barrett returns N = AB mod M where N < 3M!
 #else
     int limit = 6;
-    if(bit_max64 == 1) limit = 8;					// bit_max == 65, due to decreased accuracy of mul_96_192_no_low2() above we need a higher threshold
-    if(bit_max64 == 2) limit = 7;					// bit_max == 66, ...
     mod_simple_96(&a, tmp96, f, ff, bit_max64, limit, modbasecase_debug);
 #endif
 
     exp<<=1;
   }
-
-  if(cmp_96(a,f)>0)							// final adjustment
+  
+  if(cmp_ge_96(a,f))				// final adjustment in case a >= f
   {
     sub_96(&a, a, f);
   }
+
+#if defined CHECKS_MODBASECASE && defined USE_DEVICE_PRINTF && __CUDA_ARCH__ >= 200
+  if(cmp_ge_96(a,f) && f.d2)
+  {
+    printf("EEEEEK, final a is >= f\n");
+  }
+#endif
   
 /* finally check if we found a factor and write the factor to RES[] */
   if( ((a.d2|a.d1)==0 && a.d0==1) )
@@ -948,9 +1096,9 @@ Precalculated here since it is the same for all steps in the following loop */
 
 __global__ void
 #ifndef CHECKS_MODBASECASE
-__launch_bounds__(THREADS_PER_BLOCK, KERNEL_MIN_BLOCKS) mfakt_barrett79(unsigned int exp, int96 k, unsigned int *k_tab, int shiftcount, int192 b, unsigned int *RES)
+__launch_bounds__(THREADS_PER_BLOCK, KERNEL_MIN_BLOCKS) mfaktc_barrett79(unsigned int exp, int96 k, unsigned int *k_tab, int shiftcount, int192 b, unsigned int *RES)
 #else
-__launch_bounds__(THREADS_PER_BLOCK, KERNEL_MIN_BLOCKS) mfakt_barrett79(unsigned int exp, int96 k, unsigned int *k_tab, int shiftcount, int192 b, unsigned int *RES, int bit_max64, unsigned int *modbasecase_debug)
+__launch_bounds__(THREADS_PER_BLOCK, KERNEL_MIN_BLOCKS) mfaktc_barrett79(unsigned int exp, int96 k, unsigned int *k_tab, int shiftcount, int192 b, unsigned int *RES, int bit_max64, unsigned int *modbasecase_debug)
 #endif
 /*
 computes 2^exp mod f
@@ -1060,13 +1208,21 @@ Precalculated here since it is the same for all steps in the following loop */
 #endif
 
 
-    exp<<=1;
+//    exp<<=1;
+    exp += exp;
   }
 
-  if(cmp_96(a,f)>0)							// final adjustment
+  if(cmp_ge_96(a,f))							// final adjustment in case a >= f
   {
     sub_96(&a, a, f);
   }
+  
+#if defined CHECKS_MODBASECASE && defined USE_DEVICE_PRINTF && __CUDA_ARCH__ >= 200
+  if(cmp_ge_96(a,f) && f.d2)						// factors < 2^64 are not supported by this kernel
+  {
+    printf("EEEEEK, final a is >= f\n");
+  }
+#endif
   
 /* finally check if we found a factor and write the factor to RES[] */
   if( ((a.d2|a.d1)==0 && a.d0==1) )

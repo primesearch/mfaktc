@@ -5,17 +5,18 @@
 Content
 
 0   What is mfaktc?
-1   Compilation
-1.1 Compilation (Linux)
-1.2 Compilation (Windows)
-2   Running mfaktc (Linux)
-2.1 Running mfaktc (Windows)
-3   Howto get work and report results from/to the primenet server
-4   Known issues
-4.1 Stuff that looks like an issue but actually isn't an issue
-5   Tuning
-6   FAQ
-7   .plan
+1   Supported Hardware
+2   Compilation
+2.1 Compilation (Linux)
+2.2 Compilation (Windows)
+3   Running mfaktc (Linux)
+3.1 Running mfaktc (Windows)
+4   Howto get work and report results from/to the primenet server
+5   Known issues
+5.1 Stuff that looks like an issue but actually isn't an issue
+6   Tuning
+7   FAQ
+8   .plan
 
 
 
@@ -30,8 +31,19 @@ It uses CPU and GPU resources.
 
 
 
+########################
+# 1 Supported Hardware #
+########################
+
+mfaktc should run all all CUDA capable Nvidia GPUs with compute capability
+>= 1.1. From my knowledge there is only once CUDA capable GPU with compute
+capability 1.0: the G80 chip which is found on Geforce 8800 Ultra / GTX /
+GTS 640 / GTS 320 and their Quadro and Tesla variants.
+
+
+
 #################
-# 1 Compilation #
+# 2 Compilation #
 #################
 
 It is assumed that you've allready setup your compiler and CUDA environment.
@@ -51,7 +63,7 @@ on a Intel Core i7)
 
 
 ###########################
-# 1.1 Compilation (Linux) #
+# 2.1 Compilation (Linux) #
 ###########################
 
 Change into the subdirectory "src/"
@@ -64,13 +76,11 @@ I'm using
 - gcc 4.3.2 (OpenSUSE 11.1)
 - Nvidia driver 260.24
 - Nvidia CUDA Toolkit
-  - 4.0 RC2   read below
   - 3.2       ~1% slower than 3.0/3.1
   - 3.1       read below
   - 3.0       read below
 
-CUDA Toolkits 3.0, 3.1 an 4.0RC2 are only basically tested (compile, run
-selftest).
+CUDA Toolkits 3.0 and 3.1 are only minimal tested (compile, run selftest).
 
 I don't spent time testing mfaktc on 32bit Linux because I think 64bit
 (x86_64) is adopted by most Linux users now. Anyway mfaktc should work on
@@ -83,7 +93,7 @@ in "Makefile" (replace "lib64" with "lib").
 
 
 #############################
-# 1.2 Compilation (Windows) #
+# 2.2 Compilation (Windows) #
 #############################
 
 The following instructions have been tested on Windows 7 64bit using Visual
@@ -103,7 +113,7 @@ are placed in the parent directory.
 
 
 ############################
-# 2 Running mfaktc (Linux) #
+# 3 Running mfaktc (Linux) #
 ############################
 
 Just run './mfaktc.exe -h'. It will tell you what parameters it accepts.
@@ -132,7 +142,7 @@ M3321932839 from 2^50 to 2^71.
 
 
 ################################
-# 2.1 Running mfaktc (Windows) #
+# 3.1 Running mfaktc (Windows) #
 ################################
 
 Similar to Linux (read above!).
@@ -141,7 +151,7 @@ Open a command shell and run 'mfaktc.exe -h'.
 
 
 ###################################################################
-# 3 Howto get work and report results from/to the primenet server #
+# 4 Howto get work and report results from/to the primenet server #
 ###################################################################
 
 Getting work:
@@ -190,7 +200,7 @@ Advanced usage (extend the upper limit):
 
 
 ##################
-# 4 Known issues #
+# 5 Known issues #
 ##################
 
 - The user interface isn't hardened against malformed input. There are some
@@ -217,7 +227,7 @@ Advanced usage (extend the upper limit):
 
 
 ##################################################################
-# 4.1 Stuff that looks like an issue but actually isn't an issue #
+# 5.1 Stuff that looks like an issue but actually isn't an issue #
 ##################################################################
 
 - mfaktc runs slower on small ranges. Usually it doesn't make much sense to
@@ -240,7 +250,7 @@ Advanced usage (extend the upper limit):
 
 
 ############
-# 5 Tuning #
+# 6 Tuning #
 ############
 
 Read mfaktc.ini and think before edit. ;)
@@ -248,7 +258,7 @@ Read mfaktc.ini and think before edit. ;)
 
 
 #########
-# 6 FAQ #
+# 7 FAQ #
 #########
 
 Q Does mfaktc support multiple GPUs?
@@ -261,22 +271,38 @@ A Yes, with the exception that a single instance of mfaktc can only use one
 Q Can I run multiple instances of mfaktc on the same computer?
 A Yes! You need a separate directory for each instance of mfaktc.
 
+Q Can I continue (load a checkpoint) from a 32bit version of mfaktc with a
+  64bit version of mfaktc (and vice versa)?
+A Yes!
+
+Q Version numbers
+A release versions are usually 0.XX where XX increases by one for each new
+  release. Sometimes there are version which include a single (quick) patch.
+  If you look into the Changelog.txt you can see the mfaktc 0.13 was
+  followed by mfaktc 0.13p1 followed by mfaktc 0.14. These 0.XXpY versions
+  are intended for daily work by regular users!
+  Additionally there are lots of 0.XX-preY versions which are usually not
+  public available. They are usually *NOT* intended for productive usage,
+  sometimes they don't even compile or have the computational part disabled.
+  If you somehow receive one of those -pre versions please don't use them
+  for productive work. They had usually minimal to zero QA.
 
 
 ###########
-# 7 .plan #
+# 8 .plan #
 ###########
 
-0.17
-- add some sleeps in the loop which polls the stream status (busy loop)        <-- done
-  this should reduce CPU-usage when using a "slow" GPU.
-- Changes in README.txt                                                        <-- done
-- replace the compiletime option THREADS_PER_GRID_MAX in params.h with the     <-- done
-  runtime option GridSize in mfaktc.ini
-
-0.18
-- minor rework on average wait and related SievePrimes autotuning (make this
-  less dependend on GridSize and absolute throughput).
+0.19
+- automatic primenet interaction (Eric Christenson is working on this)         <- specification draft exists
+  - this will greatly increase usability of mfaktc
+  - George Woltman agreed to include the so called "security module" in
+    mfaktc for a closed source version of mfaktc. I have to check license
+    options, GPL v3 does not allow to have parts of the program to be
+    closed source. Solution: I'll re-release under another license. This is
+    NOT the end of the GPL v3 version! I'll release future versions of
+    mfaktc under GPL v3! I want mfaktc being open source! The only
+    differences of the closed version will be the security module and the
+    license information.
 
 not planned for a specific release yet, no particular order!
 - performance improvements whenever I find them ;)

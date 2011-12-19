@@ -66,42 +66,42 @@ int my_read_string(char *inifile, char *name, char *string)
 int read_config(mystuff_t *mystuff)
 {
   int i;
-  printf("\nRuntime options\n");
+  if(mystuff->verbosity >= 1)printf("\nRuntime options\n");
 
   if(my_read_int("mfaktc.ini", "SievePrimes", &i))
   {
     printf("WARNING: Cannot read SievePrimes from mfaktc.ini, using default value (%d)\n",SIEVE_PRIMES_DEFAULT);
-    i=SIEVE_PRIMES_DEFAULT;
+    i = SIEVE_PRIMES_DEFAULT;
   }
   else
   {
-    if(i>SIEVE_PRIMES_MAX)
+    if(i > SIEVE_PRIMES_MAX)
     {
       printf("WARNING: Read SievePrimes=%d from mfaktc.ini, using max value (%d)\n",i,SIEVE_PRIMES_MAX);
-      i=SIEVE_PRIMES_MAX;
+      i = SIEVE_PRIMES_MAX;
     }
-    else if(i<SIEVE_PRIMES_MIN)
+    else if(i < SIEVE_PRIMES_MIN)
     {
       printf("WARNING: Read SievePrimes=%d from mfaktc.ini, using min value (%d)\n",i,SIEVE_PRIMES_MIN);
-      i=SIEVE_PRIMES_MIN;
+      i = SIEVE_PRIMES_MIN;
     }
   }
-  printf("  SievePrimes               %d\n",i);
+  if(mystuff->verbosity >= 1)printf("  SievePrimes               %d\n",i);
   mystuff->sieve_primes = i;
 
 /*****************************************************************************/  
 
   if(my_read_int("mfaktc.ini", "SievePrimesAdjust", &i))
   {
-    printf("WARNING: Cannot read SievePrimesAdjust from mfaktc.ini, using default value (0)\n");
-    i=0;
+    printf("WARNING: Cannot read SievePrimesAdjust from mfaktc.ini, using default value (1)\n");
+    i = 1;
   }
   else if(i != 0 && i != 1)
   {
-    printf("WARNING: SievePrimesAdjust must be 0 or 1, using default value (0)\n");
-    i=0;
+    printf("WARNING: SievePrimesAdjust must be 0 or 1, using default value (1)\n");
+    i = 1;
   }
-  printf("  SievePrimesAdjust         %d\n",i);
+  if(mystuff->verbosity >= 1)printf("  SievePrimesAdjust         %d\n",i);
   mystuff->sieve_primes_adjust = i;
 
 /*****************************************************************************/
@@ -109,22 +109,22 @@ int read_config(mystuff_t *mystuff)
   if(my_read_int("mfaktc.ini", "NumStreams", &i))
   {
     printf("WARNING: Cannot read NumStreams from mfaktc.ini, using default value (%d)\n",NUM_STREAMS_DEFAULT);
-    i=NUM_STREAMS_DEFAULT;
+    i = NUM_STREAMS_DEFAULT;
   }
   else
   {
-    if(i>NUM_STREAMS_MAX)
+    if(i > NUM_STREAMS_MAX)
     {
       printf("WARNING: Read NumStreams=%d from mfaktc.ini, using max value (%d)\n",i,NUM_STREAMS_MAX);
-      i=NUM_STREAMS_MAX;
+      i = NUM_STREAMS_MAX;
     }
-    else if(i<NUM_STREAMS_MIN)
+    else if(i < NUM_STREAMS_MIN)
     {
       printf("WARNING: Read NumStreams=%d from mfaktc.ini, using min value (%d)\n",i,NUM_STREAMS_MIN);
-      i=NUM_STREAMS_MIN;
+      i = NUM_STREAMS_MIN;
     }
   }
-  printf("  NumStreams                %d\n",i);
+  if(mystuff->verbosity >= 1)printf("  NumStreams                %d\n",i);
   mystuff->num_streams = i;
 
 /*****************************************************************************/
@@ -132,22 +132,22 @@ int read_config(mystuff_t *mystuff)
   if(my_read_int("mfaktc.ini", "CPUStreams", &i))
   {
     printf("WARNING: Cannot read CPUStreams from mfaktc.ini, using default value (%d)\n",CPU_STREAMS_DEFAULT);
-    i=CPU_STREAMS_DEFAULT;
+    i = CPU_STREAMS_DEFAULT;
   }
   else
   {
-    if(i>CPU_STREAMS_MAX)
+    if(i > CPU_STREAMS_MAX)
     {
       printf("WARNING: Read CPUStreams=%d from mfaktc.ini, using max value (%d)\n",i,CPU_STREAMS_MAX);
-      i=CPU_STREAMS_MAX;
+      i = CPU_STREAMS_MAX;
     }
-    else if(i<CPU_STREAMS_MIN)
+    else if(i < CPU_STREAMS_MIN)
     {
       printf("WARNING: Read CPUStreams=%d from mfaktc.ini, using min value (%d)\n",i,CPU_STREAMS_MIN);
-      i=CPU_STREAMS_MIN;
+      i = CPU_STREAMS_MIN;
     }
   }
-  printf("  CPUStreams                %d\n",i);
+  if(mystuff->verbosity >= 1)printf("  CPUStreams                %d\n",i);
   mystuff->cpu_streams = i;
 
 /*****************************************************************************/
@@ -170,7 +170,7 @@ int read_config(mystuff_t *mystuff)
       i = 0;
     }
   }
-  printf("  GridSize                  %d\n",i);
+  if(mystuff->verbosity >= 1)printf("  GridSize                  %d\n",i);
        if(i == 0)  mystuff->threads_per_grid_max =  131072;
   else if(i == 1)  mystuff->threads_per_grid_max =  262144;
   else if(i == 2)  mystuff->threads_per_grid_max =  524288;
@@ -180,41 +180,61 @@ int read_config(mystuff_t *mystuff)
 
   if(my_read_string("mfaktc.ini", "WorkFile", mystuff->workfile))
   {
-    printf("WARNING: can't read WorkFile from mfaktc.ini, using default (worktodo.ini)\n");
-    sprintf(mystuff->workfile, "worktodo.ini");
+    sprintf(mystuff->workfile, "worktodo.txt");
+    printf("WARNING: can't read WorkFile from mfaktc.ini, using default (%s)\n", mystuff->workfile);
   }
-  printf("  WorkFile                  %s\n", mystuff->workfile);
+  if(mystuff->verbosity >= 1)printf("  WorkFile                  %s\n", mystuff->workfile);
 
 /*****************************************************************************/
 
   if(my_read_int("mfaktc.ini", "Checkpoints", &i))
   {
     printf("WARNING: Cannot read Checkpoints from mfaktc.ini, enabled by default\n");
-    i=1;
+    i = 1;
   }
   else if(i != 0 && i != 1)
   {
     printf("WARNING: Checkpoints must be 0 or 1, enabled by default\n");
-    i=1;
+    i = 1;
   }
-  if(i==0)printf("  Checkpoints               disabled\n");
-  else    printf("  Checkpoints               enabled\n");
+  if(i == 0){if(mystuff->verbosity >= 1)printf("  Checkpoints               disabled\n");}
+  else      {if(mystuff->verbosity >= 1)printf("  Checkpoints               enabled\n");}
   mystuff->checkpoints = i;
+
+/*****************************************************************************/
+
+  if(my_read_int("mfaktc.ini", "CheckpointDelay", &i))
+  {
+    printf("WARNING: Cannot read CheckpointDelay from mfaktc.ini, set to 30s by default\n");
+    i = 30;
+  }
+  if(i > 900)
+  {
+    printf("WARNING: Maximum value for CheckpointDelay is 900s\n");
+    i = 900;
+  }
+  if(i < 0)
+  {
+    printf("WARNING: Minimum value for CheckpointDelay is 0s\n");
+    i = 0;
+  }
+  if(mystuff->verbosity >= 1)printf("  CheckpointDelay           %ds\n", i);
+  mystuff->checkpointdelay = i;
 
 /*****************************************************************************/
 
   if(my_read_int("mfaktc.ini", "Stages", &i))
   {
     printf("WARNING: Cannot read Stages from mfaktc.ini, enabled by default\n");
-    i=1;
+    i = 1;
   }
   else if(i != 0 && i != 1)
   {
     printf("WARNING: Stages must be 0 or 1, enabled by default\n");
-    i=1;
+    i = 1;
   }
-  if(i==0)printf("  Stages                    disabled\n");
-  else    printf("  Stages                    enabled\n");
+  if(i == 0){if(mystuff->verbosity >= 1)printf("  Stages                    disabled\n");}
+  else      {if(mystuff->verbosity >= 1)printf("  Stages                    enabled\n");}
   mystuff->stages = i;
 
 /*****************************************************************************/
@@ -222,16 +242,16 @@ int read_config(mystuff_t *mystuff)
   if(my_read_int("mfaktc.ini", "StopAfterFactor", &i))
   {
     printf("WARNING: Cannot read StopAfterFactor from mfaktc.ini, set to 1 by default\n");
-    i=1;
+    i = 1;
   }
   else if( (i < 0) || (i > 2) )
   {
     printf("WARNING: StopAfterFactor must be 0, 1 or 2, set to 1 by default\n");
-    i=1;
+    i = 1;
   }
-       if(i==0)printf("  StopAfterFactor           disabled\n");
-  else if(i==1)printf("  StopAfterFactor           bitlevel\n");
-  else if(i==2)printf("  StopAfterFactor           class\n");
+       if(i==0){if(mystuff->verbosity >= 1)printf("  StopAfterFactor           disabled\n");}
+  else if(i==1){if(mystuff->verbosity >= 1)printf("  StopAfterFactor           bitlevel\n");}
+  else if(i==2){if(mystuff->verbosity >= 1)printf("  StopAfterFactor           class\n");}
   mystuff->stopafterfactor = i;
 
 /*****************************************************************************/
@@ -239,15 +259,15 @@ int read_config(mystuff_t *mystuff)
   if(my_read_int("mfaktc.ini", "PrintMode", &i))
   {
     printf("WARNING: Cannot read PrintMode from mfaktc.ini, set to 0 by default\n");
-    i=0;
+    i = 0;
   }
   else if(i != 0 && i != 1)
   {
     printf("WARNING: PrintMode must be 0 or 1, set to 0 by default\n");
-    i=0;
+    i = 0;
   }
-  if(i == 0)printf("  PrintMode                 full\n");
-  else      printf("  PrintMode                 compact\n");
+  if(i == 0){if(mystuff->verbosity >= 1)printf("  PrintMode                 full\n");}
+  else      {if(mystuff->verbosity >= 1)printf("  PrintMode                 compact\n");}
   mystuff->printmode = i;
 
 /*****************************************************************************/
@@ -255,17 +275,16 @@ int read_config(mystuff_t *mystuff)
   if(my_read_int("mfaktc.ini", "AllowSleep", &i))
   {
     printf("WARNING: Cannot read AllowSleep from mfaktc.ini, set to 0 by default\n");
-    i=0;
+    i = 0;
   }
-  else if(i != 0 && i != 1)
+  else if(i < 0 || i > 1)
   {
     printf("WARNING: AllowSleep must be 0 or 1, set to 0 by default\n");
-    i=0;
+    i = 0;
   }
-  if(i == 0)printf("  AllowSleep                no\n");
-  else      printf("  AllowSleep                yes\n");
+  if     (i == 0){if(mystuff->verbosity >= 1)printf("  AllowSleep                no\n");}
+  else           {if(mystuff->verbosity >= 1)printf("  AllowSleep                yes\n");}
   mystuff->allowsleep = i;
-
 
   return 0;
 }

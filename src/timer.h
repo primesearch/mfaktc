@@ -29,6 +29,7 @@ void timer_init(struct timeval *timer);
 unsigned long long int timer_diff(struct timeval *timer);
 void timertest();
 void sleeptest();
+int sleep_is_good();
 #if defined(NVCC_EXTERN) && !defined(_MSC_VER)
 }
 #endif

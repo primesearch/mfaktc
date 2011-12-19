@@ -65,7 +65,7 @@ typedef struct
   int compcapa_major;		/* compute capability major */
   int compcapa_minor;		/* compute capability minor */
   
-  int checkpoints, mode, stages, stopafterfactor;
+  int checkpoints, checkpointdelay, mode, stages, stopafterfactor;
   int threads_per_grid_max, threads_per_grid;
 
 #ifdef CHECKS_MODBASECASE
@@ -76,6 +76,11 @@ typedef struct
   int printmode;
   int class_counter;		/* needed for ETA calculation */
   int allowsleep;
+  
+  int quit;
+  int verbosity;		/* 0 = reduced number of screen prints, 1 = default, >1 current unused */
+  
+  int selftestsize;
   
 }mystuff_t;			/* FIXME: propper name needed */
 
@@ -97,3 +102,6 @@ enum MODES
   MODE_SELFTEST_SHORT,
   MODE_SELFTEST_FULL
 };
+
+#define RET_CUDA_ERROR 1000000001
+#define RET_QUIT       1000000002

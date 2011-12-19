@@ -32,13 +32,14 @@ unsigned long long int timer_diff(struct timeval *timer)
   unsigned long long int usecs;
   struct timeval t2;
   gettimeofday(&t2,NULL);
-  usecs = t2.tv_sec - timer->tv_sec;
-  usecs *= 1000000;
-//  usecs += t2.tv_usec - timer->tv_usec;
-  usecs += t2.tv_usec;
-  usecs -= timer->tv_usec;
+  usecs = (unsigned long long int)t2.tv_sec - (unsigned long long int)timer->tv_sec;
+  usecs *= 1000000ULL;
+  usecs += (unsigned long long int)t2.tv_usec;
+  usecs -= (unsigned long long int)timer->tv_usec;
+  
   return usecs;
 }
+
 
 void timertest()
 {
@@ -68,11 +69,10 @@ void timertest()
   printf("  negative steps: %" PRIu64 "\n", negative);
   printf("  zero steps:     %" PRIu64 "\n", zero);
   printf("  positive steps: %" PRIu64 "\n", positive);
-  if(negative > 0)
-    printf("WARNING: %8" PRIu64 " negative timesteps\n", negative);
   printf("  smallest (non-zero) time step: %" PRIu64 "usec\n", min_step);
   printf("  biggest time step:             %" PRIu64 "usec\n", max_step);
 }
+
 
 void sleeptest()
 {

@@ -1,6 +1,6 @@
 /*
 This file is part of mfaktc.
-Copyright (C) 2009, 2010  Oliver Weihe (o.weihe@t-online.de)
+Copyright (C) 2011  Oliver Weihe (o.weihe@t-online.de)
 
 mfaktc is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -16,13 +16,5 @@ You should have received a copy of the GNU General Public License
 along with mfaktc.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifdef _MSC_VER
-extern "C" {
-#endif
-void setui_72(int72 *res, unsigned long long int a);
-#ifdef _MSC_VER
-int tf_class_71(unsigned int exp, int bit_min, int bit_max, unsigned long long int k_min, unsigned long long int k_max, mystuff_t *mystuff);
-}
-#else
-extern int tf_class_71(unsigned int exp, int bit_min, int bit_max, unsigned long long int k_min, unsigned long long int k_max, mystuff_t *mystuff);
-#endif
+void my_signal_handler(int signum);
+void register_signal_handler(mystuff_t *mystuff);

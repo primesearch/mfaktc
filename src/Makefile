@@ -22,7 +22,8 @@ LDFLAGS = -fPIC $(CUDA_LIB) -lcudart
 
 ##############################################################################
 
-CSRC  = sieve.c timer.c parse.c read_config.c mfaktc.c checkpoint.c
+CSRC  = sieve.c timer.c parse.c read_config.c mfaktc.c checkpoint.c \
+	signal_handler.c
 CUSRC = tf_72bit.cu tf_96bit.cu tf_barrett96.cu
 
 COBJS  = $(CSRC:.c=.o)
@@ -63,9 +64,11 @@ read_config.o: read_config.c params.h my_types.h
 
 mfaktc.o: mfaktc.c params.h my_types.h compatibility.h sieve.h \
  read_config.h parse.h timer.h tf_72bit.h tf_96bit.h tf_barrett96.h \
- checkpoint.h selftest-data.c
+ checkpoint.h signal_handler.h selftest-data.c
 
 checkpoint.o: checkpoint.c params.h
+
+signal_handler.o: signal_handler.c params.h my_types.h compatibility.h
 
 tf_72bit.o: tf_72bit.cu params.h my_types.h compatibility.h \
  my_intrinsics.h sieve.h timer.h tf_debug.h tf_common.cu

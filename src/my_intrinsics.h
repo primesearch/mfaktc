@@ -87,3 +87,67 @@ __device__ static unsigned int __subc(unsigned int a, unsigned int b)
   asm("subc.u32 %0, %1, %2;" : "=r" (r) : "r" (a) , "r" (b));
   return r;
 }
+
+
+__device__ static unsigned int __umad32(unsigned int a, unsigned int b, unsigned int c)
+{
+  unsigned int r;
+  asm("mad.lo.u32 %0, %1, %2, %3;" : "=r" (r) : "r" (a) , "r" (b), "r" (c));
+  return r;
+}
+
+
+__device__ static unsigned int __umad32_cc(unsigned int a, unsigned int b, unsigned int c)
+{
+  unsigned int r;
+  asm("mad.lo.cc.u32 %0, %1, %2, %3;" : "=r" (r) : "r" (a) , "r" (b), "r" (c));
+  return r;
+}
+
+
+__device__ static unsigned int __umad32c(unsigned int a, unsigned int b, unsigned int c)
+{
+  unsigned int r;
+  asm("madc.lo.u32 %0, %1, %2, %3;" : "=r" (r) : "r" (a) , "r" (b), "r" (c));
+  return r;
+}
+
+
+__device__ static unsigned int __umad32c_cc(unsigned int a, unsigned int b, unsigned int c)
+{
+  unsigned int r;
+  asm("madc.lo.cc.u32 %0, %1, %2, %3;" : "=r" (r) : "r" (a) , "r" (b), "r" (c));
+  return r;
+}
+
+
+__device__ static unsigned int __umad32hi(unsigned int a, unsigned int b, unsigned int c)
+{
+  unsigned int r;
+  asm("mad.hi.u32 %0, %1, %2, %3;" : "=r" (r) : "r" (a) , "r" (b), "r" (c));
+  return r;
+}
+
+
+__device__ static unsigned int __umad32hi_cc(unsigned int a, unsigned int b, unsigned int c)
+{
+  unsigned int r;
+  asm("mad.hi.cc.u32 %0, %1, %2, %3;" : "=r" (r) : "r" (a) , "r" (b), "r" (c));
+  return r;
+}
+
+
+__device__ static unsigned int __umad32hic(unsigned int a, unsigned int b, unsigned int c)
+{
+  unsigned int r;
+  asm("madc.hi.u32 %0, %1, %2, %3;" : "=r" (r) : "r" (a) , "r" (b), "r" (c));
+  return r;
+}
+
+
+__device__ static unsigned int __umad32hic_cc(unsigned int a, unsigned int b, unsigned int c)
+{
+  unsigned int r;
+  asm("madc.hi.cc.u32 %0, %1, %2, %3;" : "=r" (r) : "r" (a) , "r" (b), "r" (c));
+  return r;
+}

@@ -1,3 +1,62 @@
+version 0.18 (2011-12-17)
+- contributors
+  - Eric Christenson
+
+- fixed the output if StopAfterFactor is set to 2 and a factor if found in
+  the very last class than the output will not include the "partially
+  tested" string.
+- autoadjustment of SievePrimes is now less dependend on the gridsize and
+  absolute speed. Instead of measuring the absolute (average) time waited
+  per precessing block (grid size) now the relative time spent on waiting
+  for the GPU is calculated. In the per-class output "avg. wait" is replaced
+  by "CPU wait".
+- in all GPU kernels the functions cmp_72() and cmp_96() are replaced by
+  cmp_ge_72() and cmp_ge_96(). Those cmp_ge_?? only check if the first of
+  two input numbers is greater or equal than the second number. cmp_??
+  checked if is is smaller, equal or greater. A very small performance
+  improvement (< 1%) is possible for all GPU kernels. This was suggested by
+  bdot on www.mersenneforum.org. Thank you!
+- added even more debug code for CHECKS_MODBASECASE. The new code did not
+  show any issues. :)
+- cleanup: only one function which checks if a kernel is possible or not
+- new commandline option: "-st2" runs a even longer selftest with *new*
+  testcases
+- two new functions in parse.c: amount_of_work() and
+  amount_of_work_in_worktodo(). Currently not needed but might be useful
+  once automated primenet interaction has been implemented.
+- lower limit for the barrett92 kernel is now 2^79 => very small performance
+  enhancement. :)
+- second rewrite of worktodo handling by Eric Christenson, preparation for
+  automated primenet interaction
+- new commandline option: "-v" (verbosity) let the user decide how many
+  informations are printed
+  (suggested by aspen on www.mersenneforum.org)
+- minor cosmetics in the code (e.g. function names mfakt -> mfaktc)
+- "has a factor" result lines now contain informations (program name,
+  versions, bitlevel, ...) James Heinrich is working on this on the server
+  side. This should give more accurate credits for "has a factor" results
+  from the primenet server once this is fully implemented.
+- mfaktc no longer refuses to load a checkpoint file from a Linux version
+  with a Windows version of mfaktc and vice versa. Of course mfaktc still
+  refuses to load checkpoint files from other versions than itself
+  (identical version string!)
+- added a (simple) signal handler (captures SIGINT and SIGTERM).
+    1st ^C: mfaktc will exit after the currently processed class is
+            finished.
+    2nd ^C: mfaktc will stop immediately
+- much tighter version checking (CUDA runtime and CUDA driver), the CUDA
+  runtime version must match the version used for compiling mfaktc. The CUDA
+  driver version must have same or newer version. (for more information
+  check the CUDA_C_Programming_Guide.pdf from Nvidia.)
+- reordered the coloums of the per-class output.
+- added a minimum delay between two checkpoint file writes. The user can set
+  the delay in mfaktc.ini (CheckpointDelay).
+- barrett92_mul32 kernel is a little bit faster (squaring function improved)
+- added a new code path to barrett79_mul32 and barrett92_mul32 kernels, CUDA
+  >= 4.1 features multiply-add with carry for compute capability >= 2.0.
+  On my GTX 470 (compute capability) this yields up to 15% for
+  barrett92_mul32 and up to 7% for barrett79_mul32 extra throughput.
+
 version 0.17 (2011-05-06)
 - report whether mfaktc is compiled for a 32bit or 64bit system
 - show all enabled debug compiletime options (don't show them when they are

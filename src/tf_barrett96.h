@@ -21,10 +21,10 @@ extern "C" {
 #endif
 void setui_96(int96 *res, unsigned long long int a);
 #ifdef _MSC_VER
-int tf_class_barrett79(unsigned int exp, int bit_min, unsigned long long int k_min, unsigned long long int k_max, mystuff_t *mystuff);
-int tf_class_barrett92(unsigned int exp, int bit_min, unsigned long long int k_min, unsigned long long int k_max, mystuff_t *mystuff);
+int tf_class_barrett79(unsigned int exp, int bit_min, int bit_max, unsigned long long int k_min, unsigned long long int k_max, mystuff_t *mystuff);
+int tf_class_barrett92(unsigned int exp, int bit_min, int bit_max, unsigned long long int k_min, unsigned long long int k_max, mystuff_t *mystuff);
 }
 #else
-extern int tf_class_barrett79(unsigned int exp, int bit_min, unsigned long long int k_min, unsigned long long int k_max, mystuff_t *mystuff);
-extern int tf_class_barrett92(unsigned int exp, int bit_min, unsigned long long int k_min, unsigned long long int k_max, mystuff_t *mystuff);
+extern int tf_class_barrett79(unsigned int exp, int bit_min, int bit_max, unsigned long long int k_min, unsigned long long int k_max, mystuff_t *mystuff);
+extern int tf_class_barrett92(unsigned int exp, int bit_min, int bit_max, unsigned long long int k_min, unsigned long long int k_max, mystuff_t *mystuff);
 #endif

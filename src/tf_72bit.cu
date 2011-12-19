@@ -1,6 +1,6 @@
 /*
 This file is part of mfaktc.
-Copyright (C) 2009, 2010  Oliver Weihe (o.weihe@t-online.de)
+Copyright (C) 2009, 2010, 2011  Oliver Weihe (o.weihe@t-online.de)
 
 mfaktc is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -110,28 +110,15 @@ __device__ static void mul_24_48(unsigned int *res_hi, unsigned int *res_lo, uns
 }
 
 
-__device__ static void copy_72(int72 *a, int72 b)
-/* a = b */
+__device__ static int cmp_ge_72(int72 a, int72 b)
+/* checks if a is greater or equal than b */
 {
-  a->d0 = b.d0;
-  a->d1 = b.d1;
-  a->d2 = b.d2;
-}
-
-
-__device__ static int cmp_72(int72 a, int72 b)
-/* returns
--1 if a < b
-0  if a = b
-1  if a > b */
-{
-  if(a.d2 < b.d2)return -1;
-  if(a.d2 > b.d2)return 1;
-  if(a.d1 < b.d1)return -1;
-  if(a.d1 > b.d1)return 1;
-  if(a.d0 < b.d0)return -1;
-  if(a.d0 > b.d0)return 1;
-  return 0;
+  if(a.d2 == b.d2)
+  {
+    if(a.d1 == b.d1)return(a.d0 >= b.d0);
+    else            return(a.d1 >  b.d1);
+  }
+  else              return(a.d2 >  b.d2);
 }
 
 
@@ -430,7 +417,7 @@ __device__ static void mod_144_72(int72 *res, int144 q, int72 n, float nf, unsig
 qi is allways a little bit too small, this is OK for all steps except the last
 one. Sometimes the result is a little bit bigger than n
 */
-/*  if(cmp_72(*res,n)>0)
+/*  if(cmp_ge_72(*res,n))
   {
     sub_72(&tmp72,*res,n);
     copy_72(res,tmp72);
@@ -439,9 +426,9 @@ one. Sometimes the result is a little bit bigger than n
 
 __global__ void
 #ifndef CHECKS_MODBASECASE
-__launch_bounds__(THREADS_PER_BLOCK,2) mfakt_71(unsigned int exp, int72 k, unsigned int *k_tab, int shiftcount, int144 b, unsigned int *RES)
+__launch_bounds__(THREADS_PER_BLOCK,2) mfaktc_71(unsigned int exp, int72 k, unsigned int *k_tab, int shiftcount, int144 b, unsigned int *RES)
 #else
-__launch_bounds__(THREADS_PER_BLOCK,2) mfakt_71(unsigned int exp, int72 k, unsigned int *k_tab, int shiftcount, int144 b, unsigned int *RES, unsigned int *modbasecase_debug)
+__launch_bounds__(THREADS_PER_BLOCK,2) mfaktc_71(unsigned int exp, int72 k, unsigned int *k_tab, int shiftcount, int144 b, unsigned int *RES, unsigned int *modbasecase_debug)
 #endif
 /*
 computes 2^exp mod f
@@ -492,11 +479,18 @@ Precalculated here since it is the same for all steps in the following loop */
 #endif    
     exp<<=1;
   }
-  if(cmp_72(a,f)>0)
+
+  if(cmp_ge_72(a,f))				// final adjustment in case a >= f
   {
-    sub_72(&exp72,a,f);
-    copy_72(&a,exp72);
+    sub_72(&a,a,f);
   }
+
+#if defined CHECKS_MODBASECASE && defined USE_DEVICE_PRINTF && __CUDA_ARCH__ >= 200
+  if(cmp_ge_72(a,f))
+  {
+    printf("EEEEEK, final a is >= f\n");
+  }
+#endif
 
 /* finally check if we found a factor and write the factor to RES[] */
   if((a.d2|a.d1)==0 && a.d0==1)

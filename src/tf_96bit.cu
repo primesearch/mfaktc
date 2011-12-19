@@ -1,6 +1,6 @@
 /*
 This file is part of mfaktc.
-Copyright (C) 2009, 2010  Oliver Weihe (o.weihe@t-online.de)
+Copyright (C) 2009, 2010, 2011  Oliver Weihe (o.weihe@t-online.de)
 
 mfaktc is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -109,28 +109,15 @@ __host__ void setui_96(int96 *res, unsigned long long int a)
 #endif
 
 
-__device__ static void copy_96(int96 *a, int96 b)
-/* a = b */
+__device__ static int cmp_ge_96(int96 a, int96 b)
+/* checks if a is greater or equal than b */
 {
-  a->d0 = b.d0;
-  a->d1 = b.d1;
-  a->d2 = b.d2;
-}
-
-
-__device__ static int cmp_96(int96 a, int96 b)
-/* returns
--1 if a < b
-0  if a = b
-1  if a > b */
-{
-  if(a.d2 < b.d2)return -1;
-  if(a.d2 > b.d2)return 1;
-  if(a.d1 < b.d1)return -1;
-  if(a.d1 > b.d1)return 1;
-  if(a.d0 < b.d0)return -1;
-  if(a.d0 > b.d0)return 1;
-  return 0;
+  if(a.d2 == b.d2)
+  {
+    if(a.d1 == b.d1)return(a.d0 >= b.d0);
+    else            return(a.d1 >  b.d1);
+  }
+  else              return(a.d2 >  b.d2);
 }
 
 
@@ -406,7 +393,7 @@ division will be skipped
 qi is allways a little bit too small, this is OK for all steps except the last
 one. Sometimes the result is a little bit bigger than n
 */
-/*  if(cmp_96(*res,n)>0)
+/*  if(cmp_ge_96(*res,n))
   {
     sub_96(&tmp96,*res,n);
     copy_96(res,tmp96);
@@ -417,15 +404,15 @@ one. Sometimes the result is a little bit bigger than n
 __global__ void
 #ifdef SHORTCUT_75BIT
   #ifndef CHECKS_MODBASECASE
-__launch_bounds__(THREADS_PER_BLOCK,2) mfakt_75(unsigned int exp, int96 k, unsigned int *k_tab, int shiftcount, int192 b, unsigned int *RES)
+__launch_bounds__(THREADS_PER_BLOCK,2) mfaktc_75(unsigned int exp, int96 k, unsigned int *k_tab, int shiftcount, int192 b, unsigned int *RES)
   #else
-__launch_bounds__(THREADS_PER_BLOCK,2) mfakt_75(unsigned int exp, int96 k, unsigned int *k_tab, int shiftcount, int192 b, unsigned int *RES, unsigned int *modbasecase_debug)
+__launch_bounds__(THREADS_PER_BLOCK,2) mfaktc_75(unsigned int exp, int96 k, unsigned int *k_tab, int shiftcount, int192 b, unsigned int *RES, unsigned int *modbasecase_debug)
   #endif
 #else
   #ifndef CHECKS_MODBASECASE
-__launch_bounds__(THREADS_PER_BLOCK,2) mfakt_95(unsigned int exp, int96 k, unsigned int *k_tab, int shiftcount, int192 b, unsigned int *RES)
+__launch_bounds__(THREADS_PER_BLOCK,2) mfaktc_95(unsigned int exp, int96 k, unsigned int *k_tab, int shiftcount, int192 b, unsigned int *RES)
   #else
-__launch_bounds__(THREADS_PER_BLOCK,2) mfakt_95(unsigned int exp, int96 k, unsigned int *k_tab, int shiftcount, int192 b, unsigned int *RES, unsigned int *modbasecase_debug)
+__launch_bounds__(THREADS_PER_BLOCK,2) mfaktc_95(unsigned int exp, int96 k, unsigned int *k_tab, int shiftcount, int192 b, unsigned int *RES, unsigned int *modbasecase_debug)
   #endif
 #endif
 /*
@@ -484,11 +471,18 @@ Precalculated here since it is the same for all steps in the following loop */
 #endif
     exp<<=1;
   }
-  if(cmp_96(a,f)>0)
+
+  if(cmp_ge_96(a,f))				// final adjustment in case a >= f
   {
-    sub_96(&exp96,a,f);
-    copy_96(&a,exp96);
+    sub_96(&a,a,f);
   }
+
+#if defined CHECKS_MODBASECASE && defined USE_DEVICE_PRINTF && __CUDA_ARCH__ >= 200
+  if(cmp_ge_96(a,f))
+  {
+    printf("EEEEEK, final a is >= f\n");
+  }
+#endif
 
 /* finally check if we found a factor and write the factor to RES[] */
   if((a.d2|a.d1)==0 && a.d0==1)

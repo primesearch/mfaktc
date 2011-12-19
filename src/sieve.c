@@ -182,7 +182,7 @@ void sieve_init_class(unsigned int exp, unsigned long long int k_start, int siev
 {
   int i,j,k,p;
   int ii,jj;
-
+  
 #ifdef MORE_CLASSES  
   for(i=4;i<sieve_limit;i++)
 #else

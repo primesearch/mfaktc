@@ -84,11 +84,7 @@ code path */
 *******************************************************************************
 ******************************************************************************/
 
-#ifndef _MSC_VER
-  #define MFAKTC_VERSION "0.17" /* DO NOT CHANGE! */
-#else
-  #define MFAKTC_VERSION "0.17-Win" /* DO NOT CHANGE! */
-#endif
+#define MFAKTC_VERSION "0.18" /* DO NOT CHANGE! */
 
 
 
@@ -102,7 +98,7 @@ time. When it is increased too much you might run out of register space
 (especially on GPUs with compute capability 1.0 and 1.1)
 */
 
-#define THREADS_PER_BLOCK 256
+#define THREADS_PER_BLOCK 256 /* DO NOT CHANGE! */
 
 
 
@@ -147,9 +143,9 @@ The following lines define the min, default and max value.
 
 /* set NUM_CLASSES and SIEVE_SIZE depending on MORE_CLASSES and SIEVE_SIZE_LIMIT */
 #ifndef MORE_CLASSES
-  #define NUM_CLASSES 420 /* 2 * 2 * 3 * 5 * 7 */
-  #define SIEVE_SIZE ((SIEVE_SIZE_LIMIT<<13) - (SIEVE_SIZE_LIMIT<<13) % (11*13*17*19))
+  #define NUM_CLASSES 420 /* 2 * 2 * 3 * 5 * 7 */  /* DO NOT CHANGE! */
+  #define SIEVE_SIZE ((SIEVE_SIZE_LIMIT<<13) - (SIEVE_SIZE_LIMIT<<13) % (11*13*17*19)) /* DO NOT CHANGE! */
 #else
-  #define NUM_CLASSES 4620 /* 2 * 2 * 3 * 5 * 7 * 11 */
-  #define SIEVE_SIZE ((SIEVE_SIZE_LIMIT<<13) - (SIEVE_SIZE_LIMIT<<13) % (13*17*19*23))
+  #define NUM_CLASSES 4620 /* 2 * 2 * 3 * 5 * 7 * 11 */ /* DO NOT CHANGE! */
+  #define SIEVE_SIZE ((SIEVE_SIZE_LIMIT<<13) - (SIEVE_SIZE_LIMIT<<13) % (13*17*19*23)) /* DO NOT CHANGE! */
 #endif

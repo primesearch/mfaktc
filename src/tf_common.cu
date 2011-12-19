@@ -18,25 +18,30 @@ along with mfaktc.  If not, see <http://www.gnu.org/licenses/>.
 
 
 #ifdef TF_72BIT
-extern "C" __host__ int tf_class_71(unsigned int exp, int bit_min, unsigned long long int k_min, unsigned long long int k_max, mystuff_t *mystuff)
-#define MFAKT_FUNC mfakt_71
+extern "C" __host__ int tf_class_71(unsigned int exp, int bit_min, int bit_max, unsigned long long int k_min, unsigned long long int k_max, mystuff_t *mystuff)
+#define MFAKTC_FUNC mfaktc_71
+#define KERNEL_NAME "71bit_mul24"
 #endif
 #ifdef TF_96BIT
   #ifdef SHORTCUT_75BIT
-extern "C" __host__ int tf_class_75(unsigned int exp, int bit_min, unsigned long long int k_min, unsigned long long int k_max, mystuff_t *mystuff)
-#define MFAKT_FUNC mfakt_75
+extern "C" __host__ int tf_class_75(unsigned int exp, int bit_min, int bit_max, unsigned long long int k_min, unsigned long long int k_max, mystuff_t *mystuff)
+#define MFAKTC_FUNC mfaktc_75
+#define KERNEL_NAME "75bit_mul32"
   #else
-extern "C" __host__ int tf_class_95(unsigned int exp, int bit_min, unsigned long long int k_min, unsigned long long int k_max, mystuff_t *mystuff)
-#define MFAKT_FUNC mfakt_95
+extern "C" __host__ int tf_class_95(unsigned int exp, int bit_min, int bit_max, unsigned long long int k_min, unsigned long long int k_max, mystuff_t *mystuff)
+#define MFAKTC_FUNC mfaktc_95
+#define KERNEL_NAME "95bit_mul32"
   #endif
 #endif
 #ifdef TF_BARRETT
   #ifdef TF_BARRETT_79BIT
-extern "C" __host__ int tf_class_barrett79(unsigned int exp, int bit_min, unsigned long long int k_min, unsigned long long int k_max, mystuff_t *mystuff)
-#define MFAKT_FUNC mfakt_barrett79
+extern "C" __host__ int tf_class_barrett79(unsigned int exp, int bit_min, int bit_max, unsigned long long int k_min, unsigned long long int k_max, mystuff_t *mystuff)
+#define MFAKTC_FUNC mfaktc_barrett79
+#define KERNEL_NAME "barrett79_mul32"
   #else
-extern "C" __host__ int tf_class_barrett92(unsigned int exp, int bit_min, unsigned long long int k_min, unsigned long long int k_max, mystuff_t *mystuff)
-#define MFAKT_FUNC mfakt_barrett92
+extern "C" __host__ int tf_class_barrett92(unsigned int exp, int bit_min, int bit_max, unsigned long long int k_min, unsigned long long int k_max, mystuff_t *mystuff)
+#define MFAKTC_FUNC mfaktc_barrett92
+#define KERNEL_NAME "barrett92_mul32"
   #endif
 #endif
 {
@@ -45,8 +50,8 @@ extern "C" __host__ int tf_class_barrett92(unsigned int exp, int bit_min, unsign
   cudaError_t cuda_ret;
   timeval timer;
   timeval timer2;
-  unsigned long long int twait=0, eta;
-  unsigned int cwait=0;
+  unsigned long long int twait = 0, eta;
+  float cpuwait = 0.0;
 #ifdef TF_72BIT  
   int72 factor,k_base;
   int144 b_preinit;
@@ -55,11 +60,11 @@ extern "C" __host__ int tf_class_barrett92(unsigned int exp, int bit_min, unsign
   int96 factor,k_base;
   int192 b_preinit;
 #endif
-  int shiftcount,ln2b,count=0;
+  int shiftcount, ln2b, count = 0;
   unsigned long long int k_diff;
   unsigned long long int t;
   char string[50];
-  int factorsfound=0;
+  int factorsfound = 0;
   FILE *resultfile;
   
   int h_ktab_index = 0;
@@ -76,7 +81,7 @@ extern "C" __host__ int tf_class_barrett92(unsigned int exp, int bit_min, unsign
   
   unsigned int delay = 1000;
   
-  for(i=0; i<mystuff->num_streams; i++)h_ktab_inuse[i]   = i;
+  for(i=0; i<mystuff->num_streams; i++)h_ktab_inuse[i] = i;
   for(i=0; i<mystuff->cpu_streams; i++)h_ktab_cpu[i] = i + mystuff->num_streams;
   for(i=0; i<mystuff->cpu_streams; i++)k_min_grid[i] = 0;
   h_ktab_index = 0;
@@ -142,7 +147,6 @@ extern "C" __host__ int tf_class_barrett92(unsigned int exp, int bit_min, unsign
       if(count > mystuff->num_streams)
       {
         twait+=timer_diff(&timer2);
-        cwait++;
       }
 #ifdef DEBUG_STREAM_SCHEDULE
       printf(" STREAM_SCHEDULE: preprocessing on h_ktab[%d] (count = %d)\n", index, count);
@@ -205,19 +209,19 @@ extern "C" __host__ int tf_class_barrett92(unsigned int exp, int bit_min, unsign
 
 #if defined(TF_72BIT) || defined(TF_96BIT)
   #ifndef CHECKS_MODBASECASE
-        MFAKT_FUNC<<<blocksPerGrid, threadsPerBlock, 0, mystuff->stream[stream]>>>(exp, k_base, mystuff->d_ktab[stream], shiftcount, b_preinit, mystuff->d_RES);
+        MFAKTC_FUNC<<<blocksPerGrid, threadsPerBlock, 0, mystuff->stream[stream]>>>(exp, k_base, mystuff->d_ktab[stream], shiftcount, b_preinit, mystuff->d_RES);
   #else
-        MFAKT_FUNC<<<blocksPerGrid, threadsPerBlock, 0, mystuff->stream[stream]>>>(exp, k_base, mystuff->d_ktab[stream], shiftcount, b_preinit, mystuff->d_RES, mystuff->d_modbasecase_debug);
+        MFAKTC_FUNC<<<blocksPerGrid, threadsPerBlock, 0, mystuff->stream[stream]>>>(exp, k_base, mystuff->d_ktab[stream], shiftcount, b_preinit, mystuff->d_RES, mystuff->d_modbasecase_debug);
   #endif
 #elif defined(TF_BARRETT)
   #ifndef CHECKS_MODBASECASE
     #ifndef TF_BARRETT_79BIT
-        MFAKT_FUNC<<<blocksPerGrid, threadsPerBlock, 0, mystuff->stream[stream]>>>(exp, k_base, mystuff->d_ktab[stream], shiftcount, b_preinit, mystuff->d_RES, bit_min-63);
+        MFAKTC_FUNC<<<blocksPerGrid, threadsPerBlock, 0, mystuff->stream[stream]>>>(exp, k_base, mystuff->d_ktab[stream], shiftcount, b_preinit, mystuff->d_RES, bit_min-63);
     #else        
-        MFAKT_FUNC<<<blocksPerGrid, threadsPerBlock, 0, mystuff->stream[stream]>>>(exp, k_base, mystuff->d_ktab[stream], shiftcount, b_preinit, mystuff->d_RES);
+        MFAKTC_FUNC<<<blocksPerGrid, threadsPerBlock, 0, mystuff->stream[stream]>>>(exp, k_base, mystuff->d_ktab[stream], shiftcount, b_preinit, mystuff->d_RES);
     #endif
   #else
-        MFAKT_FUNC<<<blocksPerGrid, threadsPerBlock, 0, mystuff->stream[stream]>>>(exp, k_base, mystuff->d_ktab[stream], shiftcount, b_preinit, mystuff->d_RES, bit_min-63, mystuff->d_modbasecase_debug);
+        MFAKTC_FUNC<<<blocksPerGrid, threadsPerBlock, 0, mystuff->stream[stream]>>>(exp, k_base, mystuff->d_ktab[stream], shiftcount, b_preinit, mystuff->d_RES, bit_min-63, mystuff->d_modbasecase_debug);
   #endif
 #endif
 
@@ -292,10 +296,6 @@ extern "C" __host__ int tf_class_barrett92(unsigned int exp, int bit_min, unsign
     else if(t < 10000000ULL)printf(" | %6.1fs", (double)t/1000.0);
     else                    printf(" | %6.0fs", (double)t/1000.0);
 
-    printf(" | %6.2fM/s", (double)mystuff->threads_per_grid * (double)count / ((double)t * 1000.0));
-    
-    printf(" | %11d", mystuff->sieve_primes);
- 
     if(mystuff->mode == MODE_NORMAL)
     {
       if(t > 250.0)
@@ -313,28 +313,31 @@ extern "C" __host__ int tf_class_barrett92(unsigned int exp, int bit_min, unsign
       else printf(" |   n.a.");
     }
     else if(mystuff->mode == MODE_SELFTEST_FULL)printf(" |   n.a.");
+
+    printf(" | %6.2fM/s", (double)mystuff->threads_per_grid * (double)count / ((double)t * 1000.0));
+    
+    printf(" | %11d", mystuff->sieve_primes);
   }
 
-  if(cwait>0)
+  if(count > 2 * mystuff->num_streams)
   {
-    twait/=cwait;
-    if(mystuff->mode != MODE_SELFTEST_SHORT)printf(" | %7" PRIu64 "us", twait);
-    if(mystuff->sieve_primes_adjust==1 && twait>750 && mystuff->sieve_primes < mystuff->sieve_primes_max && (mystuff->mode != MODE_SELFTEST_SHORT))
+    cpuwait = (float)twait / ((float)t * 10);
+    if(mystuff->mode != MODE_SELFTEST_SHORT)printf(" |   %5.2f%%", cpuwait);
+/* if SievePrimesAdjust is enable lets try to get 2 % < CPU wait < 6% */
+    if(mystuff->sieve_primes_adjust == 1 && cpuwait > 6.0 && mystuff->sieve_primes < mystuff->sieve_primes_max && (mystuff->mode != MODE_SELFTEST_SHORT))
     {
       mystuff->sieve_primes *= 9;
       mystuff->sieve_primes /= 8;
       if(mystuff->sieve_primes > mystuff->sieve_primes_max) mystuff->sieve_primes = mystuff->sieve_primes_max;
-//      printf("\navg. wait > 750us, increasing SievePrimes to %d",mystuff->sieve_primes);
     }
-    if(mystuff->sieve_primes_adjust==1 && twait<200 && mystuff->sieve_primes > SIEVE_PRIMES_MIN && (mystuff->mode != MODE_SELFTEST_SHORT))
+    if(mystuff->sieve_primes_adjust == 1 && cpuwait < 2.0  && mystuff->sieve_primes > SIEVE_PRIMES_MIN && (mystuff->mode != MODE_SELFTEST_SHORT))
     {
       mystuff->sieve_primes *= 7;
       mystuff->sieve_primes /= 8;
       if(mystuff->sieve_primes < SIEVE_PRIMES_MIN) mystuff->sieve_primes = SIEVE_PRIMES_MIN;
-//      printf("\navg. wait < 200us, decreasing SievePrimes to %d",mystuff->sieve_primes);
     }
   }
-  else if(mystuff->mode != MODE_SELFTEST_SHORT)printf(" |      n.a.");
+  else if(mystuff->mode != MODE_SELFTEST_SHORT)printf(" |     n.a.");
 
 
   if(mystuff->mode == MODE_NORMAL)
@@ -362,12 +365,16 @@ extern "C" __host__ int tf_class_barrett92(unsigned int exp, int bit_min, unsign
     if(mystuff->mode != MODE_SELFTEST_SHORT)
     {
       if(mystuff->printmode == 1 && i == 0)printf("\n");
-      printf("Result[%02d]: M%u has a factor: %s\n",i,exp,string);
+      printf("M%u has a factor: %s\n", exp, string);
     }
     if(mystuff->mode == MODE_NORMAL)
     {
       resultfile=fopen("results.txt", "a");
-      fprintf(resultfile,"M%u has a factor: %s\n",exp,string);
+#ifndef MORE_CLASSES      
+      fprintf(resultfile,"M%u has a factor: %s [TF:%d:%d%s:mfaktc %s %s]\n", exp, string, bit_min, bit_max, ((mystuff->stopafterfactor == 2) && (mystuff->class_counter <  96)) ? "*" : "" , MFAKTC_VERSION, KERNEL_NAME);
+#else      
+      fprintf(resultfile,"M%u has a factor: %s [TF:%d:%d%s:mfaktc %s %s]\n", exp, string, bit_min, bit_max, ((mystuff->stopafterfactor == 2) && (mystuff->class_counter < 960)) ? "*" : "" , MFAKTC_VERSION, KERNEL_NAME);
+#endif
       fclose(resultfile);
     }
   }
@@ -385,4 +392,5 @@ extern "C" __host__ int tf_class_barrett92(unsigned int exp, int bit_min, unsign
   return factorsfound;
 }
 
-#undef MFAKT_FUNC
+#undef MFAKTC_FUNC
+#undef KERNEL_NAME

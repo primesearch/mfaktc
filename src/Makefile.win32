@@ -1,4 +1,4 @@
-CUDA_DIR = "C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v3.2"
+CUDA_DIR = "C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v4.0"
 
 CC = cl
 CFLAGS = /Ox /Oy /GL /W2 /fp:fast /I$(CUDA_DIR)\include /I$(CUDA_DIR)\include\cudart /nologo
@@ -10,7 +10,8 @@ LINK = link
 LFLAGS = /nologo /LTCG #/ltcg:pgo
 
 CUSRC = tf_72bit.cu tf_96bit.cu tf_barrett96.cu
-CSRC  = mfaktc.c sieve.c read_config.c timer.c parse.c checkpoint.c
+CSRC  = mfaktc.c sieve.c read_config.c timer.c parse.c checkpoint.c \
+	signal_handler.c
 
 CUOBJS = $(CUSRC:.cu=.obj) tf_75bit.obj
 COBJS  = $(CSRC:.c=.obj)
@@ -48,9 +49,11 @@ read_config.obj: read_config.c params.h my_types.h
 
 mfaktc.obj: mfaktc.c params.h my_types.h compatibility.h sieve.h \
  read_config.h parse.h timer.h tf_72bit.h tf_96bit.h tf_barrett96.h \
- checkpoint.h selftest-data.c
+ checkpoint.h signal_handler.h selftest-data.c
 
 checkpoint.obj: checkpoint.c params.h
+
+signal_handler.obj: signal_handler.c params.h my_types.h compatibility.h
 
 tf_72bit.obj: tf_72bit.cu params.h my_types.h compatibility.h \
  my_intrinsics.h sieve.h timer.h tf_debug.h tf_common.cu

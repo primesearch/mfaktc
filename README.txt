@@ -39,6 +39,8 @@ mfaktc should run all all CUDA capable Nvidia GPUs with compute capability
 >= 1.1. From my knowledge there is only once CUDA capable GPU with compute
 capability 1.0: the G80 chip which is found on Geforce 8800 Ultra / GTX /
 GTS 640 / GTS 320 and their Quadro and Tesla variants.
+For AMD Radeon GPUs check out the open CL port of mfaktc: mfakto by Bertram
+Franz
 
 
 
@@ -72,15 +74,13 @@ Adjust the path to your CUDA installation in "Makefile" and run 'make'.
 The binary "mfaktc.exe" is placed into the parent directory.
 
 I'm using
-- OpenSUSE 11.1 x86_64
-- gcc 4.3.2 (OpenSUSE 11.1)
-- Nvidia driver 260.24
+- OpenSUSE 12.1 x86_64
+- gcc 4.6.2 (OpenSUSE 12.1)
+- Nvidia driver 295.41
 - Nvidia CUDA Toolkit
-  - 3.2       ~1% slower than 3.0/3.1
-  - 3.1       read below
-  - 3.0       read below
+  - 4.2
 
-CUDA Toolkits 3.0 and 3.1 are only minimal tested (compile, run selftest).
+Older CUDA Toolkit versions should work, too.
 
 I don't spent time testing mfaktc on 32bit Linux because I think 64bit
 (x86_64) is adopted by most Linux users now. Anyway mfaktc should work on
@@ -292,8 +292,12 @@ A release versions are usually 0.XX where XX increases by one for each new
 # 8 .plan #
 ###########
 
-0.19
-- automatic primenet interaction (Eric Christenson is working on this)         <- specification draft exists
+0.20
+- GPU sieve (George Woltman)
+- merge "worktodo.add" from mfakto
+
+0.??
+- automatic primenet interaction (Eric Christenson is working on this)         <- specification draft exists; on hold, Eric doesn't want to continue his efforts. :(
   - this will greatly increase usability of mfaktc
   - George Woltman agreed to include the so called "security module" in
     mfaktc for a closed source version of mfaktc. I have to check license

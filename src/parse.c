@@ -1,6 +1,6 @@
 /*
 This file is part of mfaktc.
-Copyright (C) 2009, 2010, 2011  Oliver Weihe (o.weihe@t-online.de)
+Copyright (C) 2009, 2010, 2011, 2012  Oliver Weihe (o.weihe@t-online.de)
 This file has been written by Luigi Morelli (L.Morelli@mclink.it) *1
 
 mfaktc is free software: you can redistribute it and/or modify
@@ -446,62 +446,4 @@ enum ASSIGNMENT_ERRORS clear_assignment(char *filename, unsigned int exponent, i
   if(rename("__worktodo__.tmp", filename) != 0)
     return CANT_RENAME;
   return OK;
-}
-
-
-unsigned long long int amount_of_work(unsigned int exponent, int bit_min, int bit_max)
-/*
-calculates the "amount of work" needed for the specified assignment. The
-return value is a arbitrary number and not a concrete time or so.
-This function doesn't care about the size of the exponent and the different
-speed of different kernels but should be good enough as an estimate.
-*/
-{
-  unsigned long long int work;
-
-/* adjust bit_min and bit_max to avoid overflow in the following calculation */
-  bit_min -= 32; if(bit_min < 1) bit_min = 1;
-  bit_max -= 32; if(bit_max < 2) bit_max = 2;
-
-  work = ((1ULL << (unsigned long long int)bit_max) - (1ULL << (unsigned long long int)bit_min)) / (2 * exponent);
-  if(work < 10ULL)work = 10ULL;
-
-  return work;
-}
-
-
-unsigned long long int amount_of_work_in_worktodo(char *filename, int *assignments, int verbosity)
-{
-/*
-returns the "amount of work" for all valid assignments in the worktodo and
-sets *assigments to the number of valid assigments found in file "filename".
-*/
-  unsigned long long int work, work_total = 0;
-  struct ASSIGNMENT assignment;
-  enum PARSE_WARNINGS value;
-
-  *assignments = 0;
-  FILE *f_in;
-  if(verbosity >= 2)printf("amount_of_work_in_worktodo():\n");
-  f_in = fopen(filename, "r");
-  if(f_in != NULL)
-  {
-    while (END_OF_FILE != (value = parse_worktodo_line(f_in,&assignment,NULL,NULL)) )
-    {
-      if (NO_WARNING == value && valid_assignment(assignment.exponent, assignment.bit_min, assignment.bit_max, verbosity))
-      {
-        work = amount_of_work(assignment.exponent, assignment.bit_min, assignment.bit_max);
-        work_total += work;
-        (*assignments)++;
-        if(verbosity >= 2)printf("  %u, %d, %d  (amount of work = %" PRIu64 ")\n", assignment.exponent, assignment.bit_min, assignment.bit_max, work);
-      }
-    }
-    fclose(f_in);
-  }
-  if(verbosity >= 2)
-  {
-    printf("  total amount of work in \"%s\": %" PRIu64 "\n", filename, work_total);
-    printf("  number of valid assignments in worktodo: %d\n", *assignments);
-  }
-  return work_total;
 }

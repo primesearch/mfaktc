@@ -1,3 +1,29 @@
+version 0.19 (2012-08-12)
+- contributors
+  - Bertram Franz (mfakto author)
+  - Ethan (Ethan (EO) on www.mersenneforum.org)
+  - George Woltman (Prime95 author, http://www.mersenne.org)
+
+- user configureable status line (merged from mfakto)
+- alot of cleanups an rearangements in the code
+- few (not very successfully) optimizations for Kepler "light" GPUs (barrett
+  kernels only)
+- SievePrimesMin is lowered to 2000 (usually not very usefull but requested
+  quiet often)
+- added the currect number of compute core per multiprocessor for Kepler
+  "light" GPUs
+- removed debug option "VERBOSE_TIMING"
+- microoptimization for initializing result arrays, suggested by Ethan
+- don't print an error message if deleting checkpoint fails because there
+  was no checkpoint.
+- new kernel: barrett76_mul32 (idea by George Woltman), up to 23% faster
+  than the previous fastes kernel "barrett79_mul32". The new kernel is good
+  for factor candidates from 2^64 to 2^76.
+- moved base math functions (add, sub, compare, mul, square) from kernels
+  that use "full 32 bit words" into src/tf_96bit_base_math.cu
+- improved squaring functions for barrett and 75/95 bit kernels, up to 3%
+  faster for barrett kernels for CC 2.0 GPUs. (George Woltman)
+
 version 0.18 (2011-12-17)
 - contributors
   - Eric Christenson

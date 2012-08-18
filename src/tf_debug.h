@@ -1,6 +1,6 @@
 /*
 This file is part of mfaktc.
-Copyright (C) 2009, 2010  Oliver Weihe (o.weihe@t-online.de)
+Copyright (C) 2009, 2010, 2012  Oliver Weihe (o.weihe@t-online.de)
 
 mfaktc is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -24,7 +24,7 @@ B = step number
 C = qi
 D = index for modbasecase_debug[];
 */
-#if defined USE_DEVICE_PRINTF && __CUDA_ARCH__ >= 200
+#if defined USE_DEVICE_PRINTF && __CUDA_ARCH__ >= FERMI
   #define MODBASECASE_QI_ERROR(A, B, C, D) \
   if(C > (A)) \
   { \
@@ -47,7 +47,7 @@ B = step number
 C = number of q.dX
 D = index for modbasecase_debug[];
 */
-#if defined USE_DEVICE_PRINTF && __CUDA_ARCH__ >= 200
+#if defined USE_DEVICE_PRINTF && __CUDA_ARCH__ >= FERMI
   #define MODBASECASE_NONZERO_ERROR(A, B, C, D) \
   if(A) \
   { \
@@ -70,7 +70,7 @@ B = step number
 C = nn
 D = index for modbasecase_debug[];
 */
-#if defined USE_DEVICE_PRINTF && __CUDA_ARCH__ >= 200
+#if defined USE_DEVICE_PRINTF && __CUDA_ARCH__ >= FERMI
   #define MODBASECASE_NN_BIG_ERROR(A, B, C, D) \
   if(C > A) \
   { \

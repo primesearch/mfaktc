@@ -1,6 +1,6 @@
 /*
 This file is part of mfaktc.
-Copyright (C) 2009, 2010, 2011  Oliver Weihe (o.weihe@t-online.de)
+Copyright (C) 2009, 2010, 2011, 2012  Oliver Weihe (o.weihe@t-online.de)
 
 mfaktc is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -40,6 +40,7 @@ along with mfaktc.  If not, see <http://www.gnu.org/licenses/>.
 #include "tf_barrett96.h"
 #include "checkpoint.h"
 #include "signal_handler.h"
+#include "output.h"
 
 unsigned long long int calculate_k(unsigned int exp, int bits)
 /* calculates biggest possible k in "2 * exp * k + 1 < 2^bits" */
@@ -79,6 +80,7 @@ The variables exp, bit_min and bit_max must be a valid assignment! */
   if(kernel == _71BIT_MUL24 && bit_max <= 71) ret = 1;
   if(kernel == _75BIT_MUL32 && bit_max <= 75) ret = 1;
   if(kernel == _95BIT_MUL32 && bit_max <= 95) ret = 1;
+  if(kernel == BARRETT76_MUL32 && bit_min >= 64 && bit_max <= 76) ret = 1;
   if(kernel == BARRETT79_MUL32 && bit_min >= 64 && bit_max <= 79) ret = 1;
   if(kernel == BARRETT92_MUL32 && bit_min >= 79 && bit_max <= 92 && (bit_max - bit_min) == 1) ret = 1;
   
@@ -88,11 +90,37 @@ The variables exp, bit_min and bit_max must be a valid assignment! */
 }
 
 
-
-
-int tf(unsigned int exp, int bit_min, int bit_max, mystuff_t *mystuff, int class_hint, unsigned long long int k_hint, int kernel)
+int class_needed(unsigned int exp, unsigned long long int k_min, int c)
+{
 /*
-tf M<exp> from 2^bit_min to 2^bit_max
+checks whether the class c must be processed or can be ignored at all because
+all factor candidates within the class c are a multiple of 3, 5, 7 or 11 (11
+only if MORE_CLASSES is definied) or are 3 or 5 mod 8
+
+k_min *MUST* be aligned in that way that k_min is in class 0!
+*/
+  if( ((2 * (exp %  8) * ((k_min + c) %  8)) %  8 !=  2) && \
+      ((2 * (exp %  8) * ((k_min + c) %  8)) %  8 !=  4) && \
+      ((2 * (exp %  3) * ((k_min + c) %  3)) %  3 !=  2) && \
+      ((2 * (exp %  5) * ((k_min + c) %  5)) %  5 !=  4) && \
+      ((2 * (exp %  7) * ((k_min + c) %  7)) %  7 !=  6))
+#ifdef MORE_CLASSES        
+  if(  (2 * (exp % 11) * ((k_min + c) % 11)) % 11 != 10 )
+#endif
+  {
+    return 1;
+  }
+
+  return 0;
+}
+
+
+
+
+
+int tf(mystuff_t *mystuff, int class_hint, unsigned long long int k_hint, int kernel)
+/*
+tf M<mystuff->exponent> from 2^<mystuff->bit_min> to 2^<mystuff->mystuff->bit_max_stage>
 
 kernel: see my_types.h -> enum GPUKernels
 
@@ -111,25 +139,22 @@ other return value
 -1 unknown mode
 */
 {
-  int cur_class, max_class = NUM_CLASSES-1, i, count = 0;
+  int cur_class, max_class = NUM_CLASSES-1, i;
   unsigned long long int k_min, k_max, k_range, tmp;
   unsigned int f_hi, f_med, f_low;
   struct timeval timer, timer_last_checkpoint;
-#ifdef VERBOSE_TIMING  
-  struct timeval timer2;
-#endif  
   int factorsfound = 0, numfactors = 0, restart = 0;
-  FILE *resultfile=NULL;
 
-  char kernelname[20];
   int retval = 0;
   
   cudaError_t cudaError;
   
   unsigned long long int time_run, time_est;
+  
+  mystuff->stats.output_counter = 0; /* reset output counter, needed for status headline */
+  mystuff->stats.ghzdays = primenet_ghzdays(mystuff->exponent, mystuff->bit_min, mystuff->bit_max_stage);
 
-
-  if(mystuff->mode != MODE_SELFTEST_SHORT)printf("Starting trial factoring M%u from 2^%d to 2^%d\n",exp,bit_min,bit_max);
+  if(mystuff->mode != MODE_SELFTEST_SHORT)printf("Starting trial factoring M%u from 2^%d to 2^%d (%.2f GHz-days)\n", mystuff->exponent, mystuff->bit_min, mystuff->bit_max_stage, mystuff->stats.ghzdays);
   if((mystuff->mode != MODE_NORMAL) && (mystuff->mode != MODE_SELFTEST_SHORT) && (mystuff->mode != MODE_SELFTEST_FULL))
   {
     printf("ERROR, invalid mode for tf(): %d\n", mystuff->mode);
@@ -138,10 +163,10 @@ other return value
   timer_init(&timer);
   timer_init(&timer_last_checkpoint);
   
-  mystuff->class_counter = 0;
+  mystuff->stats.class_counter = 0;
   
-  k_min=calculate_k(exp,bit_min);
-  k_max=calculate_k(exp,bit_max);
+  k_min=calculate_k(mystuff->exponent, mystuff->bit_min);
+  k_max=calculate_k(mystuff->exponent, mystuff->bit_max_stage);
 
   if((mystuff->mode == MODE_SELFTEST_FULL) || (mystuff->mode == MODE_SELFTEST_SHORT))
   {
@@ -172,33 +197,36 @@ other return value
 /* select the GPU kernel (fastest GPU kernel has highest priority) */
     if(mystuff->compcapa_major == 1)
     {
-      if     (kernel_possible(_71BIT_MUL24,    exp, bit_min, bit_max)) kernel = _71BIT_MUL24;
-      else if(kernel_possible(BARRETT79_MUL32, exp, bit_min, bit_max)) kernel = BARRETT79_MUL32;
-      else if(kernel_possible(_75BIT_MUL32,    exp, bit_min, bit_max)) kernel = _75BIT_MUL32;
-      else if(kernel_possible(BARRETT92_MUL32, exp, bit_min, bit_max)) kernel = BARRETT92_MUL32;
-      else if(kernel_possible(_95BIT_MUL32,    exp, bit_min, bit_max)) kernel = _95BIT_MUL32;
+      if     (kernel_possible(BARRETT76_MUL32, mystuff->exponent, mystuff->bit_min, mystuff->bit_max_stage)) kernel = BARRETT76_MUL32;
+      else if(kernel_possible(_71BIT_MUL24,    mystuff->exponent, mystuff->bit_min, mystuff->bit_max_stage)) kernel = _71BIT_MUL24;
+      else if(kernel_possible(BARRETT79_MUL32, mystuff->exponent, mystuff->bit_min, mystuff->bit_max_stage)) kernel = BARRETT79_MUL32;
+      else if(kernel_possible(_75BIT_MUL32,    mystuff->exponent, mystuff->bit_min, mystuff->bit_max_stage)) kernel = _75BIT_MUL32;
+      else if(kernel_possible(BARRETT92_MUL32, mystuff->exponent, mystuff->bit_min, mystuff->bit_max_stage)) kernel = BARRETT92_MUL32;
+      else if(kernel_possible(_95BIT_MUL32,    mystuff->exponent, mystuff->bit_min, mystuff->bit_max_stage)) kernel = _95BIT_MUL32;
     }
     else // mystuff->compcapa_major != 1
     {
-      if     (kernel_possible(BARRETT79_MUL32, exp, bit_min, bit_max)) kernel = BARRETT79_MUL32;
-      else if(kernel_possible(BARRETT92_MUL32, exp, bit_min, bit_max)) kernel = BARRETT92_MUL32;
-      else if(kernel_possible(_75BIT_MUL32,    exp, bit_min, bit_max)) kernel = _75BIT_MUL32;
-      else if(kernel_possible(_95BIT_MUL32,    exp, bit_min, bit_max)) kernel = _95BIT_MUL32;
+      if     (kernel_possible(BARRETT76_MUL32, mystuff->exponent, mystuff->bit_min, mystuff->bit_max_stage)) kernel = BARRETT76_MUL32;
+      else if(kernel_possible(BARRETT79_MUL32, mystuff->exponent, mystuff->bit_min, mystuff->bit_max_stage)) kernel = BARRETT79_MUL32;
+      else if(kernel_possible(BARRETT92_MUL32, mystuff->exponent, mystuff->bit_min, mystuff->bit_max_stage)) kernel = BARRETT92_MUL32;
+      else if(kernel_possible(_75BIT_MUL32,    mystuff->exponent, mystuff->bit_min, mystuff->bit_max_stage)) kernel = _75BIT_MUL32;
+      else if(kernel_possible(_95BIT_MUL32,    mystuff->exponent, mystuff->bit_min, mystuff->bit_max_stage)) kernel = _95BIT_MUL32;
     }
   }
 
-       if(kernel == _71BIT_MUL24)    sprintf(kernelname, "71bit_mul24");
-  else if(kernel == _75BIT_MUL32)    sprintf(kernelname, "75bit_mul32");
-  else if(kernel == _95BIT_MUL32)    sprintf(kernelname, "95bit_mul32");
-  else if(kernel == BARRETT79_MUL32) sprintf(kernelname, "barrett79_mul32");
-  else if(kernel == BARRETT92_MUL32) sprintf(kernelname, "barrett92_mul32");
-  else                               sprintf(kernelname, "UNKNOWN kernel");
+       if(kernel == _71BIT_MUL24)    sprintf(mystuff->stats.kernelname, "71bit_mul24");
+  else if(kernel == _75BIT_MUL32)    sprintf(mystuff->stats.kernelname, "75bit_mul32");
+  else if(kernel == _95BIT_MUL32)    sprintf(mystuff->stats.kernelname, "95bit_mul32");
+  else if(kernel == BARRETT76_MUL32) sprintf(mystuff->stats.kernelname, "barrett76_mul32");
+  else if(kernel == BARRETT79_MUL32) sprintf(mystuff->stats.kernelname, "barrett79_mul32");
+  else if(kernel == BARRETT92_MUL32) sprintf(mystuff->stats.kernelname, "barrett92_mul32");
+  else                               sprintf(mystuff->stats.kernelname, "UNKNOWN kernel");
 
-  if(mystuff->mode != MODE_SELFTEST_SHORT && mystuff->verbosity >= 1)printf("Using GPU kernel \"%s\"\n",kernelname);
+  if(mystuff->mode != MODE_SELFTEST_SHORT && mystuff->verbosity >= 1)printf("Using GPU kernel \"%s\"\n", mystuff->stats.kernelname);
 
   if(mystuff->mode == MODE_NORMAL)
   {
-    if((mystuff->checkpoints == 1) && (checkpoint_read(exp, bit_min, bit_max, &cur_class, &factorsfound) == 1))
+    if((mystuff->checkpoints == 1) && (checkpoint_read(mystuff->exponent, mystuff->bit_min, mystuff->bit_max_stage, &cur_class, &factorsfound) == 1))
     {
       printf("\nfound a valid checkpoint file!\n");
       if(mystuff->verbosity >= 1)printf("  last finished class was: %d\n", cur_class);
@@ -209,20 +237,9 @@ other return value
 /* calculate the number of classes which are allready processed. This value is needed to estimate ETA */
       for(i = 0; i < cur_class; i++)
       {
-/* check if class is NOT "3 or 5 mod 8", "0 mod 3", "0 mod 5", "0 mod 7" (or "0 mod 11") */
-        if( ((2 * (exp% 8) * ((k_min+i)% 8)) % 8 !=  2) && \
-            ((2 * (exp% 8) * ((k_min+i)% 8)) % 8 !=  4) && \
-            ((2 * (exp% 3) * ((k_min+i)% 3)) % 3 !=  2) && \
-            ((2 * (exp% 5) * ((k_min+i)% 5)) % 5 !=  4) && \
-            ((2 * (exp% 7) * ((k_min+i)% 7)) % 7 !=  6))
-#ifdef MORE_CLASSES        
-        if(  (2 * (exp%11) * ((k_min+i)%11)) %11 != 10 )
-#endif    
-        {
-          mystuff->class_counter++;
-        }
+        if(class_needed(mystuff->exponent, k_min, i))mystuff->stats.class_counter++;
       }
-      restart = mystuff->class_counter;
+      restart = mystuff->stats.class_counter;
     }
     else
     {
@@ -237,16 +254,9 @@ other return value
 
   for(; cur_class <= max_class; cur_class++)
   {
-/* check if class is NOT "3 or 5 mod 8", "0 mod 3", "0 mod 5", "0 mod 7" (or "0 mod 11") */
-    if( ((2 * (exp% 8) * ((k_min+cur_class)% 8)) % 8 !=  2) && \
-        ((2 * (exp% 8) * ((k_min+cur_class)% 8)) % 8 !=  4) && \
-        ((2 * (exp% 3) * ((k_min+cur_class)% 3)) % 3 !=  2) && \
-        ((2 * (exp% 5) * ((k_min+cur_class)% 5)) % 5 !=  4) && \
-        ((2 * (exp% 7) * ((k_min+cur_class)% 7)) % 7 !=  6))
-#ifdef MORE_CLASSES        
-    if(  (2 * (exp%11) * ((k_min+cur_class)%11)) %11 != 10 )
-#endif    
+    if(class_needed(mystuff->exponent, k_min, cur_class))
     {
+      mystuff->stats.class_number = cur_class;
       if(mystuff->quit)
       {
 /* check if quit is requested. Because this is at the begining of the class
@@ -258,25 +268,15 @@ other return value
       }
       else
       {
-#ifdef VERBOSE_TIMING
-        timer_init(&timer2);
-#endif    
-        sieve_init_class(exp, k_min+cur_class, mystuff->sieve_primes);
-#ifdef VERBOSE_TIMING      
-        printf("tf(): time spent for sieve_init_class(exp, k_min+cur_class, mystuff->sieve_primes): %" PRIu64 "ms\n",timer_diff(&timer2)/1000);
-#endif
-        if(mystuff->mode != MODE_SELFTEST_SHORT && (count == 0 || (count%20 == 0 && mystuff->printmode == 0)))
-        {
-          printf("    class | candidates |    time |    ETA | avg. rate | SievePrimes | CPU wait\n");
-        }
-        count++;
-        mystuff->class_counter++;
+        sieve_init_class(mystuff->exponent, k_min+cur_class, mystuff->sieve_primes);
+        mystuff->stats.class_counter++;
       
-             if(kernel == _71BIT_MUL24)    numfactors = tf_class_71       (exp, bit_min, bit_max, k_min+cur_class, k_max, mystuff);
-        else if(kernel == _75BIT_MUL32)    numfactors = tf_class_75       (exp, bit_min, bit_max, k_min+cur_class, k_max, mystuff);
-        else if(kernel == _95BIT_MUL32)    numfactors = tf_class_95       (exp, bit_min, bit_max, k_min+cur_class, k_max, mystuff);
-        else if(kernel == BARRETT79_MUL32) numfactors = tf_class_barrett79(exp, bit_min, bit_max, k_min+cur_class, k_max, mystuff);
-        else if(kernel == BARRETT92_MUL32) numfactors = tf_class_barrett92(exp, bit_min, bit_max, k_min+cur_class, k_max, mystuff);
+             if(kernel == _71BIT_MUL24)    numfactors = tf_class_71       (k_min+cur_class, k_max, mystuff);
+        else if(kernel == _75BIT_MUL32)    numfactors = tf_class_75       (k_min+cur_class, k_max, mystuff);
+        else if(kernel == _95BIT_MUL32)    numfactors = tf_class_95       (k_min+cur_class, k_max, mystuff);
+        else if(kernel == BARRETT76_MUL32) numfactors = tf_class_barrett76(k_min+cur_class, k_max, mystuff);
+        else if(kernel == BARRETT79_MUL32) numfactors = tf_class_barrett79(k_min+cur_class, k_max, mystuff);
+        else if(kernel == BARRETT92_MUL32) numfactors = tf_class_barrett92(k_min+cur_class, k_max, mystuff);
         else
         {
           printf("ERROR: Unknown kernel selected (%d)!\n", kernel);
@@ -296,7 +296,7 @@ other return value
             if(numfactors > 0 || timer_diff(&timer_last_checkpoint)/1000000 > (unsigned long long int)mystuff->checkpointdelay || mystuff->quit)
             {
               timer_init(&timer_last_checkpoint);
-              checkpoint_write(exp, bit_min, bit_max, cur_class, factorsfound);
+              checkpoint_write(mystuff->exponent, mystuff->bit_min, mystuff->bit_max_stage, cur_class, factorsfound);
             }
           }
           if((mystuff->stopafterfactor >= 2) && (factorsfound > 0) && (cur_class != max_class))cur_class = max_class + 1;
@@ -306,40 +306,18 @@ other return value
     }
   }
   if(mystuff->mode != MODE_SELFTEST_SHORT && mystuff->printmode == 1)printf("\n");
-  if(mystuff->mode == MODE_NORMAL)resultfile=fopen("results.txt", "a");
-  if(factorsfound)
-  {
-#ifndef MORE_CLASSES
-    if((mystuff->mode == MODE_NORMAL) && (mystuff->class_counter < 96))
-#else
-    if((mystuff->mode == MODE_NORMAL) && (mystuff->class_counter < 960))
-#endif
-    {
-      fprintf(resultfile, "found %d factor%s for M%u from 2^%2d to 2^%2d (partially tested) [mfaktc %s %s]\n", factorsfound, (factorsfound > 1) ? "s" : "", exp, bit_min, bit_max, MFAKTC_VERSION, kernelname);
-      printf(             "found %d factor%s for M%u from 2^%2d to 2^%2d (partially tested) [mfaktc %s %s]\n", factorsfound, (factorsfound > 1) ? "s" : "", exp, bit_min, bit_max, MFAKTC_VERSION, kernelname);
-    }
-    else
-    {
-      if(mystuff->mode == MODE_NORMAL)        fprintf(resultfile, "found %d factor%s for M%u from 2^%2d to 2^%2d [mfaktc %s %s]\n", factorsfound, (factorsfound > 1) ? "s" : "", exp, bit_min, bit_max, MFAKTC_VERSION, kernelname);
-      if(mystuff->mode != MODE_SELFTEST_SHORT)printf(             "found %d factor%s for M%u from 2^%2d to 2^%2d [mfaktc %s %s]\n", factorsfound, (factorsfound > 1) ? "s" : "", exp, bit_min, bit_max, MFAKTC_VERSION, kernelname);
-    }
-  }
-  else
-  {
-    if(mystuff->mode == MODE_NORMAL)        fprintf(resultfile, "no factor for M%u from 2^%d to 2^%d [mfaktc %s %s]\n", exp, bit_min, bit_max, MFAKTC_VERSION, kernelname);
-    if(mystuff->mode != MODE_SELFTEST_SHORT)printf(             "no factor for M%u from 2^%d to 2^%d [mfaktc %s %s]\n", exp, bit_min, bit_max, MFAKTC_VERSION, kernelname);
-  }
+  print_result_line(mystuff, factorsfound);
+
   if(mystuff->mode == MODE_NORMAL)
   {
     retval = factorsfound;
-    fclose(resultfile);
-    if(mystuff->checkpoints == 1)checkpoint_delete(exp);
+    if(mystuff->checkpoints == 1)checkpoint_delete(mystuff->exponent);
   }
   else // mystuff->mode != MODE_NORMAL
   {
     if(mystuff->h_RES[0] == 0)
     {
-      printf("ERROR: selftest failed for M%u\n", exp);
+      printf("ERROR: selftest failed for M%u\n", mystuff->exponent);
       printf("  no factor found\n");
       retval = 1;
     }
@@ -354,17 +332,17 @@ k_max and k_min are used as 64bit temporary integers here...
       f_med   = (k_hint >> 31) & 0xFFFFFFFFULL;
       f_low   = (k_hint <<  1) & 0xFFFFFFFFULL; /* f_{hi|med|low} = 2 * k_hint */
       
-      k_max   = (unsigned long long int)exp * f_low;
+      k_max   = (unsigned long long int)mystuff->exponent * f_low;
       f_low   = (k_max & 0xFFFFFFFFULL) + 1;
       k_min   = (k_max >> 32);
 
-      k_max   = (unsigned long long int)exp * f_med;
+      k_max   = (unsigned long long int)mystuff->exponent * f_med;
       k_min  += k_max & 0xFFFFFFFFULL;
       f_med   = k_min & 0xFFFFFFFFULL;
       k_min >>= 32;
       k_min  += (k_max >> 32);
 
-      f_hi  = k_min + (exp * f_hi); /* f_{hi|med|low} = 2 * k_hint * exp +1 */
+      f_hi  = k_min + (mystuff->exponent * f_hi); /* f_{hi|med|low} = 2 * k_hint * mystuff->exponent +1 */
       
       if(kernel == _71BIT_MUL24) /* 71bit kernel uses only 24bit per int */
       {
@@ -386,7 +364,7 @@ k_max and k_min are used as 64bit temporary integers here...
       }
       if(k_min != 1) /* the factor should appear ONCE */
       {
-        printf("ERROR: selftest failed for M%u!\n", exp);
+        printf("ERROR: selftest failed for M%u!\n", mystuff->exponent);
         printf("  expected result: %08X %08X %08X\n", f_hi, f_med, f_low);
         for(i=0; ((unsigned int)i < mystuff->h_RES[0]) && (i < 10); i++)
         {
@@ -396,7 +374,7 @@ k_max and k_min are used as 64bit temporary integers here...
       }
       else
       {
-        if(mystuff->mode != MODE_SELFTEST_SHORT)printf("selftest for M%u passed!\n", exp);
+        if(mystuff->mode != MODE_SELFTEST_SHORT)printf("selftest for M%u passed!\n", mystuff->exponent);
       }
     }
   }
@@ -432,28 +410,6 @@ k_max and k_min are used as 64bit temporary integers here...
 }
 
 
-void print_help(char *string)
-{
-  printf("mfaktc v%s Copyright (C) 2009, 2010, 2011  Oliver Weihe (o.weihe@t-online.de)\n", MFAKTC_VERSION);
-  printf("This program comes with ABSOLUTELY NO WARRANTY; for details see COPYING.\n");
-  printf("This is free software, and you are welcome to redistribute it\n");
-  printf("under certain conditions; see COPYING for details.\n\n\n");
-
-  printf("Usage: %s [options]\n", string);
-  printf("  -h                     display this help and exit\n");
-  printf("  -d <device number>     specify the device number used by this program\n");
-  printf("  -tf <exp> <min> <max>  trial factor M<exp> from 2^<min> to 2^<max> and exit\n");
-  printf("                         instead of parsing the worktodo file\n");
-  printf("  -st                    run builtin selftest (1557 testcases) and exit\n");
-  printf("  -st2                   run builtin selftest (all testcases) and exit\n");
-  printf("  -v <number>            set verbosity (min = 0, default = 1, max = 2)\n");
-  printf("\n");
-  printf("options for debuging purposes\n");
-  printf("  --timertest            run test of timer functions and exit\n");
-  printf("  --sleeptest            run test of sleep functions and exit\n");
-}
-
-
 int selftest(mystuff_t *mystuff, int type)
 /*
 type = 0: full selftest (1557 testcases)
@@ -474,7 +430,7 @@ RET_CUDA_ERROR we might have a serios problem (detected by cudaGetLastError())
   int bit_min[NUM_SELFTESTS], f_class;
   unsigned long long int k[NUM_SELFTESTS];
   int retval=1;
-  int kernels[5];
+  int kernels[6];
   
 #include "selftest-data.c"  
 
@@ -486,18 +442,25 @@ RET_CUDA_ERROR we might have a serios problem (detected by cudaGetLastError())
     {
       printf("########## testcase %d/%d ##########\n", i+1, limit);
       f_class = (int)(k[i] % NUM_CLASSES);
+
+      mystuff->exponent           = exp[i];
+      mystuff->bit_min            = bit_min[i];
+      mystuff->bit_max_assignment = bit_min[i] + 1;
+      mystuff->bit_max_stage      = mystuff->bit_max_assignment;
+
 /* create a list which kernels can handle this testcase */
       j = 0;
-      if(kernel_possible(BARRETT92_MUL32, exp[i], bit_min[i], bit_min[i] + 1)) kernels[j++] = BARRETT92_MUL32;
-      if(kernel_possible(BARRETT79_MUL32, exp[i], bit_min[i], bit_min[i] + 1)) kernels[j++] = BARRETT79_MUL32;
-      if(kernel_possible(_95BIT_MUL32,    exp[i], bit_min[i], bit_min[i] + 1)) kernels[j++] = _95BIT_MUL32;
-      if(kernel_possible(_75BIT_MUL32,    exp[i], bit_min[i], bit_min[i] + 1)) kernels[j++] = _75BIT_MUL32;
-      if(kernel_possible(_71BIT_MUL24,    exp[i], bit_min[i], bit_min[i] + 1)) kernels[j++] = _71BIT_MUL24;
+      if(kernel_possible(BARRETT92_MUL32, mystuff->exponent, mystuff->bit_min, mystuff->bit_max_stage)) kernels[j++] = BARRETT92_MUL32;
+      if(kernel_possible(BARRETT79_MUL32, mystuff->exponent, mystuff->bit_min, mystuff->bit_max_stage)) kernels[j++] = BARRETT79_MUL32;
+      if(kernel_possible(BARRETT76_MUL32, mystuff->exponent, mystuff->bit_min, mystuff->bit_max_stage)) kernels[j++] = BARRETT76_MUL32;
+      if(kernel_possible(_95BIT_MUL32,    mystuff->exponent, mystuff->bit_min, mystuff->bit_max_stage)) kernels[j++] = _95BIT_MUL32;
+      if(kernel_possible(_75BIT_MUL32,    mystuff->exponent, mystuff->bit_min, mystuff->bit_max_stage)) kernels[j++] = _75BIT_MUL32;
+      if(kernel_possible(_71BIT_MUL24,    mystuff->exponent, mystuff->bit_min, mystuff->bit_max_stage)) kernels[j++] = _71BIT_MUL24;
 
       do
       {
         num_selftests++;
-        tf_res=tf(exp[i], bit_min[i], bit_min[i]+1, mystuff, f_class, k[i], kernels[--j]);
+        tf_res=tf(mystuff, f_class, k[i], kernels[--j]);
              if(tf_res == 0)st_success++;
         else if(tf_res == 1)st_nofactor++;
         else if(tf_res == 2)st_wrongfactor++;
@@ -515,18 +478,24 @@ RET_CUDA_ERROR we might have a serios problem (detected by cudaGetLastError())
     for(i=0; i<9; i++)
     {
       f_class = (int)(k[index[i]] % NUM_CLASSES);
+      
+      mystuff->exponent           = exp[index[i]];
+      mystuff->bit_min            = bit_min[index[i]];
+      mystuff->bit_max_assignment = bit_min[index[i]] + 1;
+      mystuff->bit_max_stage      = mystuff->bit_max_assignment;
 
       j = 0;
-      if(kernel_possible(BARRETT92_MUL32, exp[index[i]], bit_min[index[i]], bit_min[index[i]] + 1)) kernels[j++] = BARRETT92_MUL32;
-      if(kernel_possible(BARRETT79_MUL32, exp[index[i]], bit_min[index[i]], bit_min[index[i]] + 1)) kernels[j++] = BARRETT79_MUL32;
-      if(kernel_possible(_95BIT_MUL32,    exp[index[i]], bit_min[index[i]], bit_min[index[i]] + 1)) kernels[j++] = _95BIT_MUL32;
-      if(kernel_possible(_75BIT_MUL32,    exp[index[i]], bit_min[index[i]], bit_min[index[i]] + 1)) kernels[j++] = _75BIT_MUL32;
-      if(kernel_possible(_71BIT_MUL24,    exp[index[i]], bit_min[index[i]], bit_min[index[i]] + 1)) kernels[j++] = _71BIT_MUL24;
+      if(kernel_possible(BARRETT92_MUL32, mystuff->exponent, mystuff->bit_min, mystuff->bit_max_stage)) kernels[j++] = BARRETT92_MUL32;
+      if(kernel_possible(BARRETT79_MUL32, mystuff->exponent, mystuff->bit_min, mystuff->bit_max_stage)) kernels[j++] = BARRETT79_MUL32;
+      if(kernel_possible(BARRETT76_MUL32, mystuff->exponent, mystuff->bit_min, mystuff->bit_max_stage)) kernels[j++] = BARRETT76_MUL32;
+      if(kernel_possible(_95BIT_MUL32,    mystuff->exponent, mystuff->bit_min, mystuff->bit_max_stage)) kernels[j++] = _95BIT_MUL32;
+      if(kernel_possible(_75BIT_MUL32,    mystuff->exponent, mystuff->bit_min, mystuff->bit_max_stage)) kernels[j++] = _75BIT_MUL32;
+      if(kernel_possible(_71BIT_MUL24,    mystuff->exponent, mystuff->bit_min, mystuff->bit_max_stage)) kernels[j++] = _71BIT_MUL24;
 
       do
       {
         num_selftests++;
-        tf_res=tf(exp[index[i]], bit_min[index[i]], bit_min[index[i]]+1, mystuff, f_class, k[index[i]], kernels[--j]);
+        tf_res=tf(mystuff, f_class, k[index[i]], kernels[--j]);
              if(tf_res == 0)st_success++;
         else if(tf_res == 1)st_nofactor++;
         else if(tf_res == 2)st_wrongfactor++;
@@ -575,14 +544,11 @@ void print_last_CUDA_error()
 
 int main(int argc, char **argv)
 {
-  unsigned int exp = 0;
-  int bit_min = -1, bit_max = -1, bit_min_stage, bit_max_stage;
+  unsigned int exponent = 1;
+  int bit_min = -1, bit_max = -1;
   int parse_ret = -1;
   int devicenumber = 0;
   mystuff_t mystuff;
-#ifdef VERBOSE_TIMING  
-  struct timeval timer;
-#endif
   struct cudaDeviceProp deviceinfo;
   int i, tmp = 0;
   char *ptr;
@@ -592,6 +558,10 @@ int main(int argc, char **argv)
   mystuff.mode = MODE_NORMAL;
   mystuff.quit = 0;
   mystuff.verbosity = 1;
+  mystuff.bit_min = -1;
+  mystuff.bit_max_assignment = -1;
+  mystuff.bit_max_stage = -1;
+  sprintf(mystuff.resultfile, "results.txt");
   
   while(i < argc)
   {
@@ -622,8 +592,8 @@ int main(int argc, char **argv)
         printf("ERROR: missing parameters for option \"-tf\"\n");
         return 1;
       }
-      exp = (unsigned int)strtoul(argv[i+1], &ptr, 10);
-      if(*ptr || errno || (unsigned long)exp != strtoul(argv[i+1],&ptr,10) )
+      exponent = (unsigned int)strtoul(argv[i+1], &ptr, 10);
+      if(*ptr || errno || (unsigned long)exponent != strtoul(argv[i+1],&ptr,10) )
       {
         printf("ERROR: can't parse parameter <exp> for option \"-tf\"\n");
         return 1;
@@ -640,7 +610,7 @@ int main(int argc, char **argv)
         printf("ERROR: can't parse parameter <max> for option \"-tf\"\n");
         return 1;
       }
-      if(!valid_assignment(exp, bit_min, bit_max, mystuff.verbosity))
+      if(!valid_assignment(exponent, bit_min, bit_max, mystuff.verbosity))
       {
         return 1;
       }
@@ -725,9 +695,6 @@ int main(int argc, char **argv)
   if(mystuff.verbosity >= 1)printf("  MORE_CLASSES              disabled\n");
 #endif
 
-#ifdef VERBOSE_TIMING
-  if(mystuff.verbosity >= 1)printf("  VERBOSE_TIMING            enabled (DEBUG option)\n");
-#endif
 #ifdef USE_DEVICE_PRINTF
   if(mystuff.verbosity >= 1)printf("  USE_DEVICE_PRINTF         enabled (DEBUG option)\n");
 #endif
@@ -758,6 +725,7 @@ int main(int argc, char **argv)
   if(drv_ver < CUDART_VERSION)
   {
     printf("ERROR: current CUDA driver version is lower than the CUDA toolkit version used during compile!\n");
+    printf("       Please update your graphics driver.\n");
     return 1;
   }
   if(rt_ver != CUDART_VERSION)
@@ -791,6 +759,7 @@ int main(int argc, char **argv)
        if(deviceinfo.major == 1)i=8;                            /* devices with compute capability 1.x have 8 shader cores per multiprocessor */
   else if(deviceinfo.major == 2 && deviceinfo.minor == 0)i=32;	/* devices with compute capability 2.0 have 32 shader cores per multiprocessor */
   else if(deviceinfo.major == 2 && deviceinfo.minor == 1)i=48;	/* devices with compute capability 2.1 have 48 shader cores per multiprocessor */
+  else if(deviceinfo.major == 3 && deviceinfo.minor == 0)i=192;	/* devices with compute capability 3.0 have 192 shader cores per multiprocessor */
   if(i != 0){if(mystuff.verbosity >= 1)printf("  number of multiprocessors %d (%d shader cores)\n", deviceinfo.multiProcessorCount, deviceinfo.multiProcessorCount * i);}
   else      {if(mystuff.verbosity >= 1)printf("  number of mutliprocessors %d (unknown number of shader cores)\n", deviceinfo.multiProcessorCount);}
 #endif
@@ -874,15 +843,9 @@ int main(int argc, char **argv)
   }
 #endif  
   
-#ifdef VERBOSE_TIMING
-  timer_init(&timer);
-#endif
   sieve_init();
-#ifdef VERBOSE_TIMING
-  printf("tf(): time spent for sieve_init(): %" PRIu64 "ms\n",timer_diff(&timer)/1000);
-#endif
 
-  mystuff.sieve_primes_max = SIEVE_PRIMES_MAX;
+  mystuff.sieve_primes_upper_limit = mystuff.sieve_primes_max;
   if(mystuff.mode == MODE_NORMAL)
   {
 
@@ -897,49 +860,55 @@ int main(int argc, char **argv)
     
     do
     {
-      if(use_worktodo)parse_ret = get_next_assignment(mystuff.workfile, &exp, &bit_min, &bit_max, NULL, mystuff.verbosity);
+      if(use_worktodo)parse_ret = get_next_assignment(mystuff.workfile, &((mystuff.exponent)), &((mystuff.bit_min)), &((mystuff.bit_max_assignment)), NULL, mystuff.verbosity);
+      else /* got work from command */
+      {
+        mystuff.exponent           = exponent;
+        mystuff.bit_min            = bit_min;
+        mystuff.bit_max_assignment = bit_max;
+      }
       if(parse_ret == OK)
       {
-        if(mystuff.verbosity >= 1)printf("got assignment: exp=%u bit_min=%d bit_max=%d\n",exp,bit_min,bit_max);
+        if(mystuff.verbosity >= 1)printf("got assignment: exp=%u bit_min=%d bit_max=%d (%.2f GHz-days)\n", mystuff.exponent, mystuff.bit_min, mystuff.bit_max_assignment, primenet_ghzdays(mystuff.exponent, mystuff.bit_min, mystuff.bit_max_assignment));
 
+        mystuff.bit_max_stage = mystuff.bit_max_assignment;
 
-        bit_min_stage = bit_min;
-        bit_max_stage = bit_max;
-
-        mystuff.sieve_primes_max = sieve_sieve_primes_max(exp);
-        if(mystuff.sieve_primes > mystuff.sieve_primes_max)
+        mystuff.sieve_primes_upper_limit = sieve_sieve_primes_max(mystuff.exponent);
+        if(mystuff.sieve_primes_upper_limit > mystuff.sieve_primes_max) mystuff.sieve_primes_upper_limit = mystuff.sieve_primes_max;
+        if(mystuff.sieve_primes > mystuff.sieve_primes_upper_limit)
         {
-          mystuff.sieve_primes = mystuff.sieve_primes_max;
-          printf("WARNING: SievePrimes is too big for the current assignment, lowering to %u\n", mystuff.sieve_primes_max);
+          mystuff.sieve_primes = mystuff.sieve_primes_upper_limit;
+          printf("WARNING: SievePrimes is too big for the current assignment, lowering to %u\n", mystuff.sieve_primes_upper_limit);
           printf("         It is not allowed to sieve primes which are equal or bigger than the \n");
           printf("         exponent itself!\n");
         }
         if(mystuff.stages == 1)
         {
-          while( ((calculate_k(exp,bit_max_stage) - calculate_k(exp,bit_min_stage)) > (250000000ULL * NUM_CLASSES)) && ((bit_max_stage - bit_min_stage) > 1) )bit_max_stage--;
+          while( ((calculate_k(mystuff.exponent, mystuff.bit_max_stage) - calculate_k(mystuff.exponent, mystuff.bit_min)) > (250000000ULL * NUM_CLASSES)) && ((mystuff.bit_max_stage - mystuff.bit_min) > 1) )mystuff.bit_max_stage--;
         }
         tmp = 0;
-        while(bit_max_stage <= bit_max && !mystuff.quit)
+        while(mystuff.bit_max_stage <= mystuff.bit_max_assignment && !mystuff.quit)
         {
-          tmp = tf(exp, bit_min_stage, bit_max_stage, &mystuff, 0, 0, AUTOSELECT_KERNEL);
-//          tmp = tf(exp, bit_min_stage, bit_max_stage, &mystuff, 0, 0, _71BIT_MUL24);
-//          tmp = tf(exp, bit_min_stage, bit_max_stage, &mystuff, 0, 0, _75BIT_MUL32);
-//          tmp = tf(exp, bit_min_stage, bit_max_stage, &mystuff, 0, 0, _95BIT_MUL32);
-//          tmp = tf(exp, bit_min_stage, bit_max_stage, &mystuff, 0, 0, BARRETT79_MUL32);
-//          tmp = tf(exp, bit_min_stage, bit_max_stage, &mystuff, 0, 0, BARRETT92_MUL32);
+          tmp = tf(&mystuff, 0, 0, AUTOSELECT_KERNEL);
+//          tmp = tf(&mystuff, 0, 0, _71BIT_MUL24);
+//          tmp = tf(&mystuff, 0, 0, _75BIT_MUL32);
+//          tmp = tf(&mystuff, 0, 0, _95BIT_MUL32);
+//          tmp = tf(&mystuff, 0, 0, BARRETT76_MUL32);
+//          tmp = tf(&mystuff, 0, 0, BARRETT79_MUL32);
+//          tmp = tf(&mystuff, 0, 0, BARRETT92_MUL32);
           if(tmp == RET_CUDA_ERROR) return 1; /* bail out, we might have a serios problem (detected by cudaGetLastError())... */
 
           if(tmp != RET_QUIT)
           {
             if( (mystuff.stopafterfactor > 0) && (tmp > 0) )
             {
-              bit_max_stage = bit_max;
+              mystuff.bit_max_stage = mystuff.bit_max_assignment;
             }
 
             if(use_worktodo)
             {
-              if(bit_max_stage == bit_max)parse_ret = clear_assignment(mystuff.workfile, exp, bit_min_stage, bit_max, 0);
-              else                        parse_ret = clear_assignment(mystuff.workfile, exp, bit_min_stage, bit_max, bit_max_stage);
+              if(mystuff.bit_max_stage == mystuff.bit_max_assignment)parse_ret = clear_assignment(mystuff.workfile, mystuff.exponent, mystuff.bit_min, mystuff.bit_max_assignment, 0);
+              else                                                   parse_ret = clear_assignment(mystuff.workfile, mystuff.exponent, mystuff.bit_min, mystuff.bit_max_assignment, mystuff.bit_max_stage);
 
                    if(parse_ret == CANT_OPEN_WORKFILE)   printf("ERROR: clear_assignment() / modify_assignment(): can't open \"%s\"\n", mystuff.workfile);
               else if(parse_ret == CANT_OPEN_TEMPFILE)   printf("ERROR: clear_assignment() / modify_assignment(): can't open \"__worktodo__.tmp\"\n");
@@ -948,8 +917,8 @@ int main(int argc, char **argv)
               else if(parse_ret != OK)                   printf("ERROR: clear_assignment() / modify_assignment(): Unknown error (%d)\n", parse_ret);
             }
 
-            bit_min_stage = bit_max_stage;
-            bit_max_stage++;
+            mystuff.bit_min = mystuff.bit_max_stage;
+            mystuff.bit_max_stage++;
           }
         }
       }

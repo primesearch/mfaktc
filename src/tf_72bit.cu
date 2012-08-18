@@ -1,6 +1,6 @@
 /*
 This file is part of mfaktc.
-Copyright (C) 2009, 2010, 2011  Oliver Weihe (o.weihe@t-online.de)
+Copyright (C) 2009, 2010, 2011, 2012  Oliver Weihe (o.weihe@t-online.de)
 
 mfaktc is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -28,78 +28,10 @@ along with mfaktc.  If not, see <http://www.gnu.org/licenses/>.
 #define NVCC_EXTERN
 #include "sieve.h"
 #include "timer.h"
+#include "output.h"
 #undef NVCC_EXTERN
 
 #include "tf_debug.h"
-
-__host__ void print_dez72(int72 a, char *buf)
-/*
-writes "a" into "buf" in decimal
-"buf" must be at least 25 bytes
-*/
-{
-  char digit[24];
-  int digits=0,carry,i=0;
-  
-  while((a.d0!=0 || a.d1!=0 || a.d2!=0) && digits<24)
-  {
-                     carry=a.d2%10; a.d2/=10;
-    a.d1+=carry<<24; carry=a.d1%10; a.d1/=10;
-    a.d0+=carry<<24; carry=a.d0%10; a.d0/=10;
-    digit[digits++]=carry;
-  }
-  if(digits==0)sprintf(buf,"0");
-  else
-  {
-    digits--;
-    while(digits >= 0)
-    {
-      sprintf(&(buf[i++]),"%1d",digit[digits--]);
-    }
-  }
-}
-
-
-__host__ void print_dez144(int144 a, char *buf)
-{
-/*
-writes "a" into "buf" in decimal
-"buf" must be at least 45 bytes
-*/
-  char digit[44];
-  int digits=0,carry,i=0;
-  
-  while((a.d0!=0 || a.d1!=0 || a.d2!=0 || a.d3!=0 || a.d4!=0 || a.d5!=0) && digits<44)
-  {
-                     carry=a.d5%10; a.d5/=10;
-    a.d4+=carry<<24; carry=a.d4%10; a.d4/=10;
-    a.d3+=carry<<24; carry=a.d3%10; a.d3/=10;
-    a.d2+=carry<<24; carry=a.d2%10; a.d2/=10;
-    a.d1+=carry<<24; carry=a.d1%10; a.d1/=10;
-    a.d0+=carry<<24; carry=a.d0%10; a.d0/=10;
-    digit[digits++]=carry;
-  }
-  if(digits==0)sprintf(buf,"0 bla");
-  else
-  {
-    digits--;
-    while(digits >= 0)
-    {
-      sprintf(&(buf[i++]),"%1d",digit[digits--]);
-    }
-  }
-}
-
-
-__host__ void setui_72(int72 *res, unsigned long long int a)
-/* sets res to a */
-{
-  res->d0 = (unsigned int)(a & 0xFFFFFF);
-  a>>=24;
-  res->d1 = (unsigned int)(a & 0xFFFFFF);
-  a>>=24;
-  res->d2 = (unsigned int)(a);
-}
 
 
 __device__ static void mul_24_48(unsigned int *res_hi, unsigned int *res_lo, unsigned int a, unsigned int b)
@@ -485,7 +417,7 @@ Precalculated here since it is the same for all steps in the following loop */
     sub_72(&a,a,f);
   }
 
-#if defined CHECKS_MODBASECASE && defined USE_DEVICE_PRINTF && __CUDA_ARCH__ >= 200
+#if defined CHECKS_MODBASECASE && defined USE_DEVICE_PRINTF && __CUDA_ARCH__ >= FERMI
   if(cmp_ge_72(a,f))
   {
     printf("EEEEEK, final a is >= f\n");

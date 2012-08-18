@@ -1,6 +1,7 @@
 /*
 This file is part of mfaktc.
-Copyright (C) 2009, 2010, 2011  Oliver Weihe (o.weihe@t-online.de)
+Copyright (C) 2009, 2010, 2011, 2012  Oliver Weihe (o.weihe@t-online.de)
+                                      Bertram Franz (bertramf@gmx.net)
 
 mfaktc is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -43,25 +44,34 @@ int my_read_int(char *inifile, char *name, int *value)
   return 1;
 }
 
-int my_read_string(char *inifile, char *name, char *string)
+
+int my_read_string(char *inifile, char *name, char *string, unsigned int len)
 {
   FILE *in;
-  char buf[100];
-  int found=0;
+  char buf[256];
+  unsigned int found = 0;
+  unsigned int idx = strlen(name);
 
-  in=fopen(inifile,"r");
+  if(len > 250) len = 250;
+  
+  in = fopen(inifile, "r");
   if(!in)return 1;
-  while(fgets(buf,100,in) && !found)
+  while(fgets(buf, 250, in) && !found)
   {
-    if(!strncmp(buf,name,strlen(name)) && buf[strlen(name)]=='=')
+    if(!strncmp(buf, name, idx) && buf[idx] == '=')
     {
-      if(sscanf(&(buf[strlen(name)+1]),"%50s",string)==1)found=1;	/* string has enough space for 50+1 chars, see my_types.h */
+      found = strlen(buf + idx + 1);
+      found = (len > found ? found : len) - 1;
+      if (found)
+        strncpy(string, buf + idx + 1, found);
+      string[found] = '\0';
     }
-  }
+  }  
   fclose(in);
-  if(found)return 0;
+  if(found >= 1)return 0;
   return 1;
 }
+
 
 int read_config(mystuff_t *mystuff)
 {
@@ -105,6 +115,42 @@ int read_config(mystuff_t *mystuff)
   mystuff->sieve_primes_adjust = i;
 
 /*****************************************************************************/
+
+  if(my_read_int("mfaktc.ini", "SievePrimesMin", &i))
+  {
+    printf("WARNING: Cannot read SievePrimesMin from mfaktc.ini, using min value (%d)\n",SIEVE_PRIMES_MIN);
+    i = SIEVE_PRIMES_MIN;
+  }
+  else
+  {
+    if(i < SIEVE_PRIMES_MIN || i >= SIEVE_PRIMES_MAX || i > mystuff->sieve_primes)
+    {
+      printf("WARNING: Read SievePrimesMin=%d from mfaktc.ini, using min value (%d)\n",i,SIEVE_PRIMES_MIN);
+      i = SIEVE_PRIMES_MIN;
+    }
+  }
+  if(mystuff->verbosity >= 1)printf("  SievePrimesMin            %d\n",i);
+  mystuff->sieve_primes_min = i;
+
+/*****************************************************************************/
+
+  if(my_read_int("mfaktc.ini", "SievePrimesMax", &i))
+  {
+    printf("WARNING: Cannot read SievePrimesMax from mfaktc.ini, using max value (%d)\n",SIEVE_PRIMES_MAX);
+    i = SIEVE_PRIMES_MAX;
+  }
+  else
+  {
+    if(i <= SIEVE_PRIMES_MIN || i > SIEVE_PRIMES_MAX || i < mystuff->sieve_primes)
+    {
+      printf("WARNING: Read SievePrimesMax=%d from mfaktc.ini, using max value (%d)\n",i,SIEVE_PRIMES_MAX);
+      i = SIEVE_PRIMES_MAX;
+    }
+  }
+  if(mystuff->verbosity >= 1)printf("  SievePrimesMax            %d\n",i);
+  mystuff->sieve_primes_max = i;
+
+/*****************************************************************************/  
 
   if(my_read_int("mfaktc.ini", "NumStreams", &i))
   {
@@ -178,7 +224,7 @@ int read_config(mystuff_t *mystuff)
 
 /*****************************************************************************/
 
-  if(my_read_string("mfaktc.ini", "WorkFile", mystuff->workfile))
+  if(my_read_string("mfaktc.ini", "WorkFile", mystuff->workfile, 50))
   {
     sprintf(mystuff->workfile, "worktodo.txt");
     printf("WARNING: can't read WorkFile from mfaktc.ini, using default (%s)\n", mystuff->workfile);
@@ -197,8 +243,11 @@ int read_config(mystuff_t *mystuff)
     printf("WARNING: Checkpoints must be 0 or 1, enabled by default\n");
     i = 1;
   }
-  if(i == 0){if(mystuff->verbosity >= 1)printf("  Checkpoints               disabled\n");}
-  else      {if(mystuff->verbosity >= 1)printf("  Checkpoints               enabled\n");}
+  if(mystuff->verbosity >= 1)
+  {
+    if(i == 0)printf("  Checkpoints               disabled\n");
+    else      printf("  Checkpoints               enabled\n");
+  }
   mystuff->checkpoints = i;
 
 /*****************************************************************************/
@@ -233,8 +282,11 @@ int read_config(mystuff_t *mystuff)
     printf("WARNING: Stages must be 0 or 1, enabled by default\n");
     i = 1;
   }
-  if(i == 0){if(mystuff->verbosity >= 1)printf("  Stages                    disabled\n");}
-  else      {if(mystuff->verbosity >= 1)printf("  Stages                    enabled\n");}
+  if(mystuff->verbosity >= 1)
+  {
+    if(i == 0)printf("  Stages                    disabled\n");
+    else      printf("  Stages                    enabled\n");
+  }
   mystuff->stages = i;
 
 /*****************************************************************************/
@@ -249,9 +301,12 @@ int read_config(mystuff_t *mystuff)
     printf("WARNING: StopAfterFactor must be 0, 1 or 2, set to 1 by default\n");
     i = 1;
   }
-       if(i==0){if(mystuff->verbosity >= 1)printf("  StopAfterFactor           disabled\n");}
-  else if(i==1){if(mystuff->verbosity >= 1)printf("  StopAfterFactor           bitlevel\n");}
-  else if(i==2){if(mystuff->verbosity >= 1)printf("  StopAfterFactor           class\n");}
+  if(mystuff->verbosity >= 1)
+  {
+         if(i == 0)printf("  StopAfterFactor           disabled\n");
+    else if(i == 1)printf("  StopAfterFactor           bitlevel\n");
+    else if(i == 2)printf("  StopAfterFactor           class\n");
+  }
   mystuff->stopafterfactor = i;
 
 /*****************************************************************************/
@@ -266,9 +321,58 @@ int read_config(mystuff_t *mystuff)
     printf("WARNING: PrintMode must be 0 or 1, set to 0 by default\n");
     i = 0;
   }
-  if(i == 0){if(mystuff->verbosity >= 1)printf("  PrintMode                 full\n");}
-  else      {if(mystuff->verbosity >= 1)printf("  PrintMode                 compact\n");}
+  if(mystuff->verbosity >= 1)
+  {
+    if(i == 0)printf("  PrintMode                 full\n");
+    else      printf("  PrintMode                 compact\n");
+  }
   mystuff->printmode = i;
+
+/*****************************************************************************/
+
+  if (my_read_string("mfaktc.ini", "V5UserID", mystuff->V5UserID, 50))
+  {
+    /* no problem, don't use any */
+    if(mystuff->verbosity >= 1)printf("  V5UserID                  (none)\n");
+    mystuff->V5UserID[0]='\0';
+  }
+  else
+  {
+    if(mystuff->verbosity >= 1)printf("  V5UserID                  %s\n", mystuff->V5UserID);
+  }
+
+/*****************************************************************************/
+
+  if(my_read_string("mfaktc.ini", "ComputerID", mystuff->ComputerID, 50))
+  {
+    /* no problem, don't use any */
+    if(mystuff->verbosity >= 1)printf("  ComputerID                (none)\n");
+    mystuff->ComputerID[0]='\0';
+  }
+  else
+  {   
+    if(mystuff->verbosity >= 1)printf("  ComputerID                %s\n", mystuff->ComputerID);
+  }
+
+/*****************************************************************************/
+
+  for(i = 0; i < 256; i++)mystuff->stats.progressheader[i] = 0;
+  if(my_read_string("mfaktc.ini", "ProgressHeader", mystuff->stats.progressheader, 250))
+  {
+    sprintf(mystuff->stats.progressheader, "    class | candidates |    time |    ETA | avg. rate | SievePrimes | CPU wait");
+    printf("WARNING, no ProgressHeader specified in mfaktc.ini, using default\n");
+  }
+  if(mystuff->verbosity >= 2)printf("  ProgressHeader            \"%s\"\n", mystuff->stats.progressheader);
+
+/*****************************************************************************/
+
+  for(i = 0; i < 256; i++)mystuff->stats.progressformat[i] = 0;
+  if(my_read_string("mfaktc.ini", "ProgressFormat", mystuff->stats.progressformat, 250))
+  {
+    sprintf(mystuff->stats.progressformat, "%%C/%4d |    %%n | %%ts | %%e | %%rM/s |     %%s |  %%W%%%%", NUM_CLASSES);
+    printf("WARNING, no ProgressFormat specified in mfaktc.ini, using default\n");
+  }
+  if(mystuff->verbosity >= 2)printf("  ProgressFormat            \"%s\"\n", mystuff->stats.progressformat);
 
 /*****************************************************************************/
 
@@ -282,9 +386,31 @@ int read_config(mystuff_t *mystuff)
     printf("WARNING: AllowSleep must be 0 or 1, set to 0 by default\n");
     i = 0;
   }
-  if     (i == 0){if(mystuff->verbosity >= 1)printf("  AllowSleep                no\n");}
-  else           {if(mystuff->verbosity >= 1)printf("  AllowSleep                yes\n");}
+  if(mystuff->verbosity >= 1)
+  {
+    if(i == 0)printf("  AllowSleep                no\n");
+    else      printf("  AllowSleep                yes\n");
+  }
   mystuff->allowsleep = i;
+
+/*****************************************************************************/
+
+  if(my_read_int("mfaktc.ini", "TimeStampInResults", &i))
+  {
+    printf("WARNING: Cannot read TimeStampInResults from mfaktc.ini, set to 0 by default\n");
+    i = 0;
+  }
+  else if(i < 0 || i > 1)
+  {
+    printf("WARNING: TimeStampInResults must be 0 or 1, set to 0 by default\n");
+    i=0;
+  }
+  if(mystuff->verbosity >= 1)
+  {
+    if(i == 0)printf("  TimeStampInResults        no\n");
+    else      printf("  TimeStampInResults        yes\n");
+  }
+  mystuff->print_timestamp = i;
 
   return 0;
 }

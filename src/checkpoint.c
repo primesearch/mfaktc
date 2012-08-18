@@ -18,6 +18,7 @@ along with mfaktc.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <stdio.h>
 #include <string.h>
+#include <errno.h>
 
 #include "params.h"
 
@@ -137,6 +138,9 @@ tries to delete the checkpoint file
   
   if(remove(filename))
   {
-    printf("WARNING: can't delete the checkpoint file \"%s\"\n", CHECKPOINT_FILE);
+    if(errno != ENOENT) /* ENOENT = "No such file or directory" -> there was no checkpoint file */
+    {
+      printf("WARNING: can't delete the checkpoint file \"%s\"\n", CHECKPOINT_FILE);
+    }
   }
 }

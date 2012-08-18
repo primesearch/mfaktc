@@ -1,6 +1,6 @@
 /*
 This file is part of mfaktc.
-Copyright (C) 2009, 2010, 2011  Oliver Weihe (o.weihe@t-online.de)
+Copyright (C) 2009, 2010, 2011, 2012  Oliver Weihe (o.weihe@t-online.de)
 
 mfaktc is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -48,10 +48,6 @@ This starts to become usefull on my system for e.g. TF M66xxxxxx from 2^66 to
 ** DEBUG options **
 ******************/
 
-/* print some more timing information */
-//#define VERBOSE_TIMING
-
-
 /* enable for printf's from device (GPU) code. Only used in sm_20 or newer
 code path */
 //#define USE_DEVICE_PRINTF
@@ -84,7 +80,7 @@ code path */
 *******************************************************************************
 ******************************************************************************/
 
-#define MFAKTC_VERSION "0.18" /* DO NOT CHANGE! */
+#define MFAKTC_VERSION "0.19" /* DO NOT CHANGE! */
 
 
 
@@ -111,7 +107,7 @@ The actual configuration is done in mfaktc.ini.
 The following lines define the min, default and max value.
 */
 
-#define SIEVE_PRIMES_MIN      5000 /* DO NOT CHANGE! */
+#define SIEVE_PRIMES_MIN      2000 /* DO NOT CHANGE! */
 #define SIEVE_PRIMES_DEFAULT 25000 /* DO NOT CHANGE! */
 #define SIEVE_PRIMES_MAX    200000 /* DO NOT CHANGE! */
 

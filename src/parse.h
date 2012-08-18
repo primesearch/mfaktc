@@ -1,6 +1,6 @@
 /*
 This file is part of mfaktc.
-Copyright (C) 2009, 2010, 2011  Oliver Weihe (o.weihe@t-online.de)
+Copyright (C) 2009, 2010, 2011, 2012  Oliver Weihe (o.weihe@t-online.de)
 This file has been written by Luigi Morelli (L.Morelli@mclink.it)
 
 mfaktc is free software: you can redistribute it and/or modify
@@ -49,6 +49,3 @@ struct ASSIGNMENT
 int valid_assignment(unsigned int exp, int bit_min, int bit_max, int verbosity);	// nonzero if assignment is valid
 enum ASSIGNMENT_ERRORS get_next_assignment(char *filename, unsigned int *exponent, int *bit_min, int *bit_max, LINE_BUFFER *assignment_key, int verbosity);
 enum ASSIGNMENT_ERRORS clear_assignment(char *filename, unsigned int exponent, int bit_min, int bit_max, int bit_min_new);
-
-unsigned long long int amount_of_work(unsigned int exponent, int bit_min, int bit_max);
-unsigned long long int amount_of_work_in_worktodo(char *filename, int *assignments, int verbosity);

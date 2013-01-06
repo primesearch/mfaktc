@@ -1,3 +1,19 @@
+version 0.20-pre6 (2012-12-30)
+- contributors
+  - George Woltman (Prime95 author, http://www.mersenne.org)
+
+- GPU sieve supported on GPUs (CC >= 2.0), thank you very much, George!
+  GPU sieving is enabled by default, for old GPU (CC 1.x) you must disable
+  it manually in mfaktc.ini (variable SieveOnGPU)
+- moved some code, which is used in multiple places, to tf_96bit_helper.cu
+  and tf_barrett96_core.cu
+- new kernels (thank you, George!):
+  - barrett77_mul32 (a variant of barrett79_mul32)
+  - barrett87_mul32 (a variant of barrett92_mul32)
+  - barrett88_mul32 (a variant of barrett92_mul32)
+- minor performance improvement for barrett76 kernel
+- new default ProgressHeader/ProgressFormat
+
 version 0.19 (2012-08-12)
 - contributors
   - Bertram Franz (mfakto author)

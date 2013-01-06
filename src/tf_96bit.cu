@@ -31,8 +31,9 @@ along with mfaktc.  If not, see <http://www.gnu.org/licenses/>.
 #include "output.h"
 #undef NVCC_EXTERN
 
-#include "tf_96bit_base_math.cu"
 #include "tf_debug.h"
+#include "tf_96bit_base_math.cu"
+#include "tf_96bit_helper.cu"
 
 
 #ifndef CHECKS_MODBASECASE
@@ -261,28 +262,12 @@ computes 2^exp mod f
 shiftcount is used for precomputing without mod
 a is precomputed on host ONCE. */
 {
-  int96 exp96,f;
+  int96 f;
   int96 a;
   int index = blockDim.x * blockIdx.x + threadIdx.x;
   float ff;
 
-  exp96.d2=0;exp96.d1=exp>>31;exp96.d0=exp<<1;	// exp96 = 2 * exp
-
-  k.d0 = __add_cc (k.d0, __umul32  (k_tab[index], NUM_CLASSES));
-  k.d1 = __addc   (k.d1, __umul32hi(k_tab[index], NUM_CLASSES));	/* k is limited to 2^64 -1 so there is no need for k.d2 */
-        
-//  mul_96(&f,k,exp96);				// f = 2 * k * exp
-//  f.d0 += 1;					// f = 2 * k * exp + 1
-
-  f.d0 = 1 +                                  __umul32(k.d0, exp96.d0);
-  f.d1 = __add_cc(__umul32hi(k.d0, exp96.d0), __umul32(k.d1, exp96.d0));
-  f.d2 = __addc  (__umul32hi(k.d1, exp96.d0),                        0);
-
-  if(exp96.d1) /* exp96.d1 is 0 or 1 */
-  {
-    f.d1 = __add_cc(f.d1, k.d0);
-    f.d2 = __addc  (f.d2, k.d1);  
-  }						// f = 2 * k * exp + 1
+  create_FC96_mad(&f, exp, k, k_tab[index]);    // f = 2 * (k + k_tab[index]) * exp + 1
 
 /*
 ff = f as float, needed in mod_192_96().
@@ -291,8 +276,6 @@ Precalculated here since it is the same for all steps in the following loop */
   ff= ff * 4294967296.0f + __uint2float_rn(f.d1);
   ff= ff * 4294967296.0f + __uint2float_rn(f.d0);
 
-//  ff=0.9999997f/ff;
-//  ff=__int_as_float(0x3f7ffffc) / ff;	// just a little bit below 1.0f so we allways underestimate the quotient
   ff=__int_as_float(0x3f7ffffb) / ff;	// just a little bit below 1.0f so we allways underestimate the quotient
         
 #ifndef CHECKS_MODBASECASE
@@ -329,20 +312,9 @@ Precalculated here since it is the same for all steps in the following loop */
   }
 #endif
 
-/* finally check if we found a factor and write the factor to RES[] */
-  if((a.d2|a.d1)==0 && a.d0==1)
-  {
-    if(f.d2!=0 || f.d1!=0 || f.d0!=1)		/* 1 isn't really a factor ;) */
-    {
-      index=atomicInc(&RES[0],10000);
-      if(index<10)				/* limit to 10 factors per class */
-      {
-        RES[index*3 + 1]=f.d2;
-        RES[index*3 + 2]=f.d1;
-        RES[index*3 + 3]=f.d0;
-      }
-    }
-  }
+/* finally check if we found a factor and write the factor to RES[]
+this kernel has a lower FC limit of 2^64 so we can use check_big_factor96() */
+  check_factor96(f, a, RES);
 }
 
 #define TF_96BIT

@@ -156,6 +156,7 @@ void print_status_line(mystuff_t *mystuff)
   time_t now;
   struct tm *tm_now = NULL;
   int time_read = 0;
+  double val;
                         
 
   if(mystuff->mode == MODE_SELFTEST_SHORT) return; /* no output during short selftest */
@@ -197,7 +198,10 @@ void print_status_line(mystuff_t *mystuff)
       }
       else if(mystuff->stats.progressformat[i+1] == 'g')
       {
-        index += sprintf(buffer + index, "%7.2f", mystuff->stats.ghzdays * 86400000.0f / ((double)mystuff->stats.class_time * (double)max_class_number));
+        if(mystuff->mode == MODE_NORMAL)
+          index += sprintf(buffer + index, "%7.2f", mystuff->stats.ghzdays * 86400000.0f / ((double)mystuff->stats.class_time * (double)max_class_number));
+        else
+          index += sprintf(buffer + index, "   n.a.");
       }
       else if(mystuff->stats.progressformat[i+1] == 't')
       {
@@ -223,18 +227,34 @@ void print_status_line(mystuff_t *mystuff)
       }
       else if(mystuff->stats.progressformat[i+1] == 'n')
       {
-        if(((unsigned long long int)mystuff->threads_per_grid * (unsigned long long int)mystuff->stats.grid_count) < 1000000000ULL)
-          index += sprintf(buffer + index, "%6.2fM", (double)mystuff->threads_per_grid * (double)mystuff->stats.grid_count / 1000000.0);
-        else
-          index += sprintf(buffer + index, "%6.2fG", (double)mystuff->threads_per_grid * (double)mystuff->stats.grid_count / 1000000000.0);
+        if (mystuff->stats.cpu_wait == -2.0f) {		// Hack to indicate GPU sieving kernel
+	  if(mystuff->stats.grid_count < (1000000000 / mystuff->gpu_sieve_processing_size + 1))
+	    index += sprintf(buffer + index, "%6.2fM", (double)mystuff->stats.grid_count * mystuff->gpu_sieve_processing_size / 1000000.0);
+	  else
+	    index += sprintf(buffer + index, "%6.2fG", (double)mystuff->stats.grid_count * mystuff->gpu_sieve_processing_size / 1000000000.0);
+	} else {					// CPU sieving
+	  if(((unsigned long long int)mystuff->threads_per_grid * (unsigned long long int)mystuff->stats.grid_count) < 1000000000ULL)
+            index += sprintf(buffer + index, "%6.2fM", (double)mystuff->threads_per_grid * (double)mystuff->stats.grid_count / 1000000.0);
+          else
+	    index += sprintf(buffer + index, "%6.2fG", (double)mystuff->threads_per_grid * (double)mystuff->stats.grid_count / 1000000000.0);
+	}
       }
       else if(mystuff->stats.progressformat[i+1] == 'r')
       {
-        index += sprintf(buffer + index, "%6.2f", (double)mystuff->threads_per_grid * (double)mystuff->stats.grid_count / ((double)mystuff->stats.class_time * 1000.0));
+        if (mystuff->stats.cpu_wait == -2.0f)		// Hack to indicate GPU sieving kernel
+          val = (double)mystuff->stats.grid_count * mystuff->gpu_sieve_processing_size / ((double)mystuff->stats.class_time * 1000.0);
+	else						// CPU sieving
+          val = (double)mystuff->threads_per_grid * (double)mystuff->stats.grid_count / ((double)mystuff->stats.class_time * 1000.0);
+        
+        if(val <= 999.99f) index += sprintf(buffer + index, "%6.2f", val);
+        else               index += sprintf(buffer + index, "%6.1f", val);
       }
       else if(mystuff->stats.progressformat[i+1] == 's')
       {
-        index += sprintf(buffer + index, "%7d", mystuff->sieve_primes);
+        if (mystuff->stats.cpu_wait == -2.0f)		// Hack to indicate GPU sieving kernel
+	  index += sprintf(buffer + index, "%7d", mystuff->gpu_sieve_primes-1);  // Output number of odd primes sieved
+	else						// CPU sieving
+          index += sprintf(buffer + index, "%7d", mystuff->sieve_primes);
       }
       else if(mystuff->stats.progressformat[i+1] == 'w')
       {
@@ -243,7 +263,7 @@ void print_status_line(mystuff_t *mystuff)
       else if(mystuff->stats.progressformat[i+1] == 'W')
       {
         if(mystuff->stats.cpu_wait >= 0.0f)index += sprintf(buffer + index, "%6.2f", mystuff->stats.cpu_wait);
-        else                               index += sprintf(buffer + index, " n.a.");
+        else                               index += sprintf(buffer + index, "  n.a.");
       }
       else if(mystuff->stats.progressformat[i+1] == 'd')
       {

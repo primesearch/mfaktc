@@ -24,7 +24,7 @@ LDFLAGS = -fPIC $(CUDA_LIB) -lcudart -lm
 
 CSRC  = sieve.c timer.c parse.c read_config.c mfaktc.c checkpoint.c \
 	signal_handler.c output.c
-CUSRC = tf_72bit.cu tf_96bit.cu tf_barrett96.cu
+CUSRC = tf_72bit.cu tf_96bit.cu tf_barrett96.cu tf_barrett96_gs.cu gpusieve.cu
 
 COBJS  = $(CSRC:.c=.o)
 CUOBJS = $(CUSRC:.cu=.o) tf_75bit.o
@@ -34,7 +34,7 @@ CUOBJS = $(CUSRC:.cu=.o) tf_75bit.o
 all: ../mfaktc.exe
 
 ../mfaktc.exe : $(COBJS) $(CUOBJS)
-	$(LD) $(LDFLAGS) $^ -o $@
+	$(LD) $^ -o $@ $(LDFLAGS)
 
 clean :
 	rm -f *.o *~
@@ -78,15 +78,24 @@ tf_72bit.o: tf_72bit.cu params.h my_types.h compatibility.h \
  my_intrinsics.h sieve.h timer.h output.h tf_debug.h tf_common.cu
 
 tf_96bit.o: tf_96bit.cu params.h my_types.h compatibility.h \
- my_intrinsics.h sieve.h timer.h output.h tf_debug.h \
- tf_96bit_base_math.cu tf_common.cu
+ my_intrinsics.h sieve.h timer.h output.h tf_96bit_base_math.cu \
+ tf_96bit_helper.cu tf_debug.h tf_common.cu
 
 tf_barrett96.o: tf_barrett96.cu params.h my_types.h compatibility.h \
  my_intrinsics.h sieve.h timer.h output.h tf_debug.h \
- tf_96bit_base_math.cu tf_barrett96_div.cu tf_common.cu
+ tf_96bit_base_math.cu tf_96bit_helper.cu tf_barrett96_div.cu \
+ tf_barrett96_core.cu tf_common.cu
+
+tf_barrett96_gs.o: tf_barrett96_gs.cu params.h my_types.h compatibility.h \
+ my_intrinsics.h sieve.h timer.h output.h tf_debug.h \
+ tf_96bit_base_math.cu tf_96bit_helper.cu tf_barrett96_div.cu \
+ tf_barrett96_core.cu tf_common_gs.cu gpusieve.h
+
+gpusieve.o: gpusieve.cu params.h my_types.h compatibility.h \
+ my_intrinsics.h gpusieve.h
 
 # manually generated dependency
 
 tf_75bit.o: tf_96bit.cu params.h my_types.h compatibility.h \
- my_intrinsics.h sieve.h timer.h output.h tf_debug.h \
- tf_96bit_base_math.cu tf_common.cu
+ my_intrinsics.h sieve.h timer.h output.h tf_96bit_base_math.cu \
+ tf_96bit_helper.cu tf_debug.h tf_common.cu

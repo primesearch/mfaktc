@@ -34,9 +34,18 @@ extern "C" __host__ int tf_class_95(unsigned long long int k_min, unsigned long 
   #ifdef TF_BARRETT_76BIT
 extern "C" __host__ int tf_class_barrett76(unsigned long long int k_min, unsigned long long int k_max, mystuff_t *mystuff)
 #define MFAKTC_FUNC mfaktc_barrett76
+  #elif defined TF_BARRETT_77BIT
+extern "C" __host__ int tf_class_barrett77(unsigned long long int k_min, unsigned long long int k_max, mystuff_t *mystuff)
+#define MFAKTC_FUNC mfaktc_barrett77
   #elif defined TF_BARRETT_79BIT
 extern "C" __host__ int tf_class_barrett79(unsigned long long int k_min, unsigned long long int k_max, mystuff_t *mystuff)
 #define MFAKTC_FUNC mfaktc_barrett79
+  #elif defined TF_BARRETT_87BIT
+extern "C" __host__ int tf_class_barrett87(unsigned long long int k_min, unsigned long long int k_max, mystuff_t *mystuff)
+#define MFAKTC_FUNC mfaktc_barrett87
+  #elif defined TF_BARRETT_88BIT
+extern "C" __host__ int tf_class_barrett88(unsigned long long int k_min, unsigned long long int k_max, mystuff_t *mystuff)
+#define MFAKTC_FUNC mfaktc_barrett88
   #else
 extern "C" __host__ int tf_class_barrett92(unsigned long long int k_min, unsigned long long int k_max, mystuff_t *mystuff)
 #define MFAKTC_FUNC mfaktc_barrett92
@@ -199,7 +208,7 @@ extern "C" __host__ int tf_class_barrett92(unsigned long long int k_min, unsigne
   #endif
 #elif defined(TF_BARRETT)
   #ifndef CHECKS_MODBASECASE
-    #if defined(TF_BARRETT_76BIT) || defined(TF_BARRETT_79BIT)
+    #if defined(TF_BARRETT_76BIT) || defined(TF_BARRETT_77BIT) || defined(TF_BARRETT_79BIT)
         MFAKTC_FUNC<<<blocksPerGrid, threadsPerBlock, 0, mystuff->stream[stream]>>>(mystuff->exponent, k_base, mystuff->d_ktab[stream], shiftcount, b_preinit, mystuff->d_RES);
     #else        
         MFAKTC_FUNC<<<blocksPerGrid, threadsPerBlock, 0, mystuff->stream[stream]>>>(mystuff->exponent, k_base, mystuff->d_ktab[stream], shiftcount, b_preinit, mystuff->d_RES, mystuff->bit_min-63);

@@ -71,14 +71,14 @@ C = nn
 D = index for modbasecase_debug[];
 */
 #if defined USE_DEVICE_PRINTF && __CUDA_ARCH__ >= FERMI
-  #define MODBASECASE_NN_BIG_ERROR(A, B, C, D) \
+  #define MODBASECASE_VALUE_BIG_ERROR(A, NAME, B, C, D) \
   if(C > A) \
   { \
-    printf("EEEEEK, step %d nn.dX is too big: %u\n", B, C); \
+    printf("EEEEEK, step %d " NAME " is too big: %u\n", B, C); \
     modbasecase_debug[D]++; \
   }
 #else
-  #define MODBASECASE_NN_BIG_ERROR(A, B, C, D) \
+  #define MODBASECASE_VALUE_BIG_ERROR(A, NAME, B, C, D) \
   if(C > A) \
   { \
     modbasecase_debug[D]++; \
@@ -89,6 +89,6 @@ D = index for modbasecase_debug[];
 
 #define MODBASECASE_QI_ERROR(A, B, C, D)
 #define MODBASECASE_NONZERO_ERROR(A, B, C, D)
-#define MODBASECASE_NN_BIG_ERROR(A, B, C, D)
+#define MODBASECASE_VALUE_BIG_ERROR(A, NAME, B, C, D)
 
 #endif

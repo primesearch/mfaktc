@@ -63,7 +63,10 @@ int my_read_string(char *inifile, char *name, char *string, unsigned int len)
       found = strlen(buf + idx + 1);
       found = (len > found ? found : len) - 1;
       if (found)
+      {
         strncpy(string, buf + idx + 1, found);
+        if(string[found - 1] == '\r') found--; //remove '\r' from string, this happens when reading a DOS/Windows formatted file on Linux
+      }
       string[found] = '\0';
     }
   }  
@@ -223,7 +226,103 @@ int read_config(mystuff_t *mystuff)
   else             mystuff->threads_per_grid_max = 1048576;
 
 /*****************************************************************************/
+  if(my_read_int("mfaktc.ini", "SieveOnGPU", &i))
+  {
+    printf("WARNING: Cannot read SieveOnGPU from mfaktc.ini, enabled by default\n");
+    i = 1;
+  }
+  else
+  {
+    if(i < 0 || i > 1)
+    {
+      printf("WARNING: Read SieveOnGPU=%d from mfaktc.ini, enabled by default\n", i);
+      i = 1;
+    }
+  }
+  
+  mystuff->gpu_sieving = i;
 
+  if(mystuff->gpu_sieving) {
+
+    if(mystuff->verbosity == 1)printf("  GPU Sieving               enabled\n");
+
+/*****************************************************************************/
+
+    if(my_read_int("mfaktc.ini", "GPUSievePrimes", &i))
+    {
+      printf("WARNING: Cannot read GPUSievePrimes from mfaktc.ini, using default value (%d)\n",GPU_SIEVE_PRIMES_DEFAULT);
+      i = GPU_SIEVE_PRIMES_DEFAULT;
+    }
+    else
+    {
+      if(i > GPU_SIEVE_PRIMES_MAX)
+      {
+        printf("WARNING: Read GPUSievePrimes=%d from mfaktc.ini, using max value (%d)\n",i,GPU_SIEVE_PRIMES_MAX);
+	i = GPU_SIEVE_PRIMES_MAX;
+      }
+      else if(i < GPU_SIEVE_PRIMES_MIN)
+      {
+        printf("WARNING: Read GPUSievePrimes=%d from mfaktc.ini, using min value (%d)\n",i,GPU_SIEVE_PRIMES_MIN);
+	i = GPU_SIEVE_PRIMES_MIN;
+      }
+    }
+    if(mystuff->verbosity >= 1)printf("  GPUSievePrimes            %d\n",i);
+    mystuff->gpu_sieve_primes = i;
+
+/*****************************************************************************/
+
+    if(my_read_int("mfaktc.ini", "GPUSieveSize", &i))
+    {
+      printf("WARNING: Cannot read GPUSieveSize from mfaktc.ini, using default value (%d)\n",GPU_SIEVE_SIZE_DEFAULT);
+      i = GPU_SIEVE_SIZE_DEFAULT;
+    }
+    else
+    {
+      if(i > GPU_SIEVE_SIZE_MAX)
+      {
+        printf("WARNING: Read GPUSieveSize=%d from mfaktc.ini, using max value (%d)\n",i,GPU_SIEVE_SIZE_MAX);
+	i = GPU_SIEVE_SIZE_MAX;
+      }
+      else if(i < GPU_SIEVE_SIZE_MIN)
+      {
+        printf("WARNING: Read GPUSieveSize=%d from mfaktc.ini, using min value (%d)\n",i,GPU_SIEVE_SIZE_MIN);
+	i = GPU_SIEVE_SIZE_MIN;
+      }
+    }
+    if(mystuff->verbosity >= 1)printf("  GPUSieveSize              %dMi bits\n",i);
+    mystuff->gpu_sieve_size = i * 1024 * 1024;
+
+/*****************************************************************************/
+
+    if(my_read_int("mfaktc.ini", "GPUSieveProcessSize", &i))
+    {
+      printf("WARNING: Cannot read GPUSieveProcessSize from mfaktc.ini, using default value (%d)\n",GPU_SIEVE_PROCESS_SIZE_DEFAULT);
+      i = GPU_SIEVE_PROCESS_SIZE_DEFAULT;
+    }
+    else
+    {
+      if(i % 8 != 0)
+      {
+        printf("WARNING: GPUSieveProcessSize must be a multiple of 8\n");
+        i &= 0xFFFFFFF0;
+        printf("         --> changed GPUSieveProcessSize to %d\n", i);
+      }
+      if(i > GPU_SIEVE_PROCESS_SIZE_MAX)
+      {
+        printf("WARNING: Read GPUSieveProcessSize=%d from mfaktc.ini, using max value (%d)\n",i,GPU_SIEVE_PROCESS_SIZE_MAX);
+	i = GPU_SIEVE_PROCESS_SIZE_MAX;
+      }
+      else if(i < GPU_SIEVE_PROCESS_SIZE_MIN)
+      {
+        printf("WARNING: Read GPUSieveProcessSize=%d from mfaktc.ini, using min value (%d)\n",i,GPU_SIEVE_PROCESS_SIZE_MIN);
+	i = GPU_SIEVE_PROCESS_SIZE_MIN;
+      }
+    }
+    if(mystuff->verbosity >= 1)printf("  GPUSieveProcessSize       %dKi bits\n",i);
+    mystuff->gpu_sieve_processing_size = i * 1024;
+  }
+
+/*****************************************************************************/  
   if(my_read_string("mfaktc.ini", "WorkFile", mystuff->workfile, 50))
   {
     sprintf(mystuff->workfile, "worktodo.txt");
@@ -359,7 +458,8 @@ int read_config(mystuff_t *mystuff)
   for(i = 0; i < 256; i++)mystuff->stats.progressheader[i] = 0;
   if(my_read_string("mfaktc.ini", "ProgressHeader", mystuff->stats.progressheader, 250))
   {
-    sprintf(mystuff->stats.progressheader, "    class | candidates |    time |    ETA | avg. rate | SievePrimes | CPU wait");
+//    sprintf(mystuff->stats.progressheader, "    class | candidates |    time |    ETA | avg. rate | SievePrimes | CPU wait");
+    sprintf(mystuff->stats.progressheader, "Date   Time     Pct    ETA | Exponent    Bits | GHz-d/day    Sieve     Wait");
     printf("WARNING, no ProgressHeader specified in mfaktc.ini, using default\n");
   }
   if(mystuff->verbosity >= 2)printf("  ProgressHeader            \"%s\"\n", mystuff->stats.progressheader);
@@ -369,7 +469,8 @@ int read_config(mystuff_t *mystuff)
   for(i = 0; i < 256; i++)mystuff->stats.progressformat[i] = 0;
   if(my_read_string("mfaktc.ini", "ProgressFormat", mystuff->stats.progressformat, 250))
   {
-    sprintf(mystuff->stats.progressformat, "%%C/%4d |    %%n | %%ts | %%e | %%rM/s |     %%s |  %%W%%%%", NUM_CLASSES);
+//    sprintf(mystuff->stats.progressformat, "%%C/%4d |    %%n | %%ts | %%e | %%rM/s |     %%s |  %%W%%%%", NUM_CLASSES);
+    sprintf(mystuff->stats.progressformat, "%%d %%T  %%p %%e | %%M %%l-%%u |   %%g  %%s  %%W%%%%");
     printf("WARNING, no ProgressFormat specified in mfaktc.ini, using default\n");
   }
   if(mystuff->verbosity >= 2)printf("  ProgressFormat            \"%s\"\n", mystuff->stats.progressformat);

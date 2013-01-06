@@ -11,7 +11,7 @@ LFLAGS = /nologo /LTCG #/ltcg:pgo
 
 CSRC  = sieve.c timer.c parse.c read_config.c mfaktc.c checkpoint.c \
 	signal_handler.c output.c
-CUSRC = tf_72bit.cu tf_96bit.cu tf_barrett96.cu
+CUSRC = tf_72bit.cu tf_96bit.cu tf_barrett96.cu tf_barrett96_gs.cu gpusieve.cu
 
 CUOBJS = $(CUSRC:.cu=.obj) tf_75bit.obj
 COBJS  = $(CSRC:.c=.obj)
@@ -72,6 +72,12 @@ tf_96bit.obj: tf_96bit.cu params.h my_types.h compatibility.h \
 tf_barrett96.obj: tf_barrett96.cu params.h my_types.h compatibility.h \
  my_intrinsics.h sieve.h timer.h output.h tf_debug.h \
  tf_96bit_base_math.cu tf_barrett96_div.cu tf_common.cu
+
+tf_barrett96_gs.obj: tf_barrett96_gs.cu params.h my_types.h compatibility.h \
+ my_intrinsics.h gpusieve.h timer.h output.h tf_debug.h \
+ tf_96bit_base_math.cu tf_barrett96_div.cu tf_common_gs.cu
+
+gpusieve.obj: gpusieve.cu gpusieve.h params.h my_types.h
 
 # manually generated dependency
 

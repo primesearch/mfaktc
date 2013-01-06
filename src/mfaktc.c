@@ -76,14 +76,18 @@ int kernel_possible(int kernel, unsigned int exp, int bit_min, int bit_max)
 The variables exp, bit_min and bit_max must be a valid assignment! */
 {
   int ret = 0;
-  
-  if(kernel == _71BIT_MUL24 && bit_max <= 71) ret = 1;
-  if(kernel == _75BIT_MUL32 && bit_max <= 75) ret = 1;
-  if(kernel == _95BIT_MUL32 && bit_max <= 95) ret = 1;
-  if(kernel == BARRETT76_MUL32 && bit_min >= 64 && bit_max <= 76) ret = 1;
-  if(kernel == BARRETT79_MUL32 && bit_min >= 64 && bit_max <= 79) ret = 1;
-  if(kernel == BARRETT92_MUL32 && bit_min >= 79 && bit_max <= 92 && (bit_max - bit_min) == 1) ret = 1;
-  
+
+  if( kernel == _71BIT_MUL24 && bit_max <= 71) ret = 1;
+  if( kernel == _75BIT_MUL32 && bit_max <= 75) ret = 1;
+  if( kernel == _95BIT_MUL32 && bit_max <= 95) ret = 1;
+
+  if((kernel == BARRETT76_MUL32 || kernel == BARRETT76_MUL32_GS) && bit_min >= 64 && bit_max <= 76) ret = 1;
+  if((kernel == BARRETT77_MUL32 || kernel == BARRETT77_MUL32_GS) && bit_min >= 64 && bit_max <= 77) ret = 1;
+  if((kernel == BARRETT79_MUL32 || kernel == BARRETT79_MUL32_GS) && bit_min >= 64 && bit_max <= 79) ret = 1;
+  if((kernel == BARRETT87_MUL32 || kernel == BARRETT87_MUL32_GS) && bit_min >= 65 && bit_max <= 87 && (bit_max - bit_min) == 1) ret = 1;
+  if((kernel == BARRETT88_MUL32 || kernel == BARRETT88_MUL32_GS) && bit_min >= 65 && bit_max <= 88 && (bit_max - bit_min) == 1) ret = 1;
+  if((kernel == BARRETT92_MUL32 || kernel == BARRETT92_MUL32_GS) && bit_min >= 65 && bit_max <= 92 && (bit_max - bit_min) == 1) ret = 1;
+
   exp++;	//exp is currently unused in this function...
   
   return ret;
@@ -197,30 +201,62 @@ other return value
 /* select the GPU kernel (fastest GPU kernel has highest priority) */
     if(mystuff->compcapa_major == 1)
     {
-      if     (kernel_possible(BARRETT76_MUL32, mystuff->exponent, mystuff->bit_min, mystuff->bit_max_stage)) kernel = BARRETT76_MUL32;
+           if(kernel_possible(BARRETT76_MUL32, mystuff->exponent, mystuff->bit_min, mystuff->bit_max_stage)) kernel = BARRETT76_MUL32;
+      else if(kernel_possible(BARRETT77_MUL32, mystuff->exponent, mystuff->bit_min, mystuff->bit_max_stage)) kernel = BARRETT77_MUL32;
       else if(kernel_possible(_71BIT_MUL24,    mystuff->exponent, mystuff->bit_min, mystuff->bit_max_stage)) kernel = _71BIT_MUL24;
-      else if(kernel_possible(BARRETT79_MUL32, mystuff->exponent, mystuff->bit_min, mystuff->bit_max_stage)) kernel = BARRETT79_MUL32;
       else if(kernel_possible(_75BIT_MUL32,    mystuff->exponent, mystuff->bit_min, mystuff->bit_max_stage)) kernel = _75BIT_MUL32;
+      else if(kernel_possible(BARRETT87_MUL32, mystuff->exponent, mystuff->bit_min, mystuff->bit_max_stage)) kernel = BARRETT87_MUL32;
+      else if(kernel_possible(BARRETT88_MUL32, mystuff->exponent, mystuff->bit_min, mystuff->bit_max_stage)) kernel = BARRETT88_MUL32;
+      else if(kernel_possible(BARRETT79_MUL32, mystuff->exponent, mystuff->bit_min, mystuff->bit_max_stage)) kernel = BARRETT79_MUL32;
       else if(kernel_possible(BARRETT92_MUL32, mystuff->exponent, mystuff->bit_min, mystuff->bit_max_stage)) kernel = BARRETT92_MUL32;
       else if(kernel_possible(_95BIT_MUL32,    mystuff->exponent, mystuff->bit_min, mystuff->bit_max_stage)) kernel = _95BIT_MUL32;
     }
     else // mystuff->compcapa_major != 1
     {
-      if     (kernel_possible(BARRETT76_MUL32, mystuff->exponent, mystuff->bit_min, mystuff->bit_max_stage)) kernel = BARRETT76_MUL32;
+      if     (mystuff->gpu_sieving &&
+              kernel_possible(BARRETT76_MUL32_GS, mystuff->exponent, mystuff->bit_min, mystuff->bit_max_stage)) kernel = BARRETT76_MUL32_GS;
+      else if(mystuff->gpu_sieving &&
+              kernel_possible(BARRETT77_MUL32_GS, mystuff->exponent, mystuff->bit_min, mystuff->bit_max_stage)) kernel = BARRETT77_MUL32_GS;
+      else if(mystuff->gpu_sieving &&
+              kernel_possible(BARRETT87_MUL32_GS, mystuff->exponent, mystuff->bit_min, mystuff->bit_max_stage)) kernel = BARRETT87_MUL32_GS;
+      else if(mystuff->gpu_sieving &&
+              kernel_possible(BARRETT88_MUL32_GS, mystuff->exponent, mystuff->bit_min, mystuff->bit_max_stage)) kernel = BARRETT88_MUL32_GS;
+      else if(mystuff->gpu_sieving &&
+              kernel_possible(BARRETT79_MUL32_GS, mystuff->exponent, mystuff->bit_min, mystuff->bit_max_stage)) kernel = BARRETT79_MUL32_GS;
+      else if(mystuff->gpu_sieving &&
+              kernel_possible(BARRETT92_MUL32_GS, mystuff->exponent, mystuff->bit_min, mystuff->bit_max_stage)) kernel = BARRETT92_MUL32_GS;
+
+      else if(kernel_possible(BARRETT76_MUL32, mystuff->exponent, mystuff->bit_min, mystuff->bit_max_stage)) kernel = BARRETT76_MUL32;
+      else if(kernel_possible(BARRETT77_MUL32, mystuff->exponent, mystuff->bit_min, mystuff->bit_max_stage)) kernel = BARRETT77_MUL32;
+      else if(kernel_possible(BARRETT87_MUL32, mystuff->exponent, mystuff->bit_min, mystuff->bit_max_stage)) kernel = BARRETT87_MUL32;
+      else if(kernel_possible(BARRETT88_MUL32, mystuff->exponent, mystuff->bit_min, mystuff->bit_max_stage)) kernel = BARRETT88_MUL32;
       else if(kernel_possible(BARRETT79_MUL32, mystuff->exponent, mystuff->bit_min, mystuff->bit_max_stage)) kernel = BARRETT79_MUL32;
       else if(kernel_possible(BARRETT92_MUL32, mystuff->exponent, mystuff->bit_min, mystuff->bit_max_stage)) kernel = BARRETT92_MUL32;
+
       else if(kernel_possible(_75BIT_MUL32,    mystuff->exponent, mystuff->bit_min, mystuff->bit_max_stage)) kernel = _75BIT_MUL32;
       else if(kernel_possible(_95BIT_MUL32,    mystuff->exponent, mystuff->bit_min, mystuff->bit_max_stage)) kernel = _95BIT_MUL32;
     }
   }
 
-       if(kernel == _71BIT_MUL24)    sprintf(mystuff->stats.kernelname, "71bit_mul24");
-  else if(kernel == _75BIT_MUL32)    sprintf(mystuff->stats.kernelname, "75bit_mul32");
-  else if(kernel == _95BIT_MUL32)    sprintf(mystuff->stats.kernelname, "95bit_mul32");
-  else if(kernel == BARRETT76_MUL32) sprintf(mystuff->stats.kernelname, "barrett76_mul32");
-  else if(kernel == BARRETT79_MUL32) sprintf(mystuff->stats.kernelname, "barrett79_mul32");
-  else if(kernel == BARRETT92_MUL32) sprintf(mystuff->stats.kernelname, "barrett92_mul32");
-  else                               sprintf(mystuff->stats.kernelname, "UNKNOWN kernel");
+       if(kernel == _71BIT_MUL24)       sprintf(mystuff->stats.kernelname, "71bit_mul24");
+  else if(kernel == _75BIT_MUL32)       sprintf(mystuff->stats.kernelname, "75bit_mul32");
+  else if(kernel == _95BIT_MUL32)       sprintf(mystuff->stats.kernelname, "95bit_mul32");
+
+  else if(kernel == BARRETT76_MUL32)    sprintf(mystuff->stats.kernelname, "barrett76_mul32");
+  else if(kernel == BARRETT77_MUL32)    sprintf(mystuff->stats.kernelname, "barrett77_mul32");
+  else if(kernel == BARRETT79_MUL32)    sprintf(mystuff->stats.kernelname, "barrett79_mul32");
+  else if(kernel == BARRETT87_MUL32)    sprintf(mystuff->stats.kernelname, "barrett87_mul32");
+  else if(kernel == BARRETT88_MUL32)    sprintf(mystuff->stats.kernelname, "barrett88_mul32");
+  else if(kernel == BARRETT92_MUL32)    sprintf(mystuff->stats.kernelname, "barrett92_mul32");
+
+  else if(kernel == BARRETT76_MUL32_GS) sprintf(mystuff->stats.kernelname, "barrett76_mul32_gs");
+  else if(kernel == BARRETT77_MUL32_GS) sprintf(mystuff->stats.kernelname, "barrett77_mul32_gs");
+  else if(kernel == BARRETT79_MUL32_GS) sprintf(mystuff->stats.kernelname, "barrett79_mul32_gs");
+  else if(kernel == BARRETT87_MUL32_GS) sprintf(mystuff->stats.kernelname, "barrett87_mul32_gs");
+  else if(kernel == BARRETT88_MUL32_GS) sprintf(mystuff->stats.kernelname, "barrett88_mul32_gs");
+  else if(kernel == BARRETT92_MUL32_GS) sprintf(mystuff->stats.kernelname, "barrett92_mul32_gs");
+
+  else                                  sprintf(mystuff->stats.kernelname, "UNKNOWN kernel");
 
   if(mystuff->mode != MODE_SELFTEST_SHORT && mystuff->verbosity >= 1)printf("Using GPU kernel \"%s\"\n", mystuff->stats.kernelname);
 
@@ -268,15 +304,34 @@ other return value
       }
       else
       {
-        sieve_init_class(mystuff->exponent, k_min+cur_class, mystuff->sieve_primes);
+	if(kernel != BARRETT76_MUL32_GS &&
+	   kernel != BARRETT77_MUL32_GS &&
+	   kernel != BARRETT79_MUL32_GS &&
+	   kernel != BARRETT87_MUL32_GS &&
+	   kernel != BARRETT88_MUL32_GS &&
+	   kernel != BARRETT92_MUL32_GS)
+	{
+	  sieve_init_class(mystuff->exponent, k_min+cur_class, mystuff->sieve_primes);
+	}
         mystuff->stats.class_counter++;
       
              if(kernel == _71BIT_MUL24)    numfactors = tf_class_71       (k_min+cur_class, k_max, mystuff);
         else if(kernel == _75BIT_MUL32)    numfactors = tf_class_75       (k_min+cur_class, k_max, mystuff);
         else if(kernel == _95BIT_MUL32)    numfactors = tf_class_95       (k_min+cur_class, k_max, mystuff);
+
         else if(kernel == BARRETT76_MUL32) numfactors = tf_class_barrett76(k_min+cur_class, k_max, mystuff);
+        else if(kernel == BARRETT77_MUL32) numfactors = tf_class_barrett77(k_min+cur_class, k_max, mystuff);
         else if(kernel == BARRETT79_MUL32) numfactors = tf_class_barrett79(k_min+cur_class, k_max, mystuff);
+        else if(kernel == BARRETT87_MUL32) numfactors = tf_class_barrett87(k_min+cur_class, k_max, mystuff);
+        else if(kernel == BARRETT88_MUL32) numfactors = tf_class_barrett88(k_min+cur_class, k_max, mystuff);
         else if(kernel == BARRETT92_MUL32) numfactors = tf_class_barrett92(k_min+cur_class, k_max, mystuff);
+
+	else if(kernel == BARRETT76_MUL32_GS) numfactors = tf_class_barrett76_gs(k_min+cur_class, k_max, mystuff);
+	else if(kernel == BARRETT77_MUL32_GS) numfactors = tf_class_barrett77_gs(k_min+cur_class, k_max, mystuff);
+	else if(kernel == BARRETT79_MUL32_GS) numfactors = tf_class_barrett79_gs(k_min+cur_class, k_max, mystuff);
+	else if(kernel == BARRETT87_MUL32_GS) numfactors = tf_class_barrett87_gs(k_min+cur_class, k_max, mystuff);
+	else if(kernel == BARRETT88_MUL32_GS) numfactors = tf_class_barrett88_gs(k_min+cur_class, k_max, mystuff);
+	else if(kernel == BARRETT92_MUL32_GS) numfactors = tf_class_barrett92_gs(k_min+cur_class, k_max, mystuff);
         else
         {
           printf("ERROR: Unknown kernel selected (%d)!\n", kernel);
@@ -430,7 +485,7 @@ RET_CUDA_ERROR we might have a serios problem (detected by cudaGetLastError())
   int bit_min[NUM_SELFTESTS], f_class;
   unsigned long long int k[NUM_SELFTESTS];
   int retval=1;
-  int kernels[6];
+  int kernels[15];
   
 #include "selftest-data.c"  
 
@@ -451,8 +506,23 @@ RET_CUDA_ERROR we might have a serios problem (detected by cudaGetLastError())
 /* create a list which kernels can handle this testcase */
       j = 0;
       if(kernel_possible(BARRETT92_MUL32, mystuff->exponent, mystuff->bit_min, mystuff->bit_max_stage)) kernels[j++] = BARRETT92_MUL32;
+      if(kernel_possible(BARRETT88_MUL32, mystuff->exponent, mystuff->bit_min, mystuff->bit_max_stage)) kernels[j++] = BARRETT88_MUL32;
+      if(kernel_possible(BARRETT87_MUL32, mystuff->exponent, mystuff->bit_min, mystuff->bit_max_stage)) kernels[j++] = BARRETT87_MUL32;
       if(kernel_possible(BARRETT79_MUL32, mystuff->exponent, mystuff->bit_min, mystuff->bit_max_stage)) kernels[j++] = BARRETT79_MUL32;
+      if(kernel_possible(BARRETT77_MUL32, mystuff->exponent, mystuff->bit_min, mystuff->bit_max_stage)) kernels[j++] = BARRETT77_MUL32;
       if(kernel_possible(BARRETT76_MUL32, mystuff->exponent, mystuff->bit_min, mystuff->bit_max_stage)) kernels[j++] = BARRETT76_MUL32;
+      if(mystuff->gpu_sieving &&
+	 kernel_possible(BARRETT92_MUL32_GS, mystuff->exponent, mystuff->bit_min, mystuff->bit_max_stage)) kernels[j++] = BARRETT92_MUL32_GS;
+      if(mystuff->gpu_sieving &&
+	 kernel_possible(BARRETT88_MUL32_GS, mystuff->exponent, mystuff->bit_min, mystuff->bit_max_stage)) kernels[j++] = BARRETT88_MUL32_GS;
+      if(mystuff->gpu_sieving &&
+	 kernel_possible(BARRETT87_MUL32_GS, mystuff->exponent, mystuff->bit_min, mystuff->bit_max_stage)) kernels[j++] = BARRETT87_MUL32_GS;
+      if(mystuff->gpu_sieving &&
+	 kernel_possible(BARRETT79_MUL32_GS, mystuff->exponent, mystuff->bit_min, mystuff->bit_max_stage)) kernels[j++] = BARRETT79_MUL32_GS;
+      if(mystuff->gpu_sieving &&
+	 kernel_possible(BARRETT77_MUL32_GS, mystuff->exponent, mystuff->bit_min, mystuff->bit_max_stage)) kernels[j++] = BARRETT77_MUL32_GS;
+      if(mystuff->gpu_sieving &&
+	 kernel_possible(BARRETT76_MUL32_GS, mystuff->exponent, mystuff->bit_min, mystuff->bit_max_stage)) kernels[j++] = BARRETT76_MUL32_GS;
       if(kernel_possible(_95BIT_MUL32,    mystuff->exponent, mystuff->bit_min, mystuff->bit_max_stage)) kernels[j++] = _95BIT_MUL32;
       if(kernel_possible(_75BIT_MUL32,    mystuff->exponent, mystuff->bit_min, mystuff->bit_max_stage)) kernels[j++] = _75BIT_MUL32;
       if(kernel_possible(_71BIT_MUL24,    mystuff->exponent, mystuff->bit_min, mystuff->bit_max_stage)) kernels[j++] = _71BIT_MUL24;
@@ -486,8 +556,23 @@ RET_CUDA_ERROR we might have a serios problem (detected by cudaGetLastError())
 
       j = 0;
       if(kernel_possible(BARRETT92_MUL32, mystuff->exponent, mystuff->bit_min, mystuff->bit_max_stage)) kernels[j++] = BARRETT92_MUL32;
+      if(kernel_possible(BARRETT88_MUL32, mystuff->exponent, mystuff->bit_min, mystuff->bit_max_stage)) kernels[j++] = BARRETT88_MUL32;
+      if(kernel_possible(BARRETT87_MUL32, mystuff->exponent, mystuff->bit_min, mystuff->bit_max_stage)) kernels[j++] = BARRETT87_MUL32;
       if(kernel_possible(BARRETT79_MUL32, mystuff->exponent, mystuff->bit_min, mystuff->bit_max_stage)) kernels[j++] = BARRETT79_MUL32;
+      if(kernel_possible(BARRETT77_MUL32, mystuff->exponent, mystuff->bit_min, mystuff->bit_max_stage)) kernels[j++] = BARRETT77_MUL32;
       if(kernel_possible(BARRETT76_MUL32, mystuff->exponent, mystuff->bit_min, mystuff->bit_max_stage)) kernels[j++] = BARRETT76_MUL32;
+      if(mystuff->gpu_sieving &&
+         kernel_possible(BARRETT92_MUL32_GS, mystuff->exponent, mystuff->bit_min, mystuff->bit_max_stage)) kernels[j++] = BARRETT92_MUL32_GS;
+      if(mystuff->gpu_sieving &&
+         kernel_possible(BARRETT88_MUL32_GS, mystuff->exponent, mystuff->bit_min, mystuff->bit_max_stage)) kernels[j++] = BARRETT88_MUL32_GS;
+      if(mystuff->gpu_sieving &&
+         kernel_possible(BARRETT87_MUL32_GS, mystuff->exponent, mystuff->bit_min, mystuff->bit_max_stage)) kernels[j++] = BARRETT87_MUL32_GS;
+      if(mystuff->gpu_sieving &&
+         kernel_possible(BARRETT79_MUL32_GS, mystuff->exponent, mystuff->bit_min, mystuff->bit_max_stage)) kernels[j++] = BARRETT79_MUL32_GS;
+      if(mystuff->gpu_sieving &&
+         kernel_possible(BARRETT77_MUL32_GS, mystuff->exponent, mystuff->bit_min, mystuff->bit_max_stage)) kernels[j++] = BARRETT77_MUL32_GS;
+      if(mystuff->gpu_sieving &&
+         kernel_possible(BARRETT76_MUL32_GS, mystuff->exponent, mystuff->bit_min, mystuff->bit_max_stage)) kernels[j++] = BARRETT76_MUL32_GS;
       if(kernel_possible(_95BIT_MUL32,    mystuff->exponent, mystuff->bit_min, mystuff->bit_max_stage)) kernels[j++] = _95BIT_MUL32;
       if(kernel_possible(_75BIT_MUL32,    mystuff->exponent, mystuff->bit_min, mystuff->bit_max_stage)) kernels[j++] = _75BIT_MUL32;
       if(kernel_possible(_71BIT_MUL24,    mystuff->exponent, mystuff->bit_min, mystuff->bit_max_stage)) kernels[j++] = _71BIT_MUL24;
@@ -561,6 +646,10 @@ int main(int argc, char **argv)
   mystuff.bit_min = -1;
   mystuff.bit_max_assignment = -1;
   mystuff.bit_max_stage = -1;
+  mystuff.gpu_sieving = 0;
+  mystuff.gpu_sieve_size = GPU_SIEVE_SIZE_DEFAULT * 1024 * 1024;		/* Size (in bits) of the GPU sieve.  Default is 128M bits. */
+  mystuff.gpu_sieve_primes = GPU_SIEVE_PRIMES_DEFAULT;				/* Default to sieving primes below about 1.05M */
+  mystuff.gpu_sieve_processing_size = GPU_SIEVE_PROCESS_SIZE_DEFAULT * 1024;	/* Default to 8K bits processed by each block in a Barrett kernel. */
   sprintf(mystuff.resultfile, "results.txt");
   
   while(i < argc)
@@ -753,6 +842,12 @@ int main(int argc, char **argv)
     printf("Sorry, devices with compute capability 1.0 are not supported!\n");
     return 1;
   }
+  if((mystuff.compcapa_major == 1) && mystuff.gpu_sieving)
+  {
+    printf("Sorry, GPU sieving is not supported on devices with compute capability 1.x!\n");
+    printf("disable GPU sieving in mfaktc.ini (set SieveOnGPU to 0).\n");
+    return 1;
+  }
   if(mystuff.verbosity >= 1)printf("  maximum threads per block %d\n",deviceinfo.maxThreadsPerBlock);
 #if CUDART_VERSION >= 2000
   i=0;
@@ -770,6 +865,8 @@ int main(int argc, char **argv)
     return 1;
   }
 
+  // Don't do a CPU spin loop waiting for the GPU
+  cudaSetDeviceFlags(cudaDeviceBlockingSync);
 
   if(mystuff.verbosity >= 1)printf("\nAutomatic parameters\n");
 #if CUDART_VERSION >= 2000
@@ -894,8 +991,13 @@ int main(int argc, char **argv)
 //          tmp = tf(&mystuff, 0, 0, _75BIT_MUL32);
 //          tmp = tf(&mystuff, 0, 0, _95BIT_MUL32);
 //          tmp = tf(&mystuff, 0, 0, BARRETT76_MUL32);
+//          tmp = tf(&mystuff, 0, 0, BARRETT77_MUL32);
 //          tmp = tf(&mystuff, 0, 0, BARRETT79_MUL32);
+//          tmp = tf(&mystuff, 0, 0, BARRETT87_MUL32);
+//          tmp = tf(&mystuff, 0, 0, BARRETT88_MUL32);
 //          tmp = tf(&mystuff, 0, 0, BARRETT92_MUL32);
+          
+          
           if(tmp == RET_CUDA_ERROR) return 1; /* bail out, we might have a serios problem (detected by cudaGetLastError())... */
 
           if(tmp != RET_QUIT)
@@ -946,6 +1048,11 @@ int main(int argc, char **argv)
   for(i=0;i<(mystuff.num_streams + mystuff.cpu_streams);i++)cudaFreeHost(mystuff.h_ktab[i]);
   for(i=0;i<mystuff.num_streams;i++)cudaFree(mystuff.d_ktab[i]);
   sieve_free();
+
+  // Free GPU sieve data structures
+  cudaFree(mystuff.d_bitarray);
+  cudaFree(mystuff.d_sieve_info);
+  cudaFree(mystuff.d_calc_bit_to_clear_info);
 
   return 0;
 }

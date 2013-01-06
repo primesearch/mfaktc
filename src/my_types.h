@@ -98,13 +98,21 @@ typedef struct
   unsigned int *h_modbasecase_debug;
 #endif  
 
+  int gpu_sieving;			/* TRUE if we're letting the GPU do the sieving */
+  int gpu_sieve_size;			/* Size (in bits) of the GPU sieve.  Default is 128M bits. */
+  int gpu_sieve_primes;                 /* the actual number of primes using for sieving */
+  int gpu_sieve_processing_size;	/* The number of GPU sieve bits each thread in a Barrett kernel will process.  Default is 2K bits. */
+  unsigned int *d_bitarray;		/* 128M bit array for GPU sieve */
+  unsigned int *d_sieve_info;		/* Device array containing compressed info needed for prime number GPU sieves */
+  unsigned int *d_calc_bit_to_clear_info; /* Device array containing uncompressed info needed to calculate initial bit-to-clear */
+
   int printmode;
   int allowsleep;
   
   int print_timestamp;
   
   int quit;
-  int verbosity;                       /* 0 = reduced number of screen prints, 1 = default, >1 current unused */
+  int verbosity;                       /* 0 = reduced number of screen printfs, 1 = default, >= 2 = some additional printfs */
   
   int selftestsize;
   
@@ -124,8 +132,17 @@ enum GPUKernels
   _75BIT_MUL32,
   _95BIT_MUL32,
   BARRETT76_MUL32,
+  BARRETT77_MUL32,
   BARRETT79_MUL32,
-  BARRETT92_MUL32
+  BARRETT87_MUL32,
+  BARRETT88_MUL32,
+  BARRETT92_MUL32,
+  BARRETT76_MUL32_GS,
+  BARRETT77_MUL32_GS,
+  BARRETT79_MUL32_GS,
+  BARRETT87_MUL32_GS,
+  BARRETT88_MUL32_GS,
+  BARRETT92_MUL32_GS
 };
 
 enum MODES

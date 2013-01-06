@@ -208,7 +208,7 @@ __device__ static void mod_144_72(int72 *res, int144 q, int72 n, float nf, unsig
   nn.d4 += nn.d3 >> 24; nn.d3 &= 0xFFFFFF;
   nn.d5 += nn.d4 >> 24; nn.d4 &= 0xFFFFFF;
   
-  MODBASECASE_NN_BIG_ERROR(0xFFFFFF, 1, nn.d5, 1);
+  MODBASECASE_VALUE_BIG_ERROR(0xFFFFFF, "nn.d5", 1, nn.d5, 1);
 
 /*  q = q - nn */
 /* subtraction using sub.cc.u32, subc.cc.u32 and subc.u32 instructions */
@@ -390,8 +390,6 @@ Precalculated here since it is the same for all steps in the following loop */
   ff= ff * 16777216.0f + __uint2float_rn(f.d1);
   ff= ff * 16777216.0f + __uint2float_rn(f.d0);
 
-//  ff=0.9999997f/ff;
-//  ff=__int_as_float(0x3f7ffffc) / ff;	// just a little bit below 1.0f so we allways underestimate the quotient
   ff=__int_as_float(0x3f7ffffb) / ff;	// just a little bit below 1.0f so we allways underestimate the quotient
         
 #ifndef CHECKS_MODBASECASE

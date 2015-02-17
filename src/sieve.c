@@ -1,6 +1,6 @@
 /*
 This file is part of mfaktc.
-Copyright (C) 2009, 2010, 2011  Oliver Weihe (o.weihe@t-online.de)
+Copyright (C) 2009, 2010, 2011, 2013, 2014  Oliver Weihe (o.weihe@t-online.de)
 
 mfaktc is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -23,9 +23,11 @@ along with mfaktc.  If not, see <http://www.gnu.org/licenses/>.
 #include "params.h"
 #include "compatibility.h"
 
+#define SIEVE_PRIMES_EXTRA 25
+
 /* yeah, I like global variables :) */
-static unsigned int *sieve,*sieve_base,mask0[32],mask1[32];
-static int primes[SIEVE_PRIMES_MAX],k_init[SIEVE_PRIMES_MAX],last_sieve;
+static unsigned int *sieve, *sieve_base, mask0[32] ,mask1[32];
+static int prime_base[SIEVE_PRIMES_MAX + SIEVE_PRIMES_EXTRA], primes[SIEVE_PRIMES_MAX], k_init[SIEVE_PRIMES_MAX], last_sieve;
 
 
 /* the sieve_table contains the number of bits set in n (sieve_table[n][8]) and
@@ -79,14 +81,14 @@ void sieve_init()
   sieve=sieve_malloc(SIEVE_SIZE);
   sieve_base=sieve_malloc(SIEVE_SIZE);
 
-  primes[0]=3;
+  prime_base[0]=3;
   i=0;j=3;
-  while(i<SIEVE_PRIMES_MAX)
+  while(i < (SIEVE_PRIMES_MAX + SIEVE_PRIMES_EXTRA))
   {
     k=0;
-    while(primes[k]*primes[k]<=j)
+    while(prime_base[k]*prime_base[k]<=j)
     {
-      if(j%primes[k]==0)
+      if(j%prime_base[k]==0)
       {
         j+=2;
         k=0;
@@ -96,7 +98,7 @@ void sieve_init()
         k++;
       }
     }
-    primes[i]=j;
+    prime_base[i]=j;
     i++;    
     j+=2;
   }
@@ -182,7 +184,29 @@ void sieve_init_class(unsigned int exp, unsigned long long int k_start, int siev
 {
   int i,j,k,p;
   int ii,jj;
-  
+
+/* copy <sieve_limit> primes from prime_base[] to primes[] excluding the
+prime which equals the exponent itself. Because factors are
+2 * k * <exp> + 1 it is not a good idea to use <exp> for sieving.
+Additionally primes which are potential factors of M<exp> are removed. It
+would be sufficient add an initial offset for those primes but removing them
+allows to find composite factors. */
+  i = 0; j = 0;
+  while(i < sieve_limit)
+  {
+    if(j >= (SIEVE_PRIMES_MAX + SIEVE_PRIMES_EXTRA))
+    {
+      printf("ERROR: SIEVE_PRIMES_EXTRA is too small, contact the author!\n");
+      exit(1);
+    }
+    if((prime_base[j] != exp) && \
+       (((unsigned long long int)(prime_base[j]) % (2ULL * (unsigned long long int)exp) != 1ULL) || (prime_base[j] % 8 == 3) || (prime_base[j] % 8 == 5)))
+    {
+      primes[i++] = prime_base[j];
+    }
+    j++;
+  }
+
 #ifdef MORE_CLASSES  
   for(i=4;i<sieve_limit;i++)
 #else
@@ -476,15 +500,4 @@ b) ktab is full */
     c+=SIEVE_SIZE;
   }
   last_sieve=i;
-}
-
-
-unsigned int sieve_sieve_primes_max(unsigned int exp)
-/* returns min(SIEVE_PRIMES_MAX, number of primes below exp) */
-{
-  int ret = 0;
-  if(exp > (unsigned int)primes[SIEVE_PRIMES_MAX - 1]) ret = SIEVE_PRIMES_MAX;
-  else while((unsigned int)primes[ret] < exp)ret++;
-  
-  return ret;
 }

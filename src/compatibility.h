@@ -1,6 +1,6 @@
 /*
 This file is part of mfaktc.
-Copyright (C) 2009, 2010, 2011  Oliver Weihe (o.weihe@t-online.de)
+Copyright (C) 2009, 2010, 2011, 2015  Oliver Weihe (o.weihe@t-online.de)
 
 mfaktc is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -37,6 +37,8 @@ along with mfaktc.  If not, see <http://www.gnu.org/licenses/>.
 
 #ifdef _MSC_VER
   #define my_usleep(A) Sleep((A) / 1000)
+  #define srandom(A) srand(A)
+  #define random(A) rand(A)
 #else
   #define my_usleep(A) usleep(A)
 #endif

@@ -1,6 +1,6 @@
 /*
 This file is part of mfaktc.
-Copyright (C) 2009, 2010, 2011, 2012  Oliver Weihe (o.weihe@t-online.de)
+Copyright (C) 2009, 2010, 2011, 2012, 2014  Oliver Weihe (o.weihe@t-online.de)
 
 mfaktc is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -35,11 +35,11 @@ along with mfaktc.  If not, see <http://www.gnu.org/licenses/>.
 #include "tf_96bit_base_math.cu"
 #include "tf_96bit_helper.cu"
 
-#undef DIV_160_96
+#undef INV_160_96
 #include "tf_barrett96_div.cu"
-#define DIV_160_96
+#define INV_160_96
 #include "tf_barrett96_div.cu"
-#undef DIV_160_96
+#undef INV_160_96
 
 #define CPU_SIEVE
 #include "tf_barrett96_core.cu"
@@ -72,7 +72,7 @@ RES               integer array where the results (FCs which actually divide M(e
 
 
 __global__ void
-#ifndef CHECKS_MODBASECASE
+#ifndef DEBUG_GPU_MATH
 __launch_bounds__(THREADS_PER_BLOCK, KERNEL_MIN_BLOCKS) mfaktc_barrett92(unsigned int exp, int96 k, unsigned int *k_tab, int shiftcount, int192 b, unsigned int *RES, int bit_max64)
 #else
 __launch_bounds__(THREADS_PER_BLOCK, KERNEL_MIN_BLOCKS) mfaktc_barrett92(unsigned int exp, int96 k, unsigned int *k_tab, int shiftcount, int192 b, unsigned int *RES, int bit_max64, unsigned int *modbasecase_debug)
@@ -84,7 +84,7 @@ __launch_bounds__(THREADS_PER_BLOCK, KERNEL_MIN_BLOCKS) mfaktc_barrett92(unsigne
   create_FC96(&f, exp, k, k_tab[index]);
 
   test_FC96_barrett92(f, b, exp, RES, bit_max64, shiftcount
-#ifdef CHECKS_MODBASECASE
+#ifdef DEBUG_GPU_MATH
                       , modbasecase_debug
 #endif
                       );
@@ -92,7 +92,7 @@ __launch_bounds__(THREADS_PER_BLOCK, KERNEL_MIN_BLOCKS) mfaktc_barrett92(unsigne
 
 
 __global__ void
-#ifndef CHECKS_MODBASECASE
+#ifndef DEBUG_GPU_MATH
 __launch_bounds__(THREADS_PER_BLOCK, KERNEL_MIN_BLOCKS) mfaktc_barrett88(unsigned int exp, int96 k, unsigned int *k_tab, int shiftcount, int192 b, unsigned int *RES, int bit_max64)
 #else
 __launch_bounds__(THREADS_PER_BLOCK, KERNEL_MIN_BLOCKS) mfaktc_barrett88(unsigned int exp, int96 k, unsigned int *k_tab, int shiftcount, int192 b, unsigned int *RES, int bit_max64, unsigned int *modbasecase_debug)
@@ -104,7 +104,7 @@ __launch_bounds__(THREADS_PER_BLOCK, KERNEL_MIN_BLOCKS) mfaktc_barrett88(unsigne
   create_FC96(&f, exp, k, k_tab[index]);
   
   test_FC96_barrett88(f, b, exp, RES, bit_max64, shiftcount
-#ifdef CHECKS_MODBASECASE
+#ifdef DEBUG_GPU_MATH
                       , modbasecase_debug
 #endif
                       );
@@ -112,7 +112,7 @@ __launch_bounds__(THREADS_PER_BLOCK, KERNEL_MIN_BLOCKS) mfaktc_barrett88(unsigne
 
 
 __global__ void
-#ifndef CHECKS_MODBASECASE
+#ifndef DEBUG_GPU_MATH
 __launch_bounds__(THREADS_PER_BLOCK, KERNEL_MIN_BLOCKS) mfaktc_barrett87(unsigned int exp, int96 k, unsigned int *k_tab, int shiftcount, int192 b, unsigned int *RES, int bit_max64)
 #else
 __launch_bounds__(THREADS_PER_BLOCK, KERNEL_MIN_BLOCKS) mfaktc_barrett87(unsigned int exp, int96 k, unsigned int *k_tab, int shiftcount, int192 b, unsigned int *RES, int bit_max64, unsigned int *modbasecase_debug)
@@ -124,7 +124,7 @@ __launch_bounds__(THREADS_PER_BLOCK, KERNEL_MIN_BLOCKS) mfaktc_barrett87(unsigne
   create_FC96(&f, exp, k, k_tab[index]);
 
   test_FC96_barrett87(f, b, exp, RES, bit_max64, shiftcount
-#ifdef CHECKS_MODBASECASE
+#ifdef DEBUG_GPU_MATH
                       , modbasecase_debug
 #endif
                       );
@@ -132,7 +132,7 @@ __launch_bounds__(THREADS_PER_BLOCK, KERNEL_MIN_BLOCKS) mfaktc_barrett87(unsigne
 
 
 __global__ void
-#ifndef CHECKS_MODBASECASE
+#ifndef DEBUG_GPU_MATH
 __launch_bounds__(THREADS_PER_BLOCK, KERNEL_MIN_BLOCKS) mfaktc_barrett79(unsigned int exp, int96 k, unsigned int *k_tab, int shiftcount, int192 b, unsigned int *RES)
 #else
 __launch_bounds__(THREADS_PER_BLOCK, KERNEL_MIN_BLOCKS) mfaktc_barrett79(unsigned int exp, int96 k, unsigned int *k_tab, int shiftcount, int192 b, unsigned int *RES, int bit_max64, unsigned int *modbasecase_debug)
@@ -144,7 +144,7 @@ __launch_bounds__(THREADS_PER_BLOCK, KERNEL_MIN_BLOCKS) mfaktc_barrett79(unsigne
   create_FC96_mad(&f, exp, k, k_tab[index]);
 
   test_FC96_barrett79(f, b, exp, RES, shiftcount
-#ifdef CHECKS_MODBASECASE
+#ifdef DEBUG_GPU_MATH
                       , bit_max64, modbasecase_debug
 #endif
                       );
@@ -152,7 +152,7 @@ __launch_bounds__(THREADS_PER_BLOCK, KERNEL_MIN_BLOCKS) mfaktc_barrett79(unsigne
 
 
 __global__ void
-#ifndef CHECKS_MODBASECASE
+#ifndef DEBUG_GPU_MATH
 __launch_bounds__(THREADS_PER_BLOCK, KERNEL_MIN_BLOCKS) mfaktc_barrett77(unsigned int exp, int96 k, unsigned int *k_tab, int shiftcount, int192 b, unsigned int *RES)
 #else
 __launch_bounds__(THREADS_PER_BLOCK, KERNEL_MIN_BLOCKS) mfaktc_barrett77(unsigned int exp, int96 k, unsigned int *k_tab, int shiftcount, int192 b, unsigned int *RES, int bit_max64, unsigned int *modbasecase_debug)
@@ -164,7 +164,7 @@ __launch_bounds__(THREADS_PER_BLOCK, KERNEL_MIN_BLOCKS) mfaktc_barrett77(unsigne
   create_FC96_mad(&f, exp, k, k_tab[index]);
   
   test_FC96_barrett77(f, b, exp, RES, shiftcount
-#ifdef CHECKS_MODBASECASE
+#ifdef DEBUG_GPU_MATH
                       , bit_max64, modbasecase_debug
 #endif
                       );
@@ -172,7 +172,7 @@ __launch_bounds__(THREADS_PER_BLOCK, KERNEL_MIN_BLOCKS) mfaktc_barrett77(unsigne
 
 
 __global__ void
-#ifndef CHECKS_MODBASECASE
+#ifndef DEBUG_GPU_MATH
 __launch_bounds__(THREADS_PER_BLOCK, KERNEL_MIN_BLOCKS) mfaktc_barrett76(unsigned int exp, int96 k, unsigned int *k_tab, int shiftcount, int192 b, unsigned int *RES)
 #else
 __launch_bounds__(THREADS_PER_BLOCK, KERNEL_MIN_BLOCKS) mfaktc_barrett76(unsigned int exp, int96 k, unsigned int *k_tab, int shiftcount, int192 b, unsigned int *RES, int bit_max64, unsigned int *modbasecase_debug)
@@ -184,7 +184,7 @@ __launch_bounds__(THREADS_PER_BLOCK, KERNEL_MIN_BLOCKS) mfaktc_barrett76(unsigne
   create_FC96_mad(&f, exp, k, k_tab[index]);
   
   test_FC96_barrett76(f, b, exp, RES, shiftcount
-#ifdef CHECKS_MODBASECASE
+#ifdef DEBUG_GPU_MATH
                       , bit_max64, modbasecase_debug
 #endif
                       );

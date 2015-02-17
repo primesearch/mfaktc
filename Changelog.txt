@@ -1,4 +1,33 @@
-version 0.20-pre6 (2012-12-30)
+version 0.21 (2015-02-17)
+- contributors
+  - Jerry Hallett (Windows compability, binaries and lots of testing)
+
+- added support for Wagstaff numbers: (2^p + 1)/3
+- added support for "worktodo.add"
+- enabled GPU sieving on CC 1.x GPUs
+- dropped lower limit for exponents from 1,000,000 to 100,000
+- rework selftest (-st and -st2), both now test ALL testcases, -st narrowed
+  the searchspace (k_min < k_factor < k_max) to speedup the selftest.
+- added random offset for selftest, this might detect bugs in sieve code
+  which a static offset wouldn't find because we always test the same value.
+- fixed a bug where mfaktc runs out of shared memory (GPU sieve), might be
+  the cause for some reported (but never reproduced?) crashes. This occurs
+  when you
+  - have a GPU with relative small amount of shared memory
+  - have a LOW value for GPUSievePrimes
+  - have a BIG value for GPUSieveSize
+- fixed a bug when GPUSieveProcessSize is set to 24 AND GPUSieveSize is not
+  a multiple of 3 there was a relative small chance to ignore a factor.
+- fixed a bug in SievePrimesAdjust causing SievePrimes where lowered to
+  SievePrimesMin for very short running jobs
+- added missing dependencies to Windows Makefiles
+- (possible) speedups
+  - funnel shift for CC 3.5 and above
+  - slightly faster integer division for barrett_76,77,79 kernels
+- lots of cleanups and removal of duplicate code
+- print per-kernel-stats for selftest "-st" and "-st2"
+
+version 0.20 (2012-12-30)
 - contributors
   - George Woltman (Prime95 author, http://www.mersenne.org)
 

@@ -20,7 +20,11 @@ additions public too, so that others may benefit from your work.
 #include "my_types.h"
 #include "compatibility.h"
 #include "my_intrinsics.h"
+#define NVCC_EXTERN
 #include "gpusieve.h"
+#undef NVCC_EXTERN
+
+#undef RAW_GPU_BENCH // FIXME
 
 #if (__CUDA_ARCH__ < FERMI) /* printf is not available on CC 1.x devices */
 #undef GWDEBUG
@@ -1252,7 +1256,7 @@ void tiny_soe (uint32 limit, uint32 *primes)
 
 // GPU sieve initialization that only needs to be done one time.
 
-void gpusieve_init (mystuff_t *mystuff)
+extern "C" __host__ void gpusieve_init (mystuff_t *mystuff)
 {
 	uint32	*primes;
 	uint8	*pinfo, *saveptr;
@@ -1333,6 +1337,12 @@ static	int	gpusieve_initialized = 0;
 		exit (1);
 	}
 	tiny_soe (mystuff->gpu_sieve_primes, primes);
+	mystuff->gpu_sieve_min_exp = primes[mystuff->gpu_sieve_primes - 1] + 1;
+	if(mystuff->verbosity >= 1)
+	{
+	  printf("  GPUSievePrimes (adjusted) %d\n", mystuff->gpu_sieve_primes);
+	  printf("  GPUsieve minimum exponent %u\n", mystuff->gpu_sieve_min_exp);
+	}
 
 	// allocate memory for compressed prime info -- assumes prime data can be stored in 12 bytes
 	pinfo = (uint8 *) malloc (mystuff->gpu_sieve_primes * 12);

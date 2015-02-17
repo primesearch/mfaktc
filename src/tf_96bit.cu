@@ -1,6 +1,6 @@
 /*
 This file is part of mfaktc.
-Copyright (C) 2009, 2010, 2011, 2012  Oliver Weihe (o.weihe@t-online.de)
+Copyright (C) 2009, 2010, 2011, 2012, 2014  Oliver Weihe (o.weihe@t-online.de)
 
 mfaktc is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -35,8 +35,10 @@ along with mfaktc.  If not, see <http://www.gnu.org/licenses/>.
 #include "tf_96bit_base_math.cu"
 #include "tf_96bit_helper.cu"
 
+#include "gpusieve_helper.cu"
 
-#ifndef CHECKS_MODBASECASE
+
+#ifndef DEBUG_GPU_MATH
 __device__ static void mod_192_96(int96 *res, int192 q, int96 n, float nf)
 #else
 __device__ static void mod_192_96(int96 *res, int192 q, int96 n, float nf, unsigned int *modbasecase_debug)
@@ -104,7 +106,7 @@ division will be skipped
   nn.d4 = __addc   (__umul32hi(n.d2, qi),                  0);
 
 // shiftleft nn 23 bits
-#ifdef CHECKS_MODBASECASE
+#ifdef DEBUG_GPU_MATH
   nn.d5 =                  nn.d4 >> 9;
 #endif  
   nn.d4 = (nn.d4 << 23) + (nn.d3 >> 9);
@@ -116,7 +118,7 @@ division will be skipped
   q.d1 = __sub_cc (q.d1, nn.d1);
   q.d2 = __subc_cc(q.d2, nn.d2);
   q.d3 = __subc_cc(q.d3, nn.d3);
-#ifndef CHECKS_MODBASECASE  
+#ifndef DEBUG_GPU_MATH  
   q.d4 = __subc   (q.d4, nn.d4);
 #else
   q.d4 = __subc_cc(q.d4, nn.d4);
@@ -171,7 +173,7 @@ division will be skipped
   nn.d3 = __addc   (__umul32hi(n.d2, qi),                  0);
 
 // shiftleft nn 15 bits
-#ifdef CHECKS_MODBASECASE
+#ifdef DEBUG_GPU_MATH
   nn.d4 =                  nn.d3 >> 17;
 #endif
   nn.d3 = (nn.d3 << 15) + (nn.d2 >> 17);
@@ -183,7 +185,7 @@ division will be skipped
   q.d0 = __sub_cc (q.d0, nn.d0);
   q.d1 = __subc_cc(q.d1, nn.d1);
   q.d2 = __subc_cc(q.d2, nn.d2);
-#ifndef CHECKS_MODBASECASE
+#ifndef DEBUG_GPU_MATH
   q.d3 = __subc   (q.d3, nn.d3);
 #else
   q.d3 = __subc_cc(q.d3, nn.d3);
@@ -206,7 +208,7 @@ division will be skipped
 // nn = n * qi
   nn.d0 =                                 __umul32(n.d0, qi);
   nn.d1 = __add_cc (__umul32hi(n.d0, qi), __umul32(n.d1, qi));
-#ifndef CHECKS_MODBASECASE  
+#ifndef DEBUG_GPU_MATH  
   nn.d2 = __addc   (__umul32hi(n.d1, qi), __umul32(n.d2, qi));
 #else
   nn.d2 = __addc_cc(__umul32hi(n.d1, qi), __umul32(n.d2, qi));
@@ -216,7 +218,7 @@ division will be skipped
 //  q = q - nn
   q.d0 = __sub_cc (q.d0, nn.d0);
   q.d1 = __subc_cc(q.d1, nn.d1);
-#ifndef CHECKS_MODBASECASE
+#ifndef DEBUG_GPU_MATH
   q.d2 = __subc   (q.d2, nn.d2);
 #else
   q.d2 = __subc_cc(q.d2, nn.d2);
@@ -243,31 +245,14 @@ one. Sometimes the result is a little bit bigger than n
 }
 
 
-__global__ void
-#ifdef SHORTCUT_75BIT
-  #ifndef CHECKS_MODBASECASE
-__launch_bounds__(THREADS_PER_BLOCK,2) mfaktc_75(unsigned int exp, int96 k, unsigned int *k_tab, int shiftcount, int192 b, unsigned int *RES)
-  #else
-__launch_bounds__(THREADS_PER_BLOCK,2) mfaktc_75(unsigned int exp, int96 k, unsigned int *k_tab, int shiftcount, int192 b, unsigned int *RES, unsigned int *modbasecase_debug)
-  #endif
-#else
-  #ifndef CHECKS_MODBASECASE
-__launch_bounds__(THREADS_PER_BLOCK,2) mfaktc_95(unsigned int exp, int96 k, unsigned int *k_tab, int shiftcount, int192 b, unsigned int *RES)
-  #else
-__launch_bounds__(THREADS_PER_BLOCK,2) mfaktc_95(unsigned int exp, int96 k, unsigned int *k_tab, int shiftcount, int192 b, unsigned int *RES, unsigned int *modbasecase_debug)
-  #endif
+__device__ static void test_FC96_mfaktc_95(int96 f, int192 b, unsigned int exp, unsigned int *RES, int shiftcount
+#ifdef DEBUG_GPU_MATH
+                                           , unsigned int *modbasecase_debug
 #endif
-/*
-computes 2^exp mod f
-shiftcount is used for precomputing without mod
-a is precomputed on host ONCE. */
+                                           )
 {
-  int96 f;
   int96 a;
-  int index = blockDim.x * blockIdx.x + threadIdx.x;
   float ff;
-
-  create_FC96_mad(&f, exp, k, k_tab[index]);    // f = 2 * (k + k_tab[index]) * exp + 1
 
 /*
 ff = f as float, needed in mod_192_96().
@@ -278,7 +263,7 @@ Precalculated here since it is the same for all steps in the following loop */
 
   ff=__int_as_float(0x3f7ffffb) / ff;	// just a little bit below 1.0f so we allways underestimate the quotient
         
-#ifndef CHECKS_MODBASECASE
+#ifndef DEBUG_GPU_MATH
   mod_192_96(&a,b,f,ff);			// a = b mod f
 #else
   mod_192_96(&a,b,f,ff,modbasecase_debug);	// a = b mod f
@@ -292,7 +277,7 @@ Precalculated here since it is the same for all steps in the following loop */
     square_96_192(&b,a);			// b = a^2
 #endif
     if(exp&0x80000000)shl_192(&b);              // "optional multiply by 2" in Prime 95 documentation
-#ifndef CHECKS_MODBASECASE
+#ifndef DEBUG_GPU_MATH
       mod_192_96(&a,b,f,ff);			// a = b mod f
 #else
       mod_192_96(&a,b,f,ff,modbasecase_debug);	// a = b mod f
@@ -305,7 +290,7 @@ Precalculated here since it is the same for all steps in the following loop */
     sub_96(&a,a,f);
   }
 
-#if defined CHECKS_MODBASECASE && defined USE_DEVICE_PRINTF && __CUDA_ARCH__ >= FERMI
+#if defined DEBUG_GPU_MATH && defined USE_DEVICE_PRINTF && __CUDA_ARCH__ >= FERMI
   if(cmp_ge_96(a,f))
   {
     printf("EEEEEK, final a is >= f\n");
@@ -317,6 +302,79 @@ this kernel has a lower FC limit of 2^64 so we can use check_big_factor96() */
   check_factor96(f, a, RES);
 }
 
+
+__global__ void
+#ifdef SHORTCUT_75BIT
+__launch_bounds__(THREADS_PER_BLOCK,2) mfaktc_75(unsigned int exp, int96 k, unsigned int *k_tab, int shiftcount, int192 b, unsigned int *RES
+#else
+__launch_bounds__(THREADS_PER_BLOCK,2) mfaktc_95(unsigned int exp, int96 k, unsigned int *k_tab, int shiftcount, int192 b, unsigned int *RES
+#endif
+#ifdef DEBUG_GPU_MATH
+                                                 , unsigned int *modbasecase_debug
+#endif
+                                                 )                                                
+/*
+computes 2^exp mod f
+shiftcount is used for precomputing without mod
+a is precomputed on host ONCE. */
+{
+  int96 f;
+  int index = blockDim.x * blockIdx.x + threadIdx.x;
+
+  create_FC96_mad(&f, exp, k, k_tab[index]);    // f = 2 * (k + k_tab[index]) * exp + 1
+  
+  test_FC96_mfaktc_95(f, b, exp, RES, shiftcount
+#ifdef DEBUG_GPU_MATH
+                      , modbasecase_debug
+#endif
+                      );
+
+}
+
+
+__global__ void
+#ifdef SHORTCUT_75BIT
+__launch_bounds__(THREADS_PER_BLOCK,2) mfaktc_75_gs(unsigned int exp, int96 k_base, unsigned int *bit_array, unsigned int bits_to_process, int shiftcount, int192 b, unsigned int *RES
+#else
+__launch_bounds__(THREADS_PER_BLOCK,2) mfaktc_95_gs(unsigned int exp, int96 k_base, unsigned int *bit_array, unsigned int bits_to_process, int shiftcount, int192 b, unsigned int *RES
+#endif
+#ifdef DEBUG_GPU_MATH
+                                                 , unsigned int *modbasecase_debug
+#endif
+                                                 )                                                
+/*
+computes 2^exp mod f
+shiftcount is used for precomputing without mod
+a is precomputed on host ONCE. */
+{
+  int96 f, f_base;
+  int i, total_bit_count, k_delta;
+  extern __shared__ unsigned short k_deltas[];		// Write bits to test here.  Launching program must estimate
+							// how much shared memory to allocate based on number of primes sieved.
+
+  create_k_deltas(bit_array, bits_to_process, &total_bit_count, k_deltas);
+  create_fbase96(&f_base, k_base, exp, bits_to_process);
+
+// Loop til the k values written to shared memory are exhausted
+  for (i = threadIdx.x; i < total_bit_count; i += THREADS_PER_BLOCK) {
+
+// Get the (k - k_base) value to test
+    k_delta = k_deltas[i];
+
+// Compute new f.  This is computed as f = f_base + 2 * (k - k_base) * exp.
+    f.d0 = __add_cc (f_base.d0, __umul32(2 * k_delta * NUM_CLASSES, exp));
+    f.d1 = __addc_cc(f_base.d1, __umul32hi(2 * k_delta * NUM_CLASSES, exp));
+    f.d2 = __addc   (f_base.d2, 0);
+
+    test_FC96_mfaktc_95(f, b, exp, RES, shiftcount
+#ifdef DEBUG_GPU_MATH
+                        , modbasecase_debug
+#endif
+                        );
+  }
+}
+
 #define TF_96BIT
 #include "tf_common.cu"
+#include "tf_common_gs.cu"
 #undef TF_96BIT

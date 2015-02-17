@@ -1,6 +1,6 @@
 /*
 This file is part of mfaktc.
-Copyright (C) 2009, 2010, 2012  Oliver Weihe (o.weihe@t-online.de)
+Copyright (C) 2009, 2010, 2012, 2014  Oliver Weihe (o.weihe@t-online.de)
 
 mfaktc is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -20,8 +20,12 @@ along with mfaktc.  If not, see <http://www.gnu.org/licenses/>.
 extern "C" {
        int tf_class_75(unsigned long long int k_min, unsigned long long int k_max, mystuff_t *mystuff);
        int tf_class_95(unsigned long long int k_min, unsigned long long int k_max, mystuff_t *mystuff);
+       int tf_class_75_gs(unsigned long long int k_min, unsigned long long int k_max, mystuff_t *mystuff);
+       int tf_class_95_gs(unsigned long long int k_min, unsigned long long int k_max, mystuff_t *mystuff);
 }
 #else
 extern int tf_class_75(unsigned long long int k_min, unsigned long long int k_max, mystuff_t *mystuff);
 extern int tf_class_95(unsigned long long int k_min, unsigned long long int k_max, mystuff_t *mystuff);
+extern int tf_class_75_gs(unsigned long long int k_min, unsigned long long int k_max, mystuff_t *mystuff);
+extern int tf_class_95_gs(unsigned long long int k_min, unsigned long long int k_max, mystuff_t *mystuff);
 #endif

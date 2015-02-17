@@ -1,6 +1,6 @@
 /*
 This file is part of mfaktc.
-Copyright (C) 2009, 2010, 2011  Oliver Weihe (o.weihe@t-online.de)
+Copyright (C) 2009, 2010, 2011, 2013  Oliver Weihe (o.weihe@t-online.de)
 
 mfaktc is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -27,5 +27,3 @@ void sieve_candidates(int ktab_size, unsigned int *ktab, int sieve_limit);
 #if defined(NVCC_EXTERN) && !defined(_MSC_VER)
 }
 #endif
-
-unsigned int sieve_sieve_primes_max(unsigned int exp);

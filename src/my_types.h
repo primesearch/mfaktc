@@ -1,6 +1,6 @@
 /*
 This file is part of mfaktc.
-Copyright (C) 2009, 2010, 2011, 2012  Oliver Weihe (o.weihe@t-online.de)
+Copyright (C) 2009, 2010, 2011, 2012, 2014  Oliver Weihe (o.weihe@t-online.de)
 
 mfaktc is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -84,16 +84,22 @@ typedef struct
   int sieve_primes_min, sieve_primes_max; /* user configureable sieve_primes min/max */
   
   char workfile[51];                   /* allow filenames up to 50 chars... */
+  char addfile[51];                    /* allow filenames up to 50 chars... */
   char resultfile[51];                 /* allow filenames up to 50 chars... */
   int num_streams, cpu_streams;
   
   int compcapa_major;                  /* compute capability major */
   int compcapa_minor;                  /* compute capability minor */
+  int max_shared_memory;               /* maximum size of shared memory per multiprocessor (in byte) */
   
   int checkpoints, checkpointdelay, mode, stages, stopafterfactor;
   int threads_per_grid_max, threads_per_grid;
+  
+  int addfiledelay, addfilestatus;     /* status: -1: timer not initialized
+                                                   0: last check didn't found an addfile
+                                                   1: last check found an addfile */
 
-#ifdef CHECKS_MODBASECASE
+#ifdef DEBUG_GPU_MATH
   unsigned int *d_modbasecase_debug;
   unsigned int *h_modbasecase_debug;
 #endif  
@@ -102,6 +108,7 @@ typedef struct
   int gpu_sieve_size;			/* Size (in bits) of the GPU sieve.  Default is 128M bits. */
   int gpu_sieve_primes;                 /* the actual number of primes using for sieving */
   int gpu_sieve_processing_size;	/* The number of GPU sieve bits each thread in a Barrett kernel will process.  Default is 2K bits. */
+  unsigned int gpu_sieve_min_exp; 	/* the minumum exponent allowed for GPU sieving */
   unsigned int *d_bitarray;		/* 128M bit array for GPU sieve */
   unsigned int *d_sieve_info;		/* Device array containing compressed info needed for prime number GPU sieves */
   unsigned int *d_calc_bit_to_clear_info; /* Device array containing uncompressed info needed to calculate initial bit-to-clear */
@@ -115,6 +122,7 @@ typedef struct
   int verbosity;                       /* 0 = reduced number of screen printfs, 1 = default, >= 2 = some additional printfs */
   
   int selftestsize;
+  int selftestrandomoffset;
   
   stats_t stats;                       /* stuff for statistics, etc. */
   
@@ -137,6 +145,8 @@ enum GPUKernels
   BARRETT87_MUL32,
   BARRETT88_MUL32,
   BARRETT92_MUL32,
+  _75BIT_MUL32_GS,
+  _95BIT_MUL32_GS,
   BARRETT76_MUL32_GS,
   BARRETT77_MUL32_GS,
   BARRETT79_MUL32_GS,
@@ -160,3 +170,4 @@ enum MODES
 #define TESLA  100
 #define FERMI  200
 #define KEPLER 300
+#define KEPLER_WITH_FUNNELSHIFT 320

@@ -1,6 +1,6 @@
 /*
 This file is part of mfaktc.
-Copyright (C) 2009, 2010, 2011, 2012  Oliver Weihe (o.weihe@t-online.de)
+Copyright (C) 2009, 2010, 2011, 2012, 2014, 2015  Oliver Weihe (o.weihe@t-online.de)
 
 mfaktc is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -18,24 +18,38 @@ along with mfaktc.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "gpusieve.h"
 
-#ifdef TF_BARRETT_76BIT_GS
+#undef RAW_GPU_BENCH // FIXME
+
+
+#ifdef TF_96BIT
+  #ifdef SHORTCUT_75BIT
+extern "C" __host__ int tf_class_75_gs(unsigned long long int k_min, unsigned long long int k_max, mystuff_t *mystuff)
+#define MFAKTC_FUNC mfaktc_75_gs
+  #else
+extern "C" __host__ int tf_class_95_gs(unsigned long long int k_min, unsigned long long int k_max, mystuff_t *mystuff)
+#define MFAKTC_FUNC mfaktc_95_gs
+  #endif
+#endif
+#ifdef TF_BARRETT
+  #ifdef TF_BARRETT_76BIT_GS
 extern "C" __host__ int tf_class_barrett76_gs(unsigned long long int k_min, unsigned long long int k_max, mystuff_t *mystuff)
 #define MFAKTC_FUNC mfaktc_barrett76_gs
-#elif defined TF_BARRETT_77BIT_GS
+  #elif defined TF_BARRETT_77BIT_GS
 extern "C" __host__ int tf_class_barrett77_gs(unsigned long long int k_min, unsigned long long int k_max, mystuff_t *mystuff)
 #define MFAKTC_FUNC mfaktc_barrett77_gs
-#elif defined TF_BARRETT_79BIT_GS
+  #elif defined TF_BARRETT_79BIT_GS
 extern "C" __host__ int tf_class_barrett79_gs(unsigned long long int k_min, unsigned long long int k_max, mystuff_t *mystuff)
 #define MFAKTC_FUNC mfaktc_barrett79_gs
-#elif defined TF_BARRETT_87BIT_GS
+  #elif defined TF_BARRETT_87BIT_GS
 extern "C" __host__ int tf_class_barrett87_gs(unsigned long long int k_min, unsigned long long int k_max, mystuff_t *mystuff)
 #define MFAKTC_FUNC mfaktc_barrett87_gs
-#elif defined TF_BARRETT_88BIT_GS
+  #elif defined TF_BARRETT_88BIT_GS
 extern "C" __host__ int tf_class_barrett88_gs(unsigned long long int k_min, unsigned long long int k_max, mystuff_t *mystuff)
 #define MFAKTC_FUNC mfaktc_barrett88_gs
-#else
+  #else
 extern "C" __host__ int tf_class_barrett92_gs(unsigned long long int k_min, unsigned long long int k_max, mystuff_t *mystuff)
 #define MFAKTC_FUNC mfaktc_barrett92_gs
+  #endif
 #endif
 {
   int i;
@@ -50,7 +64,7 @@ extern "C" __host__ int tf_class_barrett92_gs(unsigned long long int k_min, unsi
   int factorsfound = 0;
 
   // If we've never initialized the GPU sieving code, do so now.
-  gpusieve_init (mystuff);
+//  gpusieve_init (mystuff); // moved to main() function!
 
   // If we haven't initialized the GPU sieving code for this Mersenne exponent, do so now.
   gpusieve_init_exponent (mystuff);
@@ -83,7 +97,7 @@ extern "C" __host__ int tf_class_barrett92_gs(unsigned long long int k_min, unsi
 /* set result array to 0 */  
   cudaMemset(mystuff->d_RES, 0, 1*sizeof(int)); //first int of result array contains the number of factors found
 
-#ifdef CHECKS_MODBASECASE  
+#ifdef DEBUG_GPU_MATH  
   cudaMemset(mystuff->d_modbasecase_debug, 0, 32*sizeof(int));
 #endif
 
@@ -102,6 +116,19 @@ extern "C" __host__ int tf_class_barrett92_gs(unsigned long long int k_min, unsi
   else shared_mem_required = 22;					// 67894 primes expect 19.94%
 #endif
   shared_mem_required = mystuff->gpu_sieve_processing_size * sizeof (int) * shared_mem_required / 100;
+  
+  // FIXME: can't use all the shared memory for GPU sieve, lets keep 1kiB spare...
+  if(mystuff->verbosity >= 3)printf("shared_mem_required = %d bytes\n", shared_mem_required + 1024);
+
+  if((shared_mem_required + 1024) > mystuff->max_shared_memory)
+  {
+    printf("ERROR: Not enough shared memory available!\n");
+    printf("       Need %d bytes\n", shared_mem_required + 1024);
+    printf("       You can lower GPUSieveProcessSize or increase GPUSievePrimes to lower\n");
+    printf("       the amount of shared memory needed\n");
+    exit(1);
+  }
+     
 
   // Loop until all the k's are processed
   for(;;)
@@ -129,15 +156,14 @@ extern "C" __host__ int tf_class_barrett92_gs(unsigned long long int k_min, unsi
 
     // Now let the GPU trial factor the candidates that survived the sieving
 
-#ifndef CHECKS_MODBASECASE
-  #if defined(TF_BARRETT_76BIT_GS) || defined(TF_BARRETT_77BIT_GS) || defined(TF_BARRETT_79BIT_GS)
-    MFAKTC_FUNC<<<numblocks, THREADS_PER_BLOCK, shared_mem_required>>>(mystuff->exponent, k_base, mystuff->d_bitarray, mystuff->gpu_sieve_processing_size, shiftcount, b_preinit, mystuff->d_RES);
-  #else        
-    MFAKTC_FUNC<<<numblocks, THREADS_PER_BLOCK, shared_mem_required>>>(mystuff->exponent, k_base, mystuff->d_bitarray, mystuff->gpu_sieve_processing_size, shiftcount, b_preinit, mystuff->d_RES, mystuff->bit_min-63);
-  #endif
-#else
-    MFAKTC_FUNC<<<numblocks, THREADS_PER_BLOCK, shared_mem_required>>>(mystuff->exponent, k_base, mystuff->d_bitarray, mystuff->gpu_sieve_processing_size, shiftcount, b_preinit, mystuff->d_RES, mystuff->bit_min-63, mystuff->d_modbasecase_debug);
+    MFAKTC_FUNC<<<numblocks, THREADS_PER_BLOCK, shared_mem_required>>>(mystuff->exponent, k_base, mystuff->d_bitarray, mystuff->gpu_sieve_processing_size, shiftcount, b_preinit, mystuff->d_RES
+#if defined (TF_BARRETT) && (defined(TF_BARRETT_87BIT_GS) || defined(TF_BARRETT_88BIT_GS) || defined(TF_BARRETT_92BIT_GS) || defined(DEBUG_GPU_MATH))
+                                                                       , mystuff->bit_min-63
 #endif
+#ifdef DEBUG_GPU_MATH
+                                                                       , mystuff->d_modbasecase_debug
+#endif
+                                                                       );
 
     // Sync before doing more GPU sieving
     cudaThreadSynchronize();
@@ -158,7 +184,7 @@ extern "C" __host__ int tf_class_barrett92_gs(unsigned long long int k_min, unsi
 /* download results from GPU */
   cudaMemcpy(mystuff->h_RES, mystuff->d_RES, 32*sizeof(int), cudaMemcpyDeviceToHost);
 
-#ifdef CHECKS_MODBASECASE
+#ifdef DEBUG_GPU_MATH
   cudaMemcpy(mystuff->h_modbasecase_debug, mystuff->d_modbasecase_debug, 32*sizeof(int), cudaMemcpyDeviceToHost);
   for(i=0;i<32;i++)if(mystuff->h_modbasecase_debug[i] != 0)printf("h_modbasecase_debug[%2d] = %u\n", i, mystuff->h_modbasecase_debug[i]);
 #endif  

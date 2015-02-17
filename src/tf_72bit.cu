@@ -1,6 +1,6 @@
 /*
 This file is part of mfaktc.
-Copyright (C) 2009, 2010, 2011, 2012  Oliver Weihe (o.weihe@t-online.de)
+Copyright (C) 2009, 2010, 2011, 2012, 2013  Oliver Weihe (o.weihe@t-online.de)
 
 mfaktc is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -170,7 +170,7 @@ __device__ static void square_72_144_shl(int144 *res, int72 a)
 }
 
 
-#ifndef CHECKS_MODBASECASE
+#ifndef DEBUG_GPU_MATH
 __device__ static void mod_144_72(int72 *res, int144 q, int72 n, float nf)
 #else
 __device__ static void mod_144_72(int72 *res, int144 q, int72 n, float nf, unsigned int *modbasecase_debug)
@@ -238,14 +238,14 @@ __device__ static void mod_144_72(int72 *res, int144 q, int72 n, float nf, unsig
 
   nn.d3 += (__umul24(n.d2, qi) << 7) & 0xFFFFFF;
   nn.d4  =  __umul24hi(n.d2, qi) >> 1;
-  #ifdef CHECKS_MODBASECASE
+  #ifdef DEBUG_GPU_MATH
   nn.d5=0;
   #endif
   
 /* do carry */
   nn.d3 += nn.d2 >> 24; nn.d2 &= 0xFFFFFF;
   nn.d4 += nn.d3 >> 24; nn.d3 &= 0xFFFFFF;
-#ifdef CHECKS_MODBASECASE
+#ifdef DEBUG_GPU_MATH
   nn.d5 += nn.d4 >> 24; nn.d4 &= 0xFFFFFF;
 #endif  
 
@@ -254,7 +254,7 @@ __device__ static void mod_144_72(int72 *res, int144 q, int72 n, float nf, unsig
   q.d1 = __sub_cc (q.d1, nn.d1) & 0xFFFFFF;
   q.d2 = __subc_cc(q.d2, nn.d2) & 0xFFFFFF;
   q.d3 = __subc_cc(q.d3, nn.d3) & 0xFFFFFF;
-#ifndef CHECKS_MODBASECASE  
+#ifndef DEBUG_GPU_MATH  
   q.d4 = __subc   (q.d4, nn.d4) & 0xFFFFFF;
 #else
   q.d4 = __subc_cc(q.d4, nn.d4) & 0xFFFFFF;
@@ -281,7 +281,7 @@ __device__ static void mod_144_72(int72 *res, int144 q, int72 n, float nf, unsig
   nn.d3 = __addc   (__umul24hi(n.d2, qi) >> 8, 0);
 
 // shiftleft 11 bits
-#ifdef CHECKS_MODBASECASE
+#ifdef DEBUG_GPU_MATH
   nn.d4 =                           nn.d3>>13;
   nn.d3 = ((nn.d3 & 0x1FFF)<<11) + (nn.d2>>13);
 #else  
@@ -296,7 +296,7 @@ __device__ static void mod_144_72(int72 *res, int144 q, int72 n, float nf, unsig
   q.d0 = __sub_cc (q.d0, nn.d0) & 0xFFFFFF;
   q.d1 = __subc_cc(q.d1, nn.d1) & 0xFFFFFF;
   q.d2 = __subc_cc(q.d2, nn.d2) & 0xFFFFFF;
-#ifndef CHECKS_MODBASECASE
+#ifndef DEBUG_GPU_MATH
   q.d3 = __subc   (q.d3, nn.d3) & 0xFFFFFF;
 #else
   q.d3 = __subc_cc(q.d3, nn.d3) & 0xFFFFFF;
@@ -318,7 +318,7 @@ __device__ static void mod_144_72(int72 *res, int144 q, int72 n, float nf, unsig
 
   nn.d0 =                                      __umul24(n.d0, qi)               & 0xFFFFFF;
   nn.d1 = __add_cc (__umul24hi(n.d0, qi) >> 8, __umul24(n.d1, qi) | 0xFF000000) & 0xFFFFFF;
-#ifndef CHECKS_MODBASECASE  
+#ifndef DEBUG_GPU_MATH  
   nn.d2 = __addc   (__umul24hi(n.d1, qi) >> 8, __umul24(n.d2, qi));
 #else
   nn.d2 = __addc_cc(__umul24hi(n.d1, qi) >> 8, __umul24(n.d2, qi) | 0xFF000000) & 0xFFFFFF;
@@ -329,7 +329,7 @@ __device__ static void mod_144_72(int72 *res, int144 q, int72 n, float nf, unsig
 /* subtraction using sub.cc.u32, subc.cc.u32 and subc.u32 instructions */
   q.d0 = __sub_cc (q.d0, nn.d0) & 0xFFFFFF;
   q.d1 = __subc_cc(q.d1, nn.d1) & 0xFFFFFF;
-#ifndef CHECKS_MODBASECASE  
+#ifndef DEBUG_GPU_MATH  
   q.d2 = __subc   (q.d2, nn.d2) & 0xFFFFFF;
 #else
   q.d2 = __subc_cc(q.d2, nn.d2) & 0xFFFFFF;
@@ -357,7 +357,7 @@ one. Sometimes the result is a little bit bigger than n
 }
 
 __global__ void
-#ifndef CHECKS_MODBASECASE
+#ifndef DEBUG_GPU_MATH
 __launch_bounds__(THREADS_PER_BLOCK,2) mfaktc_71(unsigned int exp, int72 k, unsigned int *k_tab, int shiftcount, int144 b, unsigned int *RES)
 #else
 __launch_bounds__(THREADS_PER_BLOCK,2) mfaktc_71(unsigned int exp, int72 k, unsigned int *k_tab, int shiftcount, int144 b, unsigned int *RES, unsigned int *modbasecase_debug)
@@ -392,7 +392,7 @@ Precalculated here since it is the same for all steps in the following loop */
 
   ff=__int_as_float(0x3f7ffffb) / ff;	// just a little bit below 1.0f so we allways underestimate the quotient
         
-#ifndef CHECKS_MODBASECASE
+#ifndef DEBUG_GPU_MATH
   mod_144_72(&a,b,f,ff);			// a = b mod f
 #else
   mod_144_72(&a,b,f,ff,modbasecase_debug);	// a = b mod f
@@ -402,7 +402,7 @@ Precalculated here since it is the same for all steps in the following loop */
   {
     if(exp&0x80000000)square_72_144_shl(&b,a);	// b = 2 * a^2 ("optional multiply by 2" in Prime 95 documentation)
     else              square_72_144(&b,a);	// b = a^2
-#ifndef CHECKS_MODBASECASE
+#ifndef DEBUG_GPU_MATH
     mod_144_72(&a,b,f,ff);			// a = b mod f
 #else
     mod_144_72(&a,b,f,ff,modbasecase_debug);	// a = b mod f
@@ -415,7 +415,7 @@ Precalculated here since it is the same for all steps in the following loop */
     sub_72(&a,a,f);
   }
 
-#if defined CHECKS_MODBASECASE && defined USE_DEVICE_PRINTF && __CUDA_ARCH__ >= FERMI
+#if defined DEBUG_GPU_MATH && defined USE_DEVICE_PRINTF && __CUDA_ARCH__ >= FERMI
   if(cmp_ge_72(a,f))
   {
     printf("EEEEEK, final a is >= f\n");
@@ -423,7 +423,11 @@ Precalculated here since it is the same for all steps in the following loop */
 #endif
 
 /* finally check if we found a factor and write the factor to RES[] */
+#ifdef WAGSTAFF
+  if(a.d2 == f.d2 && a.d1 == f.d1 && a.d0 == (f.d0 - 1))
+#else /* Mersennes */
   if((a.d2|a.d1)==0 && a.d0==1)
+#endif
   {
     if(f.d2!=0 || f.d1!=0 || f.d0!=1)		/* 1 isn't really a factor ;) */
     {

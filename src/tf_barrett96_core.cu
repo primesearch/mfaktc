@@ -1,6 +1,6 @@
 /*
 This file is part of mfaktc.
-Copyright (C) 2009, 2010, 2011, 2012  Oliver Weihe (o.weihe@t-online.de)
+Copyright (C) 2009, 2010, 2011, 2012, 2013  Oliver Weihe (o.weihe@t-online.de)
 
 mfaktc is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -32,7 +32,7 @@ __device__ static void test_FC96_barrett92(int96 f, int192 b, unsigned int shift
 #ifdef CPU_SIEVE
                                            , int shiftcount
 #endif
-#ifdef CHECKS_MODBASECASE
+#ifdef DEBUG_GPU_MATH
                                            , unsigned int *modbasecase_debug
 #endif
                                            )
@@ -52,15 +52,15 @@ Precalculated here since it is the same for all steps in the following loop */
   tmp192.d5 = 1 << (bit_max64 - 1);			// tmp192 = 2^(95 + bits_in_f)
   tmp192.d4 = 0; tmp192.d3 = 0; tmp192.d2 = 0; tmp192.d1 = 0; tmp192.d0 = 0;
 
-#ifndef CHECKS_MODBASECASE
+#ifndef DEBUG_GPU_MATH
   div_192_96(&u,tmp192,f,ff);				// u = floor(2^(95 + bits_in_f) / f), giving 96 bits of precision
 #else
   div_192_96(&u,tmp192,f,ff,modbasecase_debug);		// u = floor(2^(95 + bits_in_f) / f), giving 96 bits of precision
 #endif
 
-  a.d0 = (b.d2 >> (bit_max64 - 1)) + (b.d3 << (32 - (bit_max64 - 1)));	// a = floor(b / 2 ^ (bits_in_f - 1))
-  a.d1 = (b.d3 >> (bit_max64 - 1)) + (b.d4 << (32 - (bit_max64 - 1)));
-  a.d2 = (b.d4 >> (bit_max64 - 1)) + (b.d5 << (32 - (bit_max64 - 1)));
+  a.d0 = __fshift_r(b.d2, b.d3, bit_max64 - 1);		// a = floor(b / 2 ^ (bits_in_f - 1))
+  a.d1 = __fshift_r(b.d3, b.d4, bit_max64 - 1);
+  a.d2 = __fshift_r(b.d4, b.d5, bit_max64 - 1);
 
   mul_96_192_no_low3(&tmp192, a, u);			// tmp192 = (b / 2 ^ (bits_in_f - 1)) * (2 ^ (95 + bits_in_f) / f)     (ignore the floor functions for now)
 
@@ -74,24 +74,26 @@ Precalculated here since it is the same for all steps in the following loop */
   tmp96.d1 = __subc_cc(b.d1, tmp96.d1);			// we do not need the upper digits of b and tmp96 because the result is 0 after subtraction!
   tmp96.d2 = __subc   (b.d2, tmp96.d2);
 
-#ifndef CHECKS_MODBASECASE
-  mod_simple_96(&a, tmp96, f, ff);			// Adjustment.  The code above may produce an a that is too large by up to 6 times f.
-#else
-  mod_simple_96(&a, tmp96, f, ff, bit_max64 - 1, bit_max64, 6, modbasecase_debug); // bit_max - 1 = bit_min (this kernel handles only single bit levels)
-#endif
-
 #ifdef CPU_SIEVE
   shifter<<= 32 - shiftcount;
 #endif
   while(shifter)
   {
-							// On input a is at most 93 bits (see end of this loop)
+#ifndef DEBUG_GPU_MATH
+    mod_simple_96(&a, tmp96, f, ff);			// Adjustment.  The code above/below may produce an a that is too large by up to 11 times f.
+#else
+    mod_simple_96(&a, tmp96, f, ff, bit_max64 - 1, bit_max64, 11, modbasecase_debug); // bit_max - 1 = bit_min (this kernel handles only single bit levels)
+#endif
+							// Since mod_simple_96 does not do a complete adjustment we need to allow one bit
+							// for that.  Thus, at this point a can be 93 bits.
+
+							// On input a is at most 93 bits (see mod_simple_96 above)
 
     square_96_192(&b, a);				// b = a^2, b is at most 186 bits
 
-    a.d0 = (b.d2 >> (bit_max64 - 1)) + (b.d3 << (32 - (bit_max64 - 1))); // a = b / (2 ^ (bits_in_f - 1)), a is at most 95 bits
-    a.d1 = (b.d3 >> (bit_max64 - 1)) + (b.d4 << (32 - (bit_max64 - 1)));
-    a.d2 = (b.d4 >> (bit_max64 - 1)) + (b.d5 << (32 - (bit_max64 - 1)));
+    a.d0 = __fshift_r(b.d2, b.d3, bit_max64 - 1);	// a = b / (2 ^ (bits_in_f - 1)), a is at most 95 bits
+    a.d1 = __fshift_r(b.d3, b.d4, bit_max64 - 1);
+    a.d2 = __fshift_r(b.d4, b.d5, bit_max64 - 1);
 
     mul_96_192_no_low3(&tmp192, a, u);			// tmp192 = (b / 2 ^ (bits_in_f - 1)) * (2 ^ (95 + bits_in_f) / f)     (ignore the floor functions for now)
 
@@ -118,35 +120,20 @@ Precalculated here since it is the same for all steps in the following loop */
 
     if(shifter&0x80000000)shl_96(&tmp96);			// Optional multiply by 2.  At this point tmp96 can be 95.807 bits.
 
-#ifndef CHECKS_MODBASECASE
-    mod_simple_96(&a, tmp96, f, ff);			// Adjustment.  The code above may produce an a that is too large by up to 11 times f.
-#else
-    mod_simple_96(&a, tmp96, f, ff, bit_max64 - 1, bit_max64, 11, modbasecase_debug); // bit_max - 1 = bit_min (this kernel handles only single bit levels)
-#endif
-							// Since mod_simple_96 does not do a complete adjustment we need to allow one bit
-							// for that.  Thus, at this point a can be 93 bits.
 
 //    shifter<<=1;
     shifter += shifter;
   }
 
-  if(cmp_ge_96(a,f))					// final adjustment in case a >= f
-  {
-    sub_96(&a, a, f);
-  }
-
-#if defined CHECKS_MODBASECASE && defined USE_DEVICE_PRINTF && __CUDA_ARCH__ >= FERMI
-//  if(cmp_ge_96(a,f) && f.d2)
-  if(cmp_ge_96(a,f) && f.d2 >= (1 << (bit_max64-1)))
-  {
-    printf("EEEEEK, final a is >= f\n");
-    printf("  f = 0x %08X %08X %08X\n", f.d2, f.d1, f.d0);
-  }
-#endif
+  a.d0 = tmp96.d0;
+  a.d1 = tmp96.d1;
+  a.d2 = tmp96.d2;
 
 /* finally check if we found a factor and write the factor to RES[]
-this kernel has a lower FC limit of 2^64 so we can use check_big_factor96() */
-  check_big_factor96(f, a, RES);
+this kernel has a lower FC limit of 2^64 so we can use [mod_simple_96_and_]check_big_factor96().
+mod_simple_96_and_check_big_factor96() includes the final adjustment, too. The code above may
+produce an a that is too large by up to 11 times f. */
+  mod_simple_96_and_check_big_factor96(a, f, ff, RES);
 
 }
 
@@ -155,7 +142,7 @@ __device__ static void test_FC96_barrett88(int96 f, int192 b, unsigned int shift
 #ifdef CPU_SIEVE
                                            , int shiftcount
 #endif
-#ifdef CHECKS_MODBASECASE
+#ifdef DEBUG_GPU_MATH
                                            , unsigned int *modbasecase_debug
 #endif
                                            )
@@ -175,15 +162,15 @@ Precalculated here since it is the same for all steps in the following loop */
   tmp192.d5 = 1 << (bit_max64 - 1);			// tmp192 = 2^(95 + bits_in_f)
   tmp192.d4 = 0; tmp192.d3 = 0; tmp192.d2 = 0; tmp192.d1 = 0; tmp192.d0 = 0;
 
-#ifndef CHECKS_MODBASECASE
+#ifndef DEBUG_GPU_MATH
   div_192_96(&u,tmp192,f,ff);				// u = floor(2^(95 + bits_in_f) / f), giving 96 bits of precision
 #else
   div_192_96(&u,tmp192,f,ff,modbasecase_debug);		// u = floor(2^(95 + bits_in_f) / f), giving 96 bits of precision
 #endif
 
-  a.d0 = (b.d2 >> (bit_max64 - 1)) + (b.d3 << (32 - (bit_max64 - 1)));	// a = floor(b / 2 ^ (bits_in_f - 1))
-  a.d1 = (b.d3 >> (bit_max64 - 1)) + (b.d4 << (32 - (bit_max64 - 1)));
-  a.d2 = (b.d4 >> (bit_max64 - 1)) + (b.d5 << (32 - (bit_max64 - 1)));
+  a.d0 = __fshift_r(b.d2, b.d3, bit_max64 - 1);		// a = floor(b / 2 ^ (bits_in_f - 1))
+  a.d1 = __fshift_r(b.d3, b.d4, bit_max64 - 1);
+  a.d2 = __fshift_r(b.d4, b.d5, bit_max64 - 1);
 
   mul_96_192_no_low3(&tmp192, a, u);			// tmp192 = (b / 2 ^ (bits_in_f - 1)) * (2 ^ (95 + bits_in_f) / f)     (ignore the floor functions for now)
 
@@ -208,9 +195,9 @@ Precalculated here since it is the same for all steps in the following loop */
 
     if(shifter&0x80000000)shl_192(&b);			// Optional multiply by 2.  At this point b can be 182.614 bits.
 
-    a.d0 = (b.d2 >> (bit_max64 - 1)) + (b.d3 << (32 - (bit_max64 - 1))); // a = b / (2 ^ (bits_in_f - 1)), a can be 95.614 bits
-    a.d1 = (b.d3 >> (bit_max64 - 1)) + (b.d4 << (32 - (bit_max64 - 1)));
-    a.d2 = (b.d4 >> (bit_max64 - 1)) + (b.d5 << (32 - (bit_max64 - 1)));
+    a.d0 = __fshift_r(b.d2, b.d3, bit_max64 - 1);	// a = b / (2 ^ (bits_in_f - 1)), a can be 95.614 bits
+    a.d1 = __fshift_r(b.d3, b.d4, bit_max64 - 1);
+    a.d2 = __fshift_r(b.d4, b.d5, bit_max64 - 1);
 
     mul_96_192_no_low3(&tmp192, a, u);			// tmp192 = (b / 2 ^ (bits_in_f - 1)) * (2 ^ (95 + bits_in_f) / f)     (ignore the floor functions for now)
 
@@ -239,7 +226,7 @@ Precalculated here since it is the same for all steps in the following loop */
     shifter += shifter;
   }
 
-/*#ifndef CHECKS_MODBASECASE
+/*#ifndef DEBUG_GPU_MATH
   mod_simple_96(&a, tmp96, f, ff);			// Adjustment.  The code above may produce an a that is too large by up to 6 times f.
 #else
   mod_simple_96(&a, tmp96, f, ff, bit_max64 - 1, bit_max64, 6, modbasecase_debug); // bit_max - 1 = bit_min (this kernel handles only single bit levels)
@@ -257,7 +244,7 @@ __device__ static void test_FC96_barrett87(int96 f, int192 b, unsigned int shift
 #ifdef CPU_SIEVE
                                            , int shiftcount
 #endif
-#ifdef CHECKS_MODBASECASE
+#ifdef DEBUG_GPU_MATH
                                            , unsigned int *modbasecase_debug
 #endif
                                            )
@@ -277,15 +264,15 @@ Precalculated here since it is the same for all steps in the following loop */
   tmp192.d5 = 1 << (bit_max64 - 1);			// tmp192 = 2^(95 + bits_in_f)
   tmp192.d4 = 0; tmp192.d3 = 0; tmp192.d2 = 0; tmp192.d1 = 0; tmp192.d0 = 0;
 
-#ifndef CHECKS_MODBASECASE
+#ifndef DEBUG_GPU_MATH
   div_192_96(&u,tmp192,f,ff);				// u = floor(2^(95 + bits_in_f) / f), giving 96 bits of precision
 #else
   div_192_96(&u,tmp192,f,ff,modbasecase_debug);		// u = floor(2^(95 + bits_in_f) / f), giving 96 bits of precision
 #endif
 
-  a.d0 = (b.d2 >> (bit_max64 - 1)) + (b.d3 << (32 - (bit_max64 - 1)));	// a = floor(b / 2 ^ (bits_in_f - 1))
-  a.d1 = (b.d3 >> (bit_max64 - 1)) + (b.d4 << (32 - (bit_max64 - 1)));
-  a.d2 = (b.d4 >> (bit_max64 - 1)) + (b.d5 << (32 - (bit_max64 - 1)));
+  a.d0 = __fshift_r(b.d2, b.d3, bit_max64 - 1);		// a = floor(b / 2 ^ (bits_in_f - 1))
+  a.d1 = __fshift_r(b.d3, b.d4, bit_max64 - 1);
+  a.d2 = __fshift_r(b.d4, b.d5, bit_max64 - 1);
 
   mul_96_192_no_low3(&tmp192, a, u);			// tmp192 = (b / 2 ^ (bits_in_f - 1)) * (2 ^ (95 + bits_in_f) / f)     (ignore the floor functions for now)
 
@@ -308,10 +295,11 @@ Precalculated here since it is the same for all steps in the following loop */
 
     square_96_192(&b, a);				// b = a^2, b is at most 181.614 bits
 
-    a.d0 = (b.d2 >> (bit_max64 - 1)) + (b.d3 << (32 - (bit_max64 - 1))); // a = b / (2 ^ (bits_in_f - 1)), a is at most 95.614 bits
-    a.d1 = (b.d3 >> (bit_max64 - 1)) + (b.d4 << (32 - (bit_max64 - 1)));
-    a.d2 = (b.d4 >> (bit_max64 - 1)) + (b.d5 << (32 - (bit_max64 - 1)));
 
+    a.d0 = __fshift_r(b.d2, b.d3, bit_max64 - 1);	// a = b / (2 ^ (bits_in_f - 1)), a is at most 95.614 bits
+    a.d1 = __fshift_r(b.d3, b.d4, bit_max64 - 1);
+    a.d2 = __fshift_r(b.d4, b.d5, bit_max64 - 1);
+    
     mul_96_192_no_low3(&tmp192, a, u);			// tmp192 = (b / 2 ^ (bits_in_f - 1)) * (2 ^ (95 + bits_in_f) / f)     (ignore the floor functions for now)
 
     a.d0 = tmp192.d3;					// a = tmp192 / 2^96, which if we do the math simplifies to the quotient: b / f
@@ -342,7 +330,7 @@ Precalculated here since it is the same for all steps in the following loop */
     shifter += shifter;
   }
 
-/*#ifndef CHECKS_MODBASECASE
+/*#ifndef DEBUG_GPU_MATH
   mod_simple_96(&a, tmp96, f, ff);			// Adjustment.  The code above may produce an a that is too large by up to 12 times f.
 #else
   mod_simple_96(&a, tmp96, f, ff, bit_max64 - 1, bit_max64, 11, modbasecase_debug); // bit_max - 1 = bit_min (this kernel handles only single bit levels)
@@ -360,7 +348,7 @@ __device__ static void test_FC96_barrett79(int96 f, int192 b, unsigned int shift
 #ifdef CPU_SIEVE
                                            , int shiftcount
 #endif
-#ifdef CHECKS_MODBASECASE
+#ifdef DEBUG_GPU_MATH
                                            , int bit_max64, unsigned int *modbasecase_debug
 #endif
                                            )
@@ -377,16 +365,10 @@ Precalculated here since it is the same for all steps in the following loop */
   ff= ff * 4294967296.0f + __uint2float_rn(f.d1);	// f.d0 ignored because lower limit for this kernel are 64 bit which yields at least 32 significant digits without f.d0!
   ff=__int_as_float(0x3f7ffffb) / ff;			// just a little bit below 1.0f so we always underestimate the quotient
 
-  tmp192.d4 = 0xFFFFFFFF;				// tmp is nearly 2^160
-  tmp192.d3 = 0xFFFFFFFF;
-  tmp192.d2 = 0xFFFFFFFF;
-  tmp192.d1 = 0xFFFFFFFF;
-  tmp192.d0 = 0xFFFFFFFF;
-
-#ifndef CHECKS_MODBASECASE
-  div_160_96(&u,tmp192,f,ff);				// u = floor(2^160 / f)
+#ifndef DEBUG_GPU_MATH
+  inv_160_96(&u,f,ff);					// u = floor(2^160 / f)
 #else
-  div_160_96(&u,tmp192,f,ff,modbasecase_debug);		// u = floor(2^160 / f)
+  inv_160_96(&u,f,ff,modbasecase_debug);		// u = floor(2^160 / f)
 #endif
 
   a.d0 = b.d2;						// a = floor(b / 2^64)
@@ -405,18 +387,20 @@ Precalculated here since it is the same for all steps in the following loop */
   tmp96.d1 = __subc_cc(b.d1, tmp96.d1);			// we do not need the upper digits of b and tmp96 because the result is 0 after subtraction!
   tmp96.d2 = __subc   (b.d2, tmp96.d2);
 
-#ifndef CHECKS_MODBASECASE
-  mod_simple_96(&a, tmp96, f, ff);			// Adjustment.  The code above may produce a tmp96 that is too large by up to 5 times f.
-#else
-  mod_simple_96(&a, tmp96, f, ff, 0, 79 - 64, 5, modbasecase_debug);
-#endif
-
 #ifdef CPU_SIEVE
   shifter<<= 32 - shiftcount;
 #endif
   while(shifter)
   {
-							// On input a is at most 79 bits (see end of this loop)
+#ifndef DEBUG_GPU_MATH
+    mod_simple_96(&a, tmp96, f, ff);			// Adjustment.  The code above/below may produce an a that is too large by up to 11 times f.
+#else
+    mod_simple_96(&a, tmp96, f, ff, 0, 79 - 64, 10, modbasecase_debug);
+#endif
+							// Since mod_simple_96 does not do a complete adjustment we need to allow one bit
+							// for that.  Thus, at this point a can be 80 bits.
+
+							// On input a is at most 79 bits (see mod_simple_96 above)
 
     square_96_160(&b, a);				// b = a^2, b is at most 158 bits
 
@@ -453,35 +437,19 @@ Precalculated here since it is the same for all steps in the following loop */
     if(shifter&0x80000000)shl_96(&tmp96);			// "optional multiply by 2" as in Prime95 documentation
 							// At this point a can be 82.585 bits.
 
-#ifndef CHECKS_MODBASECASE
-    mod_simple_96(&a, tmp96, f, ff);			// Adjustment.  The code above may produce an a that is too large by up to 11 times f.
-#else
-    mod_simple_96(&a, tmp96, f, ff, 0, 79 - 64, 10, modbasecase_debug);
-#endif
-							// Since mod_simple_96 does not do a complete adjustment we need to allow one bit
-							// for that.  Thus, at this point a can be 80 bits.
-
 //    shifter<<=1;
     shifter += shifter;
   }
-
-  if(cmp_ge_96(a,f))					// final adjustment in case a >= f
-  {
-    sub_96(&a, a, f);
-  }
-
-#if defined CHECKS_MODBASECASE && defined USE_DEVICE_PRINTF && __CUDA_ARCH__ >= FERMI
-  if(cmp_ge_96(a,f) && f.d2)				// factors < 2^64 are not supported by this kernel
-  {
-    printf("EEEEEK, final a is >= f\n");
-    printf("  f = 0x %08X %08X %08X\n", f.d2, f.d1, f.d0);
-  }
-#endif
+  
+  a.d0 = tmp96.d0;
+  a.d1 = tmp96.d1;
+  a.d2 = tmp96.d2;
 
 /* finally check if we found a factor and write the factor to RES[]
-this kernel has a lower FC limit of 2^64 so we can use check_big_factor96() */
-  check_big_factor96(f, a, RES);
-
+this kernel has a lower FC limit of 2^64 so we can use [mod_simple_96_and_]check_big_factor96().
+mod_simple_96_and_check_big_factor96() includes the final adjustment, too. The code above may
+produce an a that is too large by up to 11 times f. */
+  mod_simple_96_and_check_big_factor96(a, f, ff, RES);
 }
 
 
@@ -489,7 +457,7 @@ __device__ static void test_FC96_barrett77(int96 f, int192 b, unsigned int shift
 #ifdef CPU_SIEVE
                                            , int shiftcount
 #endif
-#ifdef CHECKS_MODBASECASE
+#ifdef DEBUG_GPU_MATH
                                            , int bit_max64, unsigned int *modbasecase_debug
 #endif
                                            )
@@ -506,16 +474,10 @@ Precalculated here since it is the same for all steps in the following loop */
   ff= ff * 4294967296.0f + __uint2float_rn(f.d1);	// f.d0 ignored because lower limit for this kernel are 64 bit which yields at least 32 significant digits without f.d0!
   ff=__int_as_float(0x3f7ffffb) / ff;			// just a little bit below 1.0f so we always underestimate the quotient
 
-  tmp192.d4 = 0xFFFFFFFF;				// tmp is nearly 2^160
-  tmp192.d3 = 0xFFFFFFFF;
-  tmp192.d2 = 0xFFFFFFFF;
-  tmp192.d1 = 0xFFFFFFFF;
-  tmp192.d0 = 0xFFFFFFFF;
-
-#ifndef CHECKS_MODBASECASE
-  div_160_96(&u,tmp192,f,ff);				// u = floor(2^160 / f)
+#ifndef DEBUG_GPU_MATH
+  inv_160_96(&u,f,ff);					// u = floor(2^160 / f)
 #else
-  div_160_96(&u,tmp192,f,ff,modbasecase_debug);		// u = floor(2^160 / f)
+  inv_160_96(&u,f,ff,modbasecase_debug);		// u = floor(2^160 / f)
 #endif
 
   a.d0 = b.d2;						// a = floor(b / 2^64)
@@ -534,7 +496,7 @@ Precalculated here since it is the same for all steps in the following loop */
   a.d1 = __subc_cc(b.d1, tmp96.d1);			// we do not need the upper digits of b and tmp96 because the result is 0 after subtraction!
   a.d2 = __subc   (b.d2, tmp96.d2);
 
-#ifdef CHECKS_MODBASECASE
+#ifdef DEBUG_GPU_MATH
   if(f.d2)						// check only when f is >= 2^64 (f <= 2^64 is not supported by this kernel
   {
     MODBASECASE_VALUE_BIG_ERROR(0xC000, "a.d2", 99, a.d2, 13) // a should never have a value >= 2^80, if so square_96_160() will overflow!
@@ -584,7 +546,7 @@ Precalculated here since it is the same for all steps in the following loop */
 							// or 77 bits + log2 (5) bits, which is 79.322 bits.  In theory, this kernel can handle
 							// f values up to 2^77.178.
 
-#ifdef CHECKS_MODBASECASE
+#ifdef DEBUG_GPU_MATH
     if(f.d2)						// check only when f is >= 2^64 (f <= 2^64 is not supported by this kernel
     {
       MODBASECASE_VALUE_BIG_ERROR(0xC000, "a.d2", 99, a.d2, 13) // a should never have a value >= 2^80, if so square_96_160() will overflow!
@@ -595,7 +557,7 @@ Precalculated here since it is the same for all steps in the following loop */
     shifter += shifter;
   }
   
-/*#ifndef CHECKS_MODBASECASE
+/*#ifndef DEBUG_GPU_MATH
   mod_simple_96(&a, tmp96, f, ff);			// Adjustment.  The code above may produce an a that is too large by up to 5 times f.
 #else
   mod_simple_96(&a, tmp96, f, ff, 0, 79 - 64, 4, modbasecase_debug);
@@ -613,7 +575,7 @@ __device__ static void test_FC96_barrett76(int96 f, int192 b, unsigned int shift
 #ifdef CPU_SIEVE
                                            , int shiftcount
 #endif
-#ifdef CHECKS_MODBASECASE
+#ifdef DEBUG_GPU_MATH
                                            , int bit_max64, unsigned int *modbasecase_debug
 #endif
                                            )
@@ -630,16 +592,10 @@ Precalculated here since it is the same for all steps in the following loop */
   ff= ff * 4294967296.0f + __uint2float_rn(f.d1);	// f.d0 ignored because lower limit for this kernel are 64 bit which yields at least 32 significant digits without f.d0!
   ff=__int_as_float(0x3f7ffffb) / ff;			// just a little bit below 1.0f so we always underestimate the quotient
 
-  tmp192.d4 = 0xFFFFFFFF;				// tmp is nearly 2^160
-  tmp192.d3 = 0xFFFFFFFF;
-  tmp192.d2 = 0xFFFFFFFF;
-  tmp192.d1 = 0xFFFFFFFF;
-  tmp192.d0 = 0xFFFFFFFF;
-
-#ifndef CHECKS_MODBASECASE
-  div_160_96(&u,tmp192,f,ff);				// u = floor(2^160 / f)
+#ifndef DEBUG_GPU_MATH
+  inv_160_96(&u,f,ff);					// u = floor(2^160 / f)
 #else
-  div_160_96(&u,tmp192,f,ff,modbasecase_debug);		// u = floor(2^160 / f)
+  inv_160_96(&u,f,ff,modbasecase_debug);		// u = floor(2^160 / f)
 #endif
 
   a.d0 = b.d2;						// a = floor(b / 2^64)
@@ -658,7 +614,7 @@ Precalculated here since it is the same for all steps in the following loop */
   a.d1 = __subc_cc(b.d1, tmp96.d1);			// we do not need the upper digits of b and tmp96 because the result is 0 after subtraction!
   a.d2 = __subc   (b.d2, tmp96.d2);
 
-#ifdef CHECKS_MODBASECASE
+#ifdef DEBUG_GPU_MATH
   if(f.d2)						// check only when f is >= 2^64 (f <= 2^64 is not supported by this kernel
   {
     MODBASECASE_VALUE_BIG_ERROR(0xC000, "a.d2", 99, a.d2, 13) // a should never have a value >= 2^80, if so square_96_160() will overflow!
@@ -708,7 +664,7 @@ Precalculated here since it is the same for all steps in the following loop */
     if(shifter&0x80000000)shl_96(&a);			// "optional multiply by 2" as in Prime95 documentation
 							// At this point a can be 79.585 bits.
 
-#ifdef CHECKS_MODBASECASE
+#ifdef DEBUG_GPU_MATH
     if(f.d2)						// check only when f is >= 2^64 (f <= 2^64 is not supported by this kernel
     {
       MODBASECASE_VALUE_BIG_ERROR(0xC000, "a.d2", 99, a.d2, 13) // a should never have a value >= 2^80, if so square_96_160() will overflow!
@@ -719,7 +675,7 @@ Precalculated here since it is the same for all steps in the following loop */
     shifter += shifter;
   }
 
-/*#ifndef CHECKS_MODBASECASE
+/*#ifndef DEBUG_GPU_MATH
   mod_simple_96(&a, tmp96, f, ff);			// Adjustment.  The code above may produce an a that is too large by up to 11 times f.
 #else
   mod_simple_96(&a, tmp96, f, ff, 0, 79 - 64, 11, modbasecase_debug);

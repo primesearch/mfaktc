@@ -1,10 +1,17 @@
-CUDA_DIR = "C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v4.2"
+CUDA_DIR = "C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v6.5"
 
 CC = cl
 CFLAGS = /Ox /Oy /GL /W2 /fp:fast /I$(CUDA_DIR)\include /I$(CUDA_DIR)\include\cudart /nologo
 
-NVCCFLAGS = -m32 --generate-code arch=compute_11,code=sm_11 --generate-code arch=compute_20,code=sm_20 --generate-code arch=compute_30,code=sm_30 --ptxas-options=-v
-CUFLAGS = -ccbin="C:\Program Files (x86)\Microsoft Visual Studio 9.0\VC\bin" -Xcompiler /EHsc,/W3,/nologo,/Ox,/GL $(NVCCFLAGS)
+NVCCFLAGS = -m32 --ptxas-options=-v
+CUFLAGS = -ccbin="C:\Program Files (x86)\Microsoft Visual Studio 11.0\VC\bin" -Xcompiler /EHsc,/W3,/nologo,/Ox,/GL $(NVCCFLAGS)
+
+# generate code for various compute capabilities
+NVCCFLAGS += --generate-code arch=compute_11,code=sm_11 # CC 1.1, 1.2 and 1.3 GPUs will use this code (1.0 is not possible for mfaktc)
+NVCCFLAGS += --generate-code arch=compute_20,code=sm_20 # CC 2.x GPUs will use this code, one code fits all!
+NVCCFLAGS += --generate-code arch=compute_30,code=sm_30 # all CC 3.x GPUs _COULD_ use this code 
+NVCCFLAGS += --generate-code arch=compute_35,code=sm_35 # but CC 3.5 (3.2?) _CAN_ use funnel shift which is useful for mfaktc
+NVCCFLAGS += --generate-code arch=compute_50,code=sm_50 # CC 5.x GPUs will use this code
 
 LINK = link
 LFLAGS = /nologo /LTCG #/ltcg:pgo
@@ -46,15 +53,14 @@ checkpoint.obj: checkpoint.c params.h
 
 mfaktc.obj: mfaktc.c params.h my_types.h compatibility.h sieve.h \
  read_config.h parse.h timer.h tf_72bit.h tf_96bit.h tf_barrett96.h \
- checkpoint.h signal_handler.h output.h selftest-data.c
+ checkpoint.h signal_handler.h output.h gpusieve.h \
+ selftest-data-mersenne.c selftest-data-wagstaff.c
 
 output.obj: output.c params.h my_types.h output.h compatibility.h
 
-parse.obj: parse.c compatibility.h parse.h
+parse.obj: parse.c compatibility.h parse.h params.h
 
 read_config.obj: read_config.c params.h my_types.h
-
-selftest-data.obj: selftest-data.c
 
 sieve.obj: sieve.c params.h compatibility.h
 
@@ -66,21 +72,24 @@ tf_72bit.obj: tf_72bit.cu params.h my_types.h compatibility.h \
  my_intrinsics.h sieve.h timer.h output.h tf_debug.h tf_common.cu
 
 tf_96bit.obj: tf_96bit.cu params.h my_types.h compatibility.h \
- my_intrinsics.h sieve.h timer.h output.h tf_debug.h \
- tf_96bit_base_math.cu tf_common.cu
+ my_intrinsics.h sieve.h timer.h output.h tf_96bit_base_math.cu \
+ tf_96bit_helper.cu tf_debug.h tf_common.cu
 
 tf_barrett96.obj: tf_barrett96.cu params.h my_types.h compatibility.h \
  my_intrinsics.h sieve.h timer.h output.h tf_debug.h \
- tf_96bit_base_math.cu tf_barrett96_div.cu tf_common.cu
+ tf_96bit_base_math.cu tf_96bit_helper.cu tf_barrett96_div.cu \
+ tf_barrett96_core.cu tf_common.cu
 
 tf_barrett96_gs.obj: tf_barrett96_gs.cu params.h my_types.h compatibility.h \
- my_intrinsics.h gpusieve.h timer.h output.h tf_debug.h \
- tf_96bit_base_math.cu tf_barrett96_div.cu tf_common_gs.cu
+ my_intrinsics.h sieve.h timer.h output.h tf_debug.h \
+ tf_96bit_base_math.cu tf_96bit_helper.cu tf_barrett96_div.cu \
+ tf_barrett96_core.cu tf_common_gs.cu gpusieve.h
 
-gpusieve.obj: gpusieve.cu gpusieve.h params.h my_types.h
+gpusieve.obj: gpusieve.cu params.h my_types.h compatibility.h \
+ my_intrinsics.h gpusieve.h
 
 # manually generated dependency
 
 tf_75bit.obj: tf_96bit.cu params.h my_types.h compatibility.h \
- my_intrinsics.h sieve.h timer.h output.h tf_debug.h \
- tf_96bit_base_math.cu tf_common.cu
+ my_intrinsics.h sieve.h timer.h output.h tf_96bit_base_math.cu \
+ tf_96bit_helper.cu tf_debug.h tf_common.cu

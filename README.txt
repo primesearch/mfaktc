@@ -41,8 +41,6 @@ mfaktc should run all all CUDA capable Nvidia GPUs with compute capability
 >= 1.1. From my knowledge there is only one CUDA capable GPU with compute
 capability 1.0: the G80 chip which is found on Geforce 8800 Ultra / GTX /
 GTS 640 / GTS 320 and their Quadro and Tesla variants.
-For GPU sieving you need a GPU with CC 2.0 or higher, older GPUs still can
-use mfaktc with sieving done on CPU
 For AMD Radeon GPUs check out the open CL port of mfaktc: mfakto by Bertram
 Franz
 
@@ -78,11 +76,11 @@ Adjust the path to your CUDA installation in "Makefile" and run 'make'.
 The binary "mfaktc.exe" is placed into the parent directory.
 
 I'm using
-- OpenSUSE 12.1 x86_64
-- gcc 4.6.2 (OpenSUSE 12.1)
-- Nvidia driver 295.41
+- OpenSUSE 12.2 x86_64
+- gcc 4.7.1 (OpenSUSE 12.2)
+- Nvidia driver 343.36
 - Nvidia CUDA Toolkit
-  - 4.2
+  - 6.5
 
 Older CUDA Toolkit versions should work, too.
 
@@ -101,18 +99,22 @@ in "Makefile" (replace "lib64" with "lib").
 #############################
 
 The following instructions have been tested on Windows 7 64bit using Visual
-Studio 2008 Professional. A GNU compatible version of make is also required
+Studio 2012 Professional. A GNU compatible version of make is also required
 as the Makefile is not compatible with nmake. GNU Make for Win32 can be
 downloaded from http://gnuwin32.sourceforge.net/packages/make.htm.
 
-Run the Visual Studio 2008 x64 Win64 Command Prompt and change into the
-"src/" subdirectory.
+Run the Visual Studio 2012 x64 Win64 Command Prompt for x64 or
+Run the Visual Studio 2012 x86 Native Tools Command Prompt for x86 (32 bit)
+
+ and change into the "\src" subdirectory.
 
 Run 'make -f Makefile.win' for a 64bit built (recommended on 64bit systems)
-or 'make -f Makefile.win32' for a 32bit built. Perhaps you have to adjust
-the paths to your CUDA installation and the Microsoft Visual Studio binaries
-in the makefiles. The binaries "mfaktc-win-64.exe" or "mfaktc-win-32.exe"
-are placed in the parent directory.
+or 'make -f Makefile.win32' for a 32bit built.
+
+You will have to adjust the paths to your CUDA installation and the
+Microsoft Visual Studio binaries in the makefiles if you have something
+other than CUDA 6.5 and MSVS 2012. The binaries "mfaktc-win-64.exe" or
+"mfaktc-win-32.exe" are placed in the parent directory.
 
 
 
@@ -150,7 +152,7 @@ M3321932839 from 2^50 to 2^71.
 ################################
 
 Similar to Linux (read above!).
-Open a command shell and run 'mfaktc.exe -h'.
+Open a command window and run 'mfaktc.exe -h'.
 
 
 
@@ -170,6 +172,10 @@ Getting work:
     Step 5) click the button "Get Assignments"
     Step 6) copy&paste the "Factor=..." lines directly into the worktodo.txt
             in your mfaktc directory
+
+You can also use www.GPU72.org to get assignments and 
+you can also you MISFIT to get and report results
+http://www.mersenneforum.org/misfit/
 
 Start mfaktc and stress your GPU ;)
 
@@ -257,7 +263,7 @@ Advanced usage (extend the upper limit):
 # 6 Tuning #
 ############
 
-Read mfaktc.ini and think before edit. ;)
+Read mfaktc.ini and read before editing. ;)
 
 
 
@@ -296,9 +302,9 @@ A release versions are usually 0.XX where XX increases by one for each new
 # 8 .plan #
 ###########
 
-0.21
-- merge "worktodo.add" from mfakto
-- check/validate mfaktc for lower exponents
+0.22
+- merge "worktodo.add" from mfakto <-- done in 0.21
+- check/validate mfaktc for lower exponents <-- done in 0.21
 - rework debug code
 - fast (GPU-sieve enabled) kernel for factors < 2^64?
 

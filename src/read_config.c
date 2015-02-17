@@ -305,6 +305,7 @@ int read_config(mystuff_t *mystuff)
       {
         printf("WARNING: GPUSieveProcessSize must be a multiple of 8\n");
         i &= 0xFFFFFFF0;
+        if(i == 0)i = 8;
         printf("         --> changed GPUSieveProcessSize to %d\n", i);
       }
       if(i > GPU_SIEVE_PROCESS_SIZE_MAX)
@@ -317,18 +318,15 @@ int read_config(mystuff_t *mystuff)
         printf("WARNING: Read GPUSieveProcessSize=%d from mfaktc.ini, using min value (%d)\n",i,GPU_SIEVE_PROCESS_SIZE_MIN);
 	i = GPU_SIEVE_PROCESS_SIZE_MIN;
       }
+      if(mystuff->gpu_sieve_size % (i * 1024) != 0)
+      {
+        printf("WARNING: GPUSieveSize must be a multiple of GPUSieveProcessSize, using default value (%d)!\n", GPU_SIEVE_PROCESS_SIZE_DEFAULT);
+        i = GPU_SIEVE_PROCESS_SIZE_DEFAULT;
+      }
     }
     if(mystuff->verbosity >= 1)printf("  GPUSieveProcessSize       %dKi bits\n",i);
     mystuff->gpu_sieve_processing_size = i * 1024;
   }
-
-/*****************************************************************************/  
-  if(my_read_string("mfaktc.ini", "WorkFile", mystuff->workfile, 50))
-  {
-    sprintf(mystuff->workfile, "worktodo.txt");
-    printf("WARNING: can't read WorkFile from mfaktc.ini, using default (%s)\n", mystuff->workfile);
-  }
-  if(mystuff->verbosity >= 1)printf("  WorkFile                  %s\n", mystuff->workfile);
 
 /*****************************************************************************/
 
@@ -368,6 +366,30 @@ int read_config(mystuff_t *mystuff)
   }
   if(mystuff->verbosity >= 1)printf("  CheckpointDelay           %ds\n", i);
   mystuff->checkpointdelay = i;
+
+/*****************************************************************************/
+
+  if(my_read_int("mfaktc.ini", "WorkFileAddDelay", &i))
+  {
+    printf("WARNING: Cannot read WorkFileAddDelay from mfaktc.ini, set to 600s by default\n");
+    i = 600;
+  }
+  if(i > 3600)
+  {
+    printf("WARNING: Maximum value for WorkFileAddDelay is 3600s\n");
+    i = 3600;
+  }
+  if(i != 0 && i < 30)
+  {
+    printf("WARNING: Minimum value for WorkFileAddDelay is 30s\n");
+    i = 30;
+  }
+  if(mystuff->verbosity >= 1)
+  {
+    if(i > 0)printf("  WorkFileAddDelay          %ds\n", i);
+    else     printf("  WorkFileAddDelay          disabled\n");
+  }
+  mystuff->addfiledelay = i;
 
 /*****************************************************************************/
 

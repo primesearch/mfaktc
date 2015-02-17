@@ -1,6 +1,6 @@
 /*
 This file is part of mfaktc.
-Copyright (C) 2009, 2010, 2011, 2012  Oliver Weihe (o.weihe@t-online.de)
+Copyright (C) 2009, 2010, 2011, 2012, 2013  Oliver Weihe (o.weihe@t-online.de)
 
 mfaktc is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -22,7 +22,11 @@ __device__ static void check_factor96(int96 f, int96 a, unsigned int *RES)
 in this case f is written into the RES array. */
 {
   int index;
-  if(((a.d2|a.d1) == 0) && (a.d0 == 1))
+#ifdef WAGSTAFF
+  if(a.d2 == f.d2 && a.d1 == f.d1 && a.d0 == (f.d0 - 1))
+#else /* Mersennes */
+  if((a.d2|a.d1) == 0 && a.d0 == 1)
+#endif
   {
     if(f.d2 != 0 || f.d1 != 0 || f.d0 != 1)	/* 1 isn't really a factor ;) */
     {
@@ -45,7 +49,11 @@ barrett based kernels have a lower limit of 2^64 so this function is used
 there. */
 {
   int index;
-  if(((a.d2|a.d1) == 0) && (a.d0 == 1))
+#ifdef WAGSTAFF
+  if(a.d2 == f.d2 && a.d1 == f.d1 && a.d0 == (f.d0 - 1))
+#else /* Mersennes */
+  if((a.d2|a.d1) == 0 && a.d0 == 1)
+#endif
   {
     index = atomicInc(&RES[0], 10000);
     if(index < 10)				/* limit to 10 factors per class */
@@ -113,7 +121,7 @@ is faster for _SOME_ kernels. */
 }
 
 
-#ifndef CHECKS_MODBASECASE
+#ifndef DEBUG_GPU_MATH
 __device__ static void mod_simple_96(int96 *res, int96 q, int96 n, float nf)
 #else
 __device__ static void mod_simple_96(int96 *res, int96 q, int96 n, float nf, int bit_min64, int bit_max64, unsigned int limit, unsigned int *modbasecase_debug)
@@ -133,7 +141,7 @@ assumes q < Xn where X is a small integer
 
   qi=__float2uint_rz(qf*nf);
 
-#ifdef CHECKS_MODBASECASE
+#ifdef DEBUG_GPU_MATH
 /* Barrett based kernels are made for factor candidates above 2^64,
 at least the 79bit variant fails on factor candidates less than 2^64!
 Lets ignore those errors...
@@ -157,11 +165,13 @@ are "out of range".
   if(n.d2 >= (1 << bit_min64) && n.d2 < (1 << bit_max64))
   {
     MODBASECASE_QI_ERROR(limit, 100, qi, 12);
+  #if defined USE_DEVICE_PRINTF && __CUDA_ARCH__ >= FERMI
     if(qi > limit)
     {
       printf("n = 0x %08X %08X %08X\n", n.d2, n.d1, n.d0);
       printf("bit_min = %d (%08X)\n", bit_min64, 1<<bit_min64);
     }
+  #endif
   }
 #endif
 
@@ -203,6 +213,9 @@ q must be less than 100n!
 
   qi=__float2uint_rz(qf*nf);
   
+#ifdef WAGSTAFF
+  qi++; /* cause in underflow in subtraction so we can check for (-1) instead of (q - 1) */
+#endif
 /* at this point the quotient still is sometimes to small (the error is 1 in this case)
 --> final res odd and qi correct: n might be a factor
     final res odd and qi too small: n can't be a factor (because the correct res is even)
@@ -213,7 +226,12 @@ so we compare the LSB of qi and q.d0, if they are the same (both even or both od
   qi += ((~qi) ^ q.d0) & 1;
  
   nn.d0 = __umul32(n.d0, qi);
+
+#ifdef WAGSTAFF
+  if((q.d0 - nn.d0) == 0xFFFFFFFF) /* is the lowest word of the result -1 (only in this case n might be a factor) */
+#else
   if((q.d0 - nn.d0) == 1) /* is the lowest word of the result 1 (only in this case n might be a factor) */
+#endif
   {
 #if (__CUDA_ARCH__ >= FERMI) && (CUDART_VERSION >= 4010) /* multiply-add with carry is not available on CC 1.x devices and before CUDA 4.1 */
     nn.d1 = __umad32hi_cc (n.d0, qi, __umul32(n.d1, qi));
@@ -223,6 +241,13 @@ so we compare the LSB of qi and q.d0, if they are the same (both even or both od
     nn.d2 = __addc   (__umul32hi(n.d1, qi), __umul32(n.d2, qi));
 #endif
 
+#ifdef WAGSTAFF
+    res  = __sub_cc (q.d0, nn.d0);
+    res &= __subc_cc(q.d1, nn.d1);
+    res &= __subc   (q.d2, nn.d2);
+    
+    if(res == 0xFFFFFFFF)
+#else /* Mersennes */
     nn.d0++;
     res  = __sub_cc (q.d0, nn.d0);
 //           __sub_cc (q.d0, nn.d0); /* the compiler (release 5.0, V0.2.1221) doesn't want to execute this so we need the TWO lines above... */
@@ -230,6 +255,7 @@ so we compare the LSB of qi and q.d0, if they are the same (both even or both od
     res |= __subc   (q.d2, nn.d2);
 
     if(res == 0)
+#endif
     {
       int index;
       index = atomicInc(&RES[0], 10000);

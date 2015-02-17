@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with mfaktc.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifdef CHECKS_MODBASECASE
+#ifdef DEBUG_GPU_MATH
 
 /*
 A = limit for qi

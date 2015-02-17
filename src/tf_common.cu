@@ -1,6 +1,6 @@
 /*
 This file is part of mfaktc.
-Copyright (C) 2009, 2010, 2011, 2012  Oliver Weihe (o.weihe@t-online.de)
+Copyright (C) 2009, 2010, 2011, 2012, 2013, 2014  Oliver Weihe (o.weihe@t-online.de)
 
 mfaktc is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -126,7 +126,7 @@ extern "C" __host__ int tf_class_barrett92(unsigned long long int k_min, unsigne
 //  for(i=0;i<32;i++)mystuff->h_RES[i]=0;
 //  cudaMemcpy(mystuff->d_RES, mystuff->h_RES, 32*sizeof(int), cudaMemcpyHostToDevice);
 
-#ifdef CHECKS_MODBASECASE  
+#ifdef DEBUG_GPU_MATH  
 //  cudaMemcpy(mystuff->d_modbasecase_debug, mystuff->h_RES, 32*sizeof(int), cudaMemcpyHostToDevice);
   cudaMemset(mystuff->d_modbasecase_debug, 0, 32*sizeof(int));
 #endif
@@ -200,28 +200,19 @@ extern "C" __host__ int tf_class_barrett92(unsigned long long int k_min, unsigne
         k_base.d2 = 0;
 #endif    
 
-#if defined(TF_72BIT) || defined(TF_96BIT)
-  #ifndef CHECKS_MODBASECASE
-        MFAKTC_FUNC<<<blocksPerGrid, threadsPerBlock, 0, mystuff->stream[stream]>>>(mystuff->exponent, k_base, mystuff->d_ktab[stream], shiftcount, b_preinit, mystuff->d_RES);
-  #else
-        MFAKTC_FUNC<<<blocksPerGrid, threadsPerBlock, 0, mystuff->stream[stream]>>>(mystuff->exponent, k_base, mystuff->d_ktab[stream], shiftcount, b_preinit, mystuff->d_RES, mystuff->d_modbasecase_debug);
-  #endif
-#elif defined(TF_BARRETT)
-  #ifndef CHECKS_MODBASECASE
-    #if defined(TF_BARRETT_76BIT) || defined(TF_BARRETT_77BIT) || defined(TF_BARRETT_79BIT)
-        MFAKTC_FUNC<<<blocksPerGrid, threadsPerBlock, 0, mystuff->stream[stream]>>>(mystuff->exponent, k_base, mystuff->d_ktab[stream], shiftcount, b_preinit, mystuff->d_RES);
-    #else        
-        MFAKTC_FUNC<<<blocksPerGrid, threadsPerBlock, 0, mystuff->stream[stream]>>>(mystuff->exponent, k_base, mystuff->d_ktab[stream], shiftcount, b_preinit, mystuff->d_RES, mystuff->bit_min-63);
-    #endif
-  #else
-        MFAKTC_FUNC<<<blocksPerGrid, threadsPerBlock, 0, mystuff->stream[stream]>>>(mystuff->exponent, k_base, mystuff->d_ktab[stream], shiftcount, b_preinit, mystuff->d_RES, mystuff->bit_min-63, mystuff->d_modbasecase_debug);
-  #endif
+        MFAKTC_FUNC<<<blocksPerGrid, threadsPerBlock, 0, mystuff->stream[stream]>>>(mystuff->exponent, k_base, mystuff->d_ktab[stream], shiftcount, b_preinit, mystuff->d_RES
+#if defined (TF_BARRETT) && (defined(TF_BARRETT_87BIT) || defined(TF_BARRETT_88BIT) || defined(TF_BARRETT_92BIT) || defined(DEBUG_GPU_MATH))
+                                                                                    , mystuff->bit_min-63
 #endif
+#ifdef DEBUG_GPU_MATH
+                                                                                    , mystuff->d_modbasecase_debug
+#endif
+                                                                                    );
 
 #ifdef DEBUG_STREAM_SCHEDULE
         printf(" STREAM_SCHEDULE: started GPU kernel on stream %d using h_ktab[%d]\n\n", stream, h_ktab_inuse[stream]);
 #endif
-#ifdef CHECKS_MODBASECASE
+#ifdef DEBUG_GPU_MATH
         cudaThreadSynchronize(); /* needed to get the output from device printf() */
 #endif
 #ifdef DEBUG_STREAM_SCHEDULE_CHECK
@@ -254,7 +245,7 @@ extern "C" __host__ int tf_class_barrett92(unsigned long long int k_min, unsigne
 /* download results from GPU */
   cudaMemcpy(mystuff->h_RES, mystuff->d_RES, 32*sizeof(int), cudaMemcpyDeviceToHost);
 
-#ifdef CHECKS_MODBASECASE
+#ifdef DEBUG_GPU_MATH
   cudaMemcpy(mystuff->h_modbasecase_debug, mystuff->d_modbasecase_debug, 32*sizeof(int), cudaMemcpyDeviceToHost);
   for(i=0;i<32;i++)if(mystuff->h_modbasecase_debug[i] != 0)printf("h_modbasecase_debug[%2d] = %u\n", i, mystuff->h_modbasecase_debug[i]);
 #endif  
@@ -270,7 +261,7 @@ extern "C" __host__ int tf_class_barrett92(unsigned long long int k_min, unsigne
 
   print_status_line(mystuff);
   
-  if(mystuff->stats.cpu_wait >= 0.0f);
+  if(mystuff->stats.cpu_wait >= 0.0f)
   {
 /* if SievePrimesAdjust is enable lets try to get 2 % < CPU wait < 6% */
     if(mystuff->sieve_primes_adjust == 1 && mystuff->stats.cpu_wait > 6.0f && mystuff->sieve_primes < mystuff->sieve_primes_upper_limit && (mystuff->mode != MODE_SELFTEST_SHORT))

@@ -1,6 +1,6 @@
 /*
 This file is part of mfaktc.
-Copyright (C) 2009, 2010, 2011, 2012  Oliver Weihe (o.weihe@t-online.de)
+Copyright (C) 2009, 2010, 2011, 2012, 2013  Oliver Weihe (o.weihe@t-online.de)
 
 mfaktc is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -43,6 +43,12 @@ This starts to become usefull on my system for e.g. TF M66xxxxxx from 2^66 to
 #define MORE_CLASSES
 
 
+/* use WAGSTAFF to build mfaktc doing TF on Wagstaff numbers instead of
+Mersenne numbers */
+
+//#define WAGSTAFF
+
+
 
 /******************
 ** DEBUG options **
@@ -53,8 +59,8 @@ code path */
 //#define USE_DEVICE_PRINTF
 
 
-/* do some checks on the mod routine */
-//#define CHECKS_MODBASECASE
+/* do some checks on math done on GPU (mainly division stuff) */
+//#define DEBUG_GPU_MATH
 
 
 /* print stream and h_ktab usage */
@@ -80,7 +86,7 @@ code path */
 *******************************************************************************
 ******************************************************************************/
 
-#define MFAKTC_VERSION "0.20" /* DO NOT CHANGE! */
+#define MFAKTC_VERSION "0.21" /* DO NOT CHANGE! */
 
 
 
@@ -174,3 +180,11 @@ The following lines define the min, default and max value.
 #define GPU_SIEVE_PROCESS_SIZE_MIN           8 /* Processing 8K bits in each block is minimum (256 threads * 1 word of 32 bits) */
 #define GPU_SIEVE_PROCESS_SIZE_DEFAULT      16 /* Default is processing 8K bits */
 #define GPU_SIEVE_PROCESS_SIZE_MAX          32 /* Upper limit is 64K, since we store k values as "short". */
+
+
+
+#ifdef WAGSTAFF
+  #define NAME_NUMBERS "W"
+#else /* Mersennes */
+  #define NAME_NUMBERS "M"
+#endif

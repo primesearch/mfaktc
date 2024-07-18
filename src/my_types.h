@@ -86,6 +86,7 @@ typedef struct
   char workfile[51];                   /* allow filenames up to 50 chars... */
   char addfile[51];                    /* allow filenames up to 50 chars... */
   char resultfile[51];                 /* allow filenames up to 50 chars... */
+  char jsonresultfile[51];             /* allow filenames up to 50 chars... */
   int num_streams, cpu_streams;
   
   int compcapa_major;                  /* compute capability major */
@@ -129,6 +130,7 @@ typedef struct
   char V5UserID[51];                   /* primenet V5UserID and ComputerID */
   char ComputerID[51];                 /* currently only used for screen/result output */
   char assignment_key[MAX_LINE_LENGTH + 1]; /* the assignment ID */
+  char factorsstring[500];            /* store factors in global state */
   
 }mystuff_t;                            /* FIXME: propper name needed */
 

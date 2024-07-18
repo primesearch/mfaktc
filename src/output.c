@@ -345,49 +345,72 @@ void print_result_line(mystuff_t *mystuff, int factorsfound)
 /* printf the final result line (STDOUT and resultfile) */
 {
   char UID[110]; /* 50 (V5UserID) + 50 (ComputerID) + 8 + spare */
-  char string[200];
+  char aidjson[MAX_LINE_LENGTH+11];
+  char userjson[61]; /* 50 (V5UserID) + 11 spare */
+  char computerjson[65];  /* 50 (ComputerID) + 15 spare */
+  char factorjson[513];
+  char txtstring[200];
+  char jsonstring[1000];
   
-  FILE *resultfile=NULL;
+  FILE *txtresultfile=NULL;
+  FILE *jsonresultfile=NULL;
    
   
   if(mystuff->V5UserID[0] && mystuff->ComputerID[0])
     sprintf(UID, "UID: %s/%s, ", mystuff->V5UserID, mystuff->ComputerID);
   else
     UID[0]=0;
+  if (mystuff->assignment_key[0])
+      sprintf(aidjson, ",\"AID\":\"%s\"", mystuff->assignment_key);
+  else
+      aidjson[0] = 0;
+  if (mystuff->V5UserID[0])
+      sprintf(userjson, ",\"user\":\"%s\"", mystuff->V5UserID);
+  else
+      userjson[0] = 0;
+  if (mystuff->ComputerID[0])
+      sprintf(computerjson, ",\"computer\":\"%s\"", mystuff->ComputerID);
+  else
+      computerjson[0] = 0;
+  if (mystuff->factorsstring[0])
+      sprintf(factorjson, ",\"factors\":[%s]", mystuff->factorsstring);
+  else
+      factorjson[0] = 0;
     
   if(mystuff->mode == MODE_NORMAL)
   {
-    resultfile = fopen(mystuff->resultfile, "a");
-    if(mystuff->print_timestamp == 1)print_timestamp(resultfile);
+    txtresultfile = fopen(mystuff->resultfile, "a");
+    jsonresultfile = fopen(mystuff->jsonresultfile, "a");
+    if(mystuff->print_timestamp == 1)print_timestamp(txtresultfile);
   }
-  if(factorsfound)
-  {
 #ifndef MORE_CLASSES
-    if((mystuff->mode == MODE_NORMAL) && (mystuff->stats.class_counter < 96))
+  bool partialresult = (mystuff->mode == MODE_NORMAL) && (mystuff->stats.class_counter < 96);
 #else
-    if((mystuff->mode == MODE_NORMAL) && (mystuff->stats.class_counter < 960))
+  bool partialresult = (mystuff->mode == MODE_NORMAL) && (mystuff->stats.class_counter < 960);
 #endif
-    {
-      sprintf(string, "found %d factor%s for %s%u from 2^%2d to 2^%2d (partially tested) [mfaktc %s %s]", factorsfound, (factorsfound > 1) ? "s" : "", NAME_NUMBERS, mystuff->exponent, mystuff->bit_min, mystuff->bit_max_stage, MFAKTC_VERSION, mystuff->stats.kernelname);
-    }
-    else
-    {
-      sprintf(string, "found %d factor%s for %s%u from 2^%2d to 2^%2d [mfaktc %s %s]", factorsfound, (factorsfound > 1) ? "s" : "", NAME_NUMBERS, mystuff->exponent, mystuff->bit_min, mystuff->bit_max_stage, MFAKTC_VERSION, mystuff->stats.kernelname);
-    }
+  if (factorsfound)
+  {
+    sprintf(txtstring, "found %d factor%s for %s%u from 2^%2d to 2^%2d %s[mfaktc %s %s]", 
+        factorsfound, (factorsfound > 1) ? "s" : "", NAME_NUMBERS, mystuff->exponent, mystuff->bit_min, mystuff->bit_max_stage, partialresult ? "(partially tested) " : "", MFAKTC_VERSION, mystuff->stats.kernelname);
   }
   else
   {
-    sprintf(string, "no factor for %s%u from 2^%d to 2^%d [mfaktc %s %s]", NAME_NUMBERS, mystuff->exponent, mystuff->bit_min, mystuff->bit_max_stage, MFAKTC_VERSION, mystuff->stats.kernelname);
+    sprintf(txtstring, "no factor for %s%u from 2^%d to 2^%d [mfaktc %s %s]", NAME_NUMBERS, mystuff->exponent, mystuff->bit_min, mystuff->bit_max_stage, MFAKTC_VERSION, mystuff->stats.kernelname);
   }
+  sprintf(jsonstring, "{\"exponent\":%u,\"worktype\":\"TF\",\"status\":\"%s\",\"bitlo\":%2d,\"bithi\":%2d,\"rangecomplete\":%s%s,\"program\":{\"name\":\"mfaktc\",\"version\":\"%s\",\"subversion\":\"%s\"}%s%s%s}",
+      mystuff->exponent, factorsfound > 0 ? "F" : "NF", mystuff->bit_min, mystuff->bit_max_stage, partialresult ? "false" : "true", factorjson, MFAKTC_VERSION, mystuff->stats.kernelname, aidjson, userjson, computerjson);
+  // TODO timestamp
 
   if(mystuff->mode != MODE_SELFTEST_SHORT)
   {
-    printf("%s\n", string);
+    printf("%s\n", txtstring);
   }
   if(mystuff->mode == MODE_NORMAL)
   {
-    fprintf(resultfile, "%s%s [Assignment:%s]\n", UID, string, mystuff->assignment_key);
-    fclose(resultfile);
+    fprintf(txtresultfile, "%s%s\n", UID, txtstring);
+    fclose(txtresultfile);
+    fprintf(jsonresultfile, "%s\n", jsonstring);
+    fclose(jsonresultfile);
   }
 }
 

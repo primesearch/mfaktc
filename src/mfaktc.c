@@ -375,10 +375,24 @@ see benchmarks in src/kernel_benchmarks.txt */
         {
           if(mystuff->checkpoints == 1)
           {
-            if(numfactors > 0 || timer_diff(&timer_last_checkpoint) / 1000000 >= (unsigned long long int)mystuff->checkpointdelay || mystuff->quit)
+            /*if (numFactors > 0)
             {
-              timer_init(&timer_last_checkpoint);
-              checkpoint_write(mystuff->exponent, mystuff->bit_min, mystuff->bit_max_stage, cur_class, factorsfound);
+              char factorstring[50];
+              int96 factor;
+              for (i = 0; (i < numfactors) && (i < 10); i++)
+              {
+                factor.d2 = mystuff->h_RES[i * 3 + 1];
+                factor.d1 = mystuff->h_RES[i * 3 + 2];
+                factor.d0 = mystuff->h_RES[i * 3 + 3];
+                print_dez96(factor, factorstring);
+                sprintf(mystuff->factorsstring, mystuff->factorsstring[0] ? "%s,\"%s\"" : "%s\"%s\"", mystuff->factorsstring, factorstring);
+              }
+            }*/
+            if (numfactors > 0 || timer_diff(&timer_last_checkpoint) / 1000000 >= (unsigned long long int)mystuff->checkpointdelay || mystuff->quit)
+            {
+                timer_init(&timer_last_checkpoint);
+                checkpoint_write(mystuff->exponent, mystuff->bit_min, mystuff->bit_max_stage, cur_class, factorsfound);
+                // TODO add factors to ckp
             }
           }
           if((mystuff->addfiledelay > 0) && timer_diff(&timer_last_addfilecheck) / 1000000 >= (unsigned long long int)mystuff->addfiledelay)
@@ -733,6 +747,7 @@ int main(int argc, char **argv)
   mystuff.gpu_sieve_primes = GPU_SIEVE_PRIMES_DEFAULT;				/* Default to sieving primes below about 1.05M */
   mystuff.gpu_sieve_processing_size = GPU_SIEVE_PROCESS_SIZE_DEFAULT * 1024;	/* Default to 8K bits processed by each block in a Barrett kernel. */
   sprintf(mystuff.resultfile, "results.txt");
+  sprintf(mystuff.jsonresultfile, "results.json.txt");
   sprintf(mystuff.workfile, "worktodo.txt");
   sprintf(mystuff.addfile, "worktodo.add");
   mystuff.addfilestatus = -1;                                                   /* -1 -> timer not initialized! */
@@ -1084,8 +1099,9 @@ int main(int argc, char **argv)
         mystuff.exponent           = exponent;
         mystuff.bit_min            = bit_min;
         mystuff.bit_max_assignment = bit_max;
-        mystuff.assignment_key[0] = '\0';
+        mystuff.assignment_key[0] = 0;
       }
+      mystuff.factorsstring[0] = 0;
       if(parse_ret == OK)
       {
         if(mystuff.verbosity >= 1)printf("got assignment: exp=%u bit_min=%d bit_max=%d (%.2f GHz-days)\n", mystuff.exponent, mystuff.bit_min, mystuff.bit_max_assignment, primenet_ghzdays(mystuff.exponent, mystuff.bit_min, mystuff.bit_max_assignment));

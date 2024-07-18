@@ -128,6 +128,7 @@ typedef struct
   
   char V5UserID[51];                   /* primenet V5UserID and ComputerID */
   char ComputerID[51];                 /* currently only used for screen/result output */
+  char assignment_key[MAX_LINE_LENGTH + 1]; /* the assignment ID */
   
 }mystuff_t;                            /* FIXME: propper name needed */
 

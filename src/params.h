@@ -188,3 +188,6 @@ The following lines define the min, default and max value.
 #else /* Mersennes */
   #define NAME_NUMBERS "M"
 #endif
+
+/* For worktodo.txt files */
+#define MAX_LINE_LENGTH 100

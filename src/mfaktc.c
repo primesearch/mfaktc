@@ -1078,12 +1078,13 @@ int main(int argc, char **argv)
     if(!use_worktodo)mystuff.addfiledelay = 0; /* disable addfile if not using worktodo at all (-tf on command line) */
     do
     {
-      if(use_worktodo)parse_ret = get_next_assignment(mystuff.workfile, &((mystuff.exponent)), &((mystuff.bit_min)), &((mystuff.bit_max_assignment)), NULL, mystuff.verbosity);
+      if (use_worktodo)parse_ret = get_next_assignment(mystuff.workfile, &((mystuff.exponent)), &((mystuff.bit_min)), &((mystuff.bit_max_assignment)), &((mystuff.assignment_key)), mystuff.verbosity);
       else /* got work from command */
       {
         mystuff.exponent           = exponent;
         mystuff.bit_min            = bit_min;
         mystuff.bit_max_assignment = bit_max;
+        mystuff.assignment_key[0] = '\0';
       }
       if(parse_ret == OK)
       {

@@ -361,19 +361,19 @@ void print_result_line(mystuff_t *mystuff, int factorsfound)
   else
     UID[0]=0;
   if (mystuff->assignment_key[0])
-      sprintf(aidjson, ",\"AID\":\"%s\"", mystuff->assignment_key);
+      sprintf(aidjson, ", \"aid\":\"%s\"", mystuff->assignment_key);
   else
       aidjson[0] = 0;
   if (mystuff->V5UserID[0])
-      sprintf(userjson, ",\"user\":\"%s\"", mystuff->V5UserID);
+      sprintf(userjson, ", \"user\":\"%s\"", mystuff->V5UserID);
   else
       userjson[0] = 0;
   if (mystuff->ComputerID[0])
-      sprintf(computerjson, ",\"computer\":\"%s\"", mystuff->ComputerID);
+      sprintf(computerjson, ", \"computer\":\"%s\"", mystuff->ComputerID);
   else
       computerjson[0] = 0;
   if (mystuff->factorsstring[0])
-      sprintf(factorjson, ",\"factors\":[%s]", mystuff->factorsstring);
+      sprintf(factorjson, ", \"factors\":[%s]", mystuff->factorsstring);
   else
       factorjson[0] = 0;
     
@@ -397,7 +397,7 @@ void print_result_line(mystuff_t *mystuff, int factorsfound)
   {
     sprintf(txtstring, "no factor for %s%u from 2^%d to 2^%d [mfaktc %s %s]", NAME_NUMBERS, mystuff->exponent, mystuff->bit_min, mystuff->bit_max_stage, MFAKTC_VERSION, mystuff->stats.kernelname);
   }
-  sprintf(jsonstring, "{\"exponent\":%u,\"worktype\":\"TF\",\"status\":\"%s\",\"bitlo\":%2d,\"bithi\":%2d,\"rangecomplete\":%s%s,\"program\":{\"name\":\"mfaktc\",\"version\":\"%s\",\"subversion\":\"%s\"}%s%s%s}",
+  sprintf(jsonstring, "{\"exponent\":%u, \"worktype\":\"TF\", \"status\":\"%s\", \"bitlo\":%2d, \"bithi\":%2d, \"rangecomplete\":%s%s, \"program\":{\"name\":\"mfaktc\", \"version\":\"%s\", \"subversion\":\"%s\"}%s%s%s}",
       mystuff->exponent, factorsfound > 0 ? "F" : "NF", mystuff->bit_min, mystuff->bit_max_stage, partialresult ? "false" : "true", factorjson, MFAKTC_VERSION, mystuff->stats.kernelname, aidjson, userjson, computerjson);
   // TODO timestamp
 

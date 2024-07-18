@@ -386,7 +386,7 @@ void print_result_line(mystuff_t *mystuff, int factorsfound)
   }
   if(mystuff->mode == MODE_NORMAL)
   {
-    fprintf(resultfile, "%s%s\n", UID, string);
+    fprintf(resultfile, "%s%s [Assignment:%s]\n", UID, string, mystuff->assignment_key);
     fclose(resultfile);
   }
 }

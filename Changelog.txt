@@ -1,0 +1,386 @@
+version 0.21 (2015-02-17)
+- contributors
+  - Jerry Hallett (Windows compability, binaries and lots of testing)
+
+- added support for Wagstaff numbers: (2^p + 1)/3
+- added support for "worktodo.add"
+- enabled GPU sieving on CC 1.x GPUs
+- dropped lower limit for exponents from 1,000,000 to 100,000
+- rework selftest (-st and -st2), both now test ALL testcases, -st narrowed
+  the searchspace (k_min < k_factor < k_max) to speedup the selftest.
+- added random offset for selftest, this might detect bugs in sieve code
+  which a static offset wouldn't find because we always test the same value.
+- fixed a bug where mfaktc runs out of shared memory (GPU sieve), might be
+  the cause for some reported (but never reproduced?) crashes. This occurs
+  when you
+  - have a GPU with relative small amount of shared memory
+  - have a LOW value for GPUSievePrimes
+  - have a BIG value for GPUSieveSize
+- fixed a bug when GPUSieveProcessSize is set to 24 AND GPUSieveSize is not
+  a multiple of 3 there was a relative small chance to ignore a factor.
+- fixed a bug in SievePrimesAdjust causing SievePrimes where lowered to
+  SievePrimesMin for very short running jobs
+- added missing dependencies to Windows Makefiles
+- (possible) speedups
+  - funnel shift for CC 3.5 and above
+  - slightly faster integer division for barrett_76,77,79 kernels
+- lots of cleanups and removal of duplicate code
+- print per-kernel-stats for selftest "-st" and "-st2"
+
+version 0.20 (2012-12-30)
+- contributors
+  - George Woltman (Prime95 author, http://www.mersenne.org)
+
+- GPU sieve supported on GPUs (CC >= 2.0), thank you very much, George!
+  GPU sieving is enabled by default, for old GPU (CC 1.x) you must disable
+  it manually in mfaktc.ini (variable SieveOnGPU)
+- moved some code, which is used in multiple places, to tf_96bit_helper.cu
+  and tf_barrett96_core.cu
+- new kernels (thank you, George!):
+  - barrett77_mul32 (a variant of barrett79_mul32)
+  - barrett87_mul32 (a variant of barrett92_mul32)
+  - barrett88_mul32 (a variant of barrett92_mul32)
+- minor performance improvement for barrett76 kernel
+- new default ProgressHeader/ProgressFormat
+
+version 0.19 (2012-08-12)
+- contributors
+  - Bertram Franz (mfakto author)
+  - Ethan (Ethan (EO) on www.mersenneforum.org)
+  - George Woltman (Prime95 author, http://www.mersenne.org)
+
+- user configureable status line (merged from mfakto)
+- alot of cleanups an rearangements in the code
+- few (not very successfully) optimizations for Kepler "light" GPUs (barrett
+  kernels only)
+- SievePrimesMin is lowered to 2000 (usually not very usefull but requested
+  quiet often)
+- added the currect number of compute core per multiprocessor for Kepler
+  "light" GPUs
+- removed debug option "VERBOSE_TIMING"
+- microoptimization for initializing result arrays, suggested by Ethan
+- don't print an error message if deleting checkpoint fails because there
+  was no checkpoint.
+- new kernel: barrett76_mul32 (idea by George Woltman), up to 23% faster
+  than the previous fastes kernel "barrett79_mul32". The new kernel is good
+  for factor candidates from 2^64 to 2^76.
+- moved base math functions (add, sub, compare, mul, square) from kernels
+  that use "full 32 bit words" into src/tf_96bit_base_math.cu
+- improved squaring functions for barrett and 75/95 bit kernels, up to 3%
+  faster for barrett kernels for CC 2.0 GPUs. (George Woltman)
+
+version 0.18 (2011-12-17)
+- contributors
+  - Eric Christenson
+
+- fixed the output if StopAfterFactor is set to 2 and a factor if found in
+  the very last class than the output will not include the "partially
+  tested" string.
+- autoadjustment of SievePrimes is now less dependend on the gridsize and
+  absolute speed. Instead of measuring the absolute (average) time waited
+  per precessing block (grid size) now the relative time spent on waiting
+  for the GPU is calculated. In the per-class output "avg. wait" is replaced
+  by "CPU wait".
+- in all GPU kernels the functions cmp_72() and cmp_96() are replaced by
+  cmp_ge_72() and cmp_ge_96(). Those cmp_ge_?? only check if the first of
+  two input numbers is greater or equal than the second number. cmp_??
+  checked if is is smaller, equal or greater. A very small performance
+  improvement (< 1%) is possible for all GPU kernels. This was suggested by
+  bdot on www.mersenneforum.org. Thank you!
+- added even more debug code for CHECKS_MODBASECASE. The new code did not
+  show any issues. :)
+- cleanup: only one function which checks if a kernel is possible or not
+- new commandline option: "-st2" runs a even longer selftest with *new*
+  testcases
+- two new functions in parse.c: amount_of_work() and
+  amount_of_work_in_worktodo(). Currently not needed but might be useful
+  once automated primenet interaction has been implemented.
+- lower limit for the barrett92 kernel is now 2^79 => very small performance
+  enhancement. :)
+- second rewrite of worktodo handling by Eric Christenson, preparation for
+  automated primenet interaction
+- new commandline option: "-v" (verbosity) let the user decide how many
+  informations are printed
+  (suggested by aspen on www.mersenneforum.org)
+- minor cosmetics in the code (e.g. function names mfakt -> mfaktc)
+- "has a factor" result lines now contain informations (program name,
+  versions, bitlevel, ...) James Heinrich is working on this on the server
+  side. This should give more accurate credits for "has a factor" results
+  from the primenet server once this is fully implemented.
+- mfaktc no longer refuses to load a checkpoint file from a Linux version
+  with a Windows version of mfaktc and vice versa. Of course mfaktc still
+  refuses to load checkpoint files from other versions than itself
+  (identical version string!)
+- added a (simple) signal handler (captures SIGINT and SIGTERM).
+    1st ^C: mfaktc will exit after the currently processed class is
+            finished.
+    2nd ^C: mfaktc will stop immediately
+- much tighter version checking (CUDA runtime and CUDA driver), the CUDA
+  runtime version must match the version used for compiling mfaktc. The CUDA
+  driver version must have same or newer version. (for more information
+  check the CUDA_C_Programming_Guide.pdf from Nvidia.)
+- reordered the coloums of the per-class output.
+- added a minimum delay between two checkpoint file writes. The user can set
+  the delay in mfaktc.ini (CheckpointDelay).
+- barrett92_mul32 kernel is a little bit faster (squaring function improved)
+- added a new code path to barrett79_mul32 and barrett92_mul32 kernels, CUDA
+  >= 4.1 features multiply-add with carry for compute capability >= 2.0.
+  On my GTX 470 (compute capability) this yields up to 15% for
+  barrett92_mul32 and up to 7% for barrett79_mul32 extra throughput.
+
+version 0.17 (2011-05-06)
+- report whether mfaktc is compiled for a 32bit or 64bit system
+- show all enabled debug compiletime options (don't show them when they are
+  disabled)
+- if all GPU streams are busy and all possible CPU streams are preprocessed
+  mfaktc now can sleep on CPU instead of running a busy loop. This can be
+  enabled or disabled in mfaktc.ini by the option AllowSleep.
+- replaced compiletime option "THREADS_PER_GRID_MAX" with the runtime option
+  "GridSize" (mfaktc.ini).
+- align screen output of current partial runtime and estimated total runtime
+  for restarted runs.
+
+version 0.16p1 (2011-03-15)
+- bugfix: replaced all type conversion from unsigned int to float
+  old: <float variable> = (float)<unsigned int variable>;
+  new: <float variable> = __uint2float_rn(<unsigned int variable>);
+  reason: failed constant computation during compile time with CUDA toolkit
+  3.0 and 3.1 (older versions not tested)
+- missing item in changes of 0.16
+  - Thank you James Heinrich for putting an eye on screen outputs and the
+    initial idea of the new layout of the per-class status line!
+
+version 0.16 (2011-03-13)
+- barrett92 is up to 5% faster and barrett79 is up to 18% faster.
+- changed priority of the kernels for compute capability 1.x because the
+  barrett79 kernel is now faster than the 75bit kernel.
+- changed the layout of the per-class status lines. The user can select
+  between two modes: "new line" or "same line", controlled by PrintMode in
+  mfaktc.ini.
+- tell the user why a line from worktodo file is ignored.
+- minor corrections/adjustments on screen outputs
+
+version 0.15 (2011-02-14)
+- change: one checkpoint file per exponent, filename: "M<exponent>.ckp"
+- complete rewrite of worktodo handling
+- bugfix: fixed one printf (wrong format string, introduced in mfaktc 0.14)
+- some minor cleanups (e.g. unused parameters removed)
+- added lots of cudaGetLastError() in case of an error while calling a CUDA
+  function, this hopefully generated more useful error messages.
+- moved the check for a valid assignment from mfaktc.c to parse.c
+
+version 0.14 (2011-01-23)
+- bugfix: make sure that the biggest prime used in the sieve is smaller than
+  the exponent itself.
+- renamed tf_barrett92.* to tf_barrett96.*. Filenames of GPU kernels
+  contain the size of datatypes for the long integers not the maximum
+  supported factor candidate size...
+- the barrett_79 kernel is no longer a stripped down version of the
+  barrett_92 kernel:
+  - no "double compile" of tf_barrett96.cu needed
+  - faster barrett_79 kernel:
+    - 10% on my GTX 470 (GF 100 chip, compute capability 2.0)
+    - 3-4% on my GTX 275 (GT 200b chip, compute capability 1.3)
+  - not limited to a single bit level anymore
+- varios fixes in the debug code (ignore warnings about unexpected high qi
+  values when the factor candidate is out of the specified range (fixed size
+  of working sets))
+- modified the screen output per class a little bit, now it shows to total
+  number of classes, too.
+
+version 0.13p1 (2010-12-05)
+- only one fix which prevented a proper built of a Win32 binary:
+  In the function calculate_k() (file src/mfaktc.c) was a problem with a
+  conversion from "long double" to "unsigned long long int". The conversion
+  was limited to (2^63)-1 instead of the expected (2^64)-1 for a "unsigned
+  long long int". The new code is all integer based. :)
+
+version 0.13 (2010-10-26)
+- contributors
+  - Ethan (Ethan (EO) on www.mersenneforum.org)
+
+- modified the stream scheduler (again). Now it allows to precompute more
+  than one dataset.
+  Old behaviour:
+    1) precompute one dataset
+    2) start one dataset (wait for a stream if needed)
+    3) goto 1
+  New behaviour
+    1) if a free dataset is available: precompute one dataset
+    2) try to start as many as possible datasets WITHOUT waiting for an
+       empty stream
+    3) goto 1
+- modified the debug code for the stream scheduler
+- print and check CUDA versions (compiled and current CUDA version)
+- align screen outputs at start
+- two code cleanups provided by Ethan:
+  - use atomicInc() for synchronisation of accesses to RES[] (GPU-code)
+  - use cudaThreadSynchronize() to wait for all running streams instead of
+    calling cudaStreamSynchronize() for each stream
+
+version 0.12 (2010-09-28)
+- contributors
+  - Dave (amphoria on www.mersenneforum.org)
+  - Kevin (kjaget on www.mersenneforum.org)
+
+- added 2 new kernels, both do "barretts modular reduction" to avoid most
+  of the costly long divisions. Great speed on newer GPUs (compute
+  capability >= 2.0) :)
+- modified/expanded the kernel selection code
+- human readable outputs (e.g. use M/G suffixes to keep numbers small)
+- run _EACH_ selftest case with all suitable GPU kernels instead of just
+  the "optimal" kernel.
+- new DEBUG option in params.h: RAW_GPU_BENCH (disable sieve more or less)
+- tweaked the automatically adjustment of SievePrimes
+- new Makefile
+- moved source file into the subdirectory "src/"
+- using "launch bounds" to control the register usage of the GPU code. This
+  allows to build a binary which includes optimized code for sm_11 and
+  sm_20.
+- renamed the debug option "HAS_DEVICE_PRINTF" to "USE_DEVICE_PRINTF"
+- added a Makefile for Windows (Makefile.win), initially written by Kevin,
+  modified for the latest mfaktc version by Dave. Thank you!
+- Dave has written some instructions how to compile mfaktc on Windows, too.
+  Take a look at the README.txt.
+
+version 0.11(2010-09-01)
+- some minor fixes (printf(), etc)
+- debugging code heavily modified, works now on GPU and not in device
+  emulation mode on CPU. This discovered a computational bug, see below!
+- improved the sieve (~20% faster on my Core i7)
+- 75bit kernel is ~2% faster
+- lowered "ff" in mfaktc_??() functions, was too big in some cases which
+  could miss a factor. :(
+  - compiled for compute capability 1.x:
+      factor size    | chance to miss a factor
+      ---------------+------------------------
+      2^24 to 2^24.2 | < 0.1%
+      2^56 to 2^56.2 | < 0.1%
+      2^88 to 2^88.2 | < 0.1%
+      other ranges   | < 0.001%
+  - compiled for compute capability 2.x:
+      factor size    | chance to miss a factor
+      ---------------+------------------------
+      2^24 to 2^24.2 | < 0.1%
+      2^56 to 2^56.2 | < 0.1%
+      2^88 to 2^88.2 | < 0.1%
+      other ranges   | very small if not 0%
+
+version 0.10 (2010-07-26)
+- two new options in mfaktc.ini: Stages and StopAfterFactor
+- modified the stream scheduling. Earlier versions assumed the the streams
+  are executed in the order they were started.
+- the number of threads per grid is no longer a compiletime option. During
+  compile the maximum number of threads per grid is defined and during
+  runtime the actual number of threads per grid is calculated based on the
+  number of multiprocessors of the CPU and THREADS_PER_BLOCK.
+- officially GPUs with compute capability 1.0 are not supported. AFAIK the
+  only GPU affected is the G80 (8800 GTS 320, 8800 GTS 640, 8800 GTX, 8800
+  Ultra and their Quadro/Tesla variants (but not a 8800 GTS 512, this one is
+  a G92 GPU)). The issue seems to be the synchronisation of the writes to
+  *d_RES.
+  _PERHAPS_ I'm able to fix this in feature releases. BUT are there really
+  many G80 GPUs out there? I think it is not worth the work (and yes,
+  personally I own a 8800GTX).
+- moved tf_XX() from tf_72bit.cu and tf_96bit.cu to tf_common.cu. The code
+  from this functions is very similar in both cases, only a few differences
+  controlled by some #ifdef's now.
+
+version 0.09 (2010-07-09)
+- added a (basic) test for the timer resolution (commandline "-tt")
+- the selftest with "known factors" is a commandline option now: "-st"
+- the selftest doesn't write the factors to results.txt anymore
+- the selftest now checks if the reported factor is the known factor
+- a small selftest (currently 9 known factors) are tested EACH time mfaktc
+  is started
+- added cudaGetLastError() to check for errors
+- added 10 known (composite) factors to the selftest routine (size 2^90..2^95)
+- optimized the calculation of the factor candidate in mfakt_95(_75)(). This
+  gives a very small performance improvement for the 95/75 bit kernels and
+  saves one registers or 4 bytes of l_mem.
+- declared most GPU functions as static. This was needed because the CUDA
+  toolkit 3.1 builds the GPU functions as global by default now...
+
+version 0.08 (2010-06-09)
+- added new GPU kernel for factors up to 2^95
+  - this give also a new GPU kernel for factors up to 2^75
+- renamed the function tf_class() to tf_class_71() and mfakt() to mfakt_71()
+  in tf_72bit.cu. This was needed because there are multiple GPU kernels
+  now available.
+- added two more hints to the selftest routine (k_min_hint and k_max_hint)
+- added checkpoints (needs some finetuning but basically it should work)
+- fixed a signed/unsigned bug in commandline parsing of the exponent
+- added a makefile for Linux
+- added more "known factors" above 2^71 to the selftest
+
+version 0.07 (2010-05-27)
+- contributors
+  - Luigi (ET_ on www.mersenneforum.org)
+  - Kevin (kjaget on www.mersenneforum.org)
+
+- fixed a division by zero caused by a time measurement
+- integrated Luigis functions for handling Prime95 worktodo files
+- check if exponent and bit_{min|max} have supported sizes
+- fixed a wrong type in printf (in debug code)
+- some changes in siever code, faster than before (at least on Core i7)
+- new runtime option: NumStreams (suggestet by Kevin))
+- REMOVED code path for "non-async memory transfers" (compiletime option)
+- added a (simple) commandline interface
+- some minor fixes (compile warnings, return values, types)
+- additional changes in siever code, again faster on Core i7
+- mfaktc should compile on Windows now. Thank you Kevin!
+
+version 0.06 (2010-04-28)
+- split the code into several smaller files
+- some parameters can be changes without recompiling (mfaktc.ini)
+- 2 CUDA-streams are used now (was only 1 before). This allows memory
+  transfers (k_tab upload) and GPU computation at the same time on newer GPUs
+  resulting in a small performance update "for free" since the GPU doesn't
+  idle during k_tab upload.
+- some more checks if parameters (compiletime and runtime) are save/usefully
+- marked some compiletime parameters as "should not be changed unless you
+  really know what you do"
+
+version 0.05 (2010-02-22)
+- inline assembly (inline PTX) replaced the "ptx-hack compile script"
+  - easy access to add/sub with carry
+- some fine tuning for offsets of steps in mod_basecase.cu
+- unrolled the loop which creates the candidate list even more
+- added alot more selftests
+- first attempt to fix the (known) problem with multiple factors found
+  "close together"
+- saved one register (from 17 down to 16 (using nvcc 2.3)). This helps to
+  increase occupancy especially on devices with only 8192 registers per block.
+- don't print copyright/GPL notice all the time
+- query some device information
+  - some additional checks, e.g. THREADS_PER_GRID should be a multiple of
+    THREADS_PER_BLOCK * <number of multiprocessors available on the device>
+
+version 0.04 (2010-01-28)
+- Bugfix: in function mfakt(): ff was to big an overestimates the part of
+  the quotient sometimes.
+- some cleanups (remove unused code)
+- the new timer (from 0.03) has its own compiletime option now
+- alot changes in mod_basecase.cu
+  - reduced the number of steps from 5 to 4
+  - changed offsets
+    - 20 bit difference per offset (was 21 bit)
+  - modified shiftleft (variable nn)
+  - modified subtraction (q = q - nn)
+
+version 0.03 (2010-01-20)
+- allow exponents up to 2^32 -1
+  (tested with some exponents around M3321xxxxxx)
+- siever: improved the loop which creates the candidate list (again)
+  - loop unrolled
+  - use a lookup table to parse 8 bits at once
+- added 40 known factors from ElevenSmooth "Operation Billion Digits" in
+  M3321xxxxxx range to the selftest
+- added another timer which helps to adjust SIEVE_PRIMES (needs to be
+  enabled with VERBOSE_TIMING)
+
+version 0.02 (2010-01-13)
+- fixed some printf's
+- allocate and free arrays only ONCE (was per class before)
+- added check of return values of most *alloc()
+- siever: improved the loop which creates the candidate list

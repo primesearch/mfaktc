@@ -375,7 +375,7 @@ see benchmarks in src/kernel_benchmarks.txt */
         {
           if(mystuff->checkpoints == 1)
           {
-            /*if (numFactors > 0)
+            if (numfactors > 0)
             {
               char factorstring[50];
               int96 factor;
@@ -387,7 +387,7 @@ see benchmarks in src/kernel_benchmarks.txt */
                 print_dez96(factor, factorstring);
                 sprintf(mystuff->factorsstring, mystuff->factorsstring[0] ? "%s,\"%s\"" : "%s\"%s\"", mystuff->factorsstring, factorstring);
               }
-            }*/
+            }
             if (numfactors > 0 || timer_diff(&timer_last_checkpoint) / 1000000 >= (unsigned long long int)mystuff->checkpointdelay || mystuff->quit)
             {
                 timer_init(&timer_last_checkpoint);

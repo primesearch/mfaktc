@@ -86,7 +86,7 @@ code path */
 *******************************************************************************
 ******************************************************************************/
 
-#define MFAKTC_VERSION "0.23-beta" /* DO NOT CHANGE! */
+#define MFAKTC_VERSION "0.23-beta.2" /* DO NOT CHANGE! */
 
 
 
@@ -174,8 +174,8 @@ The following lines define the min, default and max value.
 #define GPU_SIEVE_PRIMES_MAX           1075000 /* Primes to 16,729,793.  GPU sieve should be able to handle up to 16M. */
 
 #define GPU_SIEVE_SIZE_MIN                   4 /* A 4M bit sieve seems like a reasonable minimum */
-#define GPU_SIEVE_SIZE_DEFAULT              64 /* Default is a 16M bit sieve */
-#define GPU_SIEVE_SIZE_MAX                 128 /* We've only tested up to 128M bits.  The GPU sieve code may be able to go higher. */
+#define GPU_SIEVE_SIZE_DEFAULT              16 /* Default is a 16M bit sieve */
+#define GPU_SIEVE_SIZE_MAX                2047 /* We've only tested up to 128M bits.  The GPU sieve code may be able to go higher. */
 
 #define GPU_SIEVE_PROCESS_SIZE_MIN           8 /* Processing 8K bits in each block is minimum (256 threads * 1 word of 32 bits) */
 #define GPU_SIEVE_PROCESS_SIZE_DEFAULT      16 /* Default is processing 8K bits */

@@ -45,13 +45,13 @@ unsigned int checkpoint_checksum(char *string, int chars)
   return chksum;
 }
 
-void checkpoint_write(unsigned int exp, int bit_min, int bit_max, int cur_class, int num_factors)
+void checkpoint_write(unsigned int exp, int bit_min, int bit_max, int cur_class, int num_factors, char *factorsstring)
 /*
 checkpoint_write() writes the checkpoint file.
 */
 {
   FILE *f;
-  char buffer[100], filename[20];
+  char buffer[600], filename[20];
   unsigned int i;
   
   sprintf(filename, "%s%u.ckp", NAME_NUMBERS, exp);
@@ -63,15 +63,15 @@ checkpoint_write() writes the checkpoint file.
   }
   else
   {
-    sprintf(buffer,"%s%u %d %d %d %s: %d %d", NAME_NUMBERS, exp, bit_min, bit_max, NUM_CLASSES, MFAKTC_VERSION, cur_class, num_factors);
+    sprintf(buffer,"%s%u %d %d %d %s: %d %d %s", NAME_NUMBERS, exp, bit_min, bit_max, NUM_CLASSES, MFAKTC_VERSION, cur_class, num_factors, strlen(factorsstring) ? factorsstring : "0");
     i=checkpoint_checksum(buffer,strlen(buffer));
-    fprintf(f,"%s%u %d %d %d %s: %d %d %08X", NAME_NUMBERS, exp, bit_min, bit_max, NUM_CLASSES, MFAKTC_VERSION, cur_class, num_factors, i);
+    fprintf(f,"%s%u %d %d %d %s: %d %d %s %08X", NAME_NUMBERS, exp, bit_min, bit_max, NUM_CLASSES, MFAKTC_VERSION, cur_class, num_factors, strlen(factorsstring) ? factorsstring : "0", i);
     fclose(f);
   }
 }
 
 
-int checkpoint_read(unsigned int exp, int bit_min, int bit_max, int *cur_class, int *num_factors)
+int checkpoint_read(unsigned int exp, int bit_min, int bit_max, int *cur_class, int *num_factors, char *factorsstring)
 /*
 checkpoint_read() reads the checkpoint file and compares values for exp,
 bit_min, bit_max, NUM_CLASSES read from file with current values.
@@ -84,9 +84,9 @@ returns 0 otherwise
 {
   FILE *f;
   int ret=0,i,chksum;
-  char buffer[100], buffer2[100], *ptr, filename[20];
+  char buffer[600], buffer2[600], *ptr, filename[20];
   
-  for(i=0;i<100;i++)buffer[i]=0;
+  for(i=0;i<600;i++)buffer[i]=0;
 
   *cur_class=-1;
   *num_factors=0;
@@ -98,7 +98,7 @@ returns 0 otherwise
   {
     return 0;
   }
-  i=fread(buffer,sizeof(char),99,f);
+  i=fread(buffer,sizeof(char),599,f);
   sprintf(buffer2,"%s%u %d %d %d %s: ", NAME_NUMBERS, exp, bit_min, bit_max, NUM_CLASSES, MFAKTC_VERSION);
   ptr=strstr(buffer, buffer2);
   if(ptr==buffer)
@@ -107,18 +107,22 @@ returns 0 otherwise
     if(i<70)
     {
       ptr=&(buffer[i]);
-      sscanf(ptr,"%d %d", cur_class, num_factors);
-      sprintf(buffer2,"%s%u %d %d %d %s: %d %d", NAME_NUMBERS, exp, bit_min, bit_max, NUM_CLASSES, MFAKTC_VERSION, *cur_class, *num_factors);
+      sscanf(ptr,"%d %d %s", cur_class, num_factors, factorsstring);
+      sprintf(buffer2,"%s%u %d %d %d %s: %d %d %s", NAME_NUMBERS, exp, bit_min, bit_max, NUM_CLASSES, MFAKTC_VERSION, *cur_class, *num_factors, factorsstring);
       chksum=checkpoint_checksum(buffer2,strlen(buffer2));
-      sprintf(buffer2,"%s%u %d %d %d %s: %d %d %08X", NAME_NUMBERS, exp, bit_min, bit_max, NUM_CLASSES, MFAKTC_VERSION, *cur_class, *num_factors, chksum);
+      sprintf(buffer2,"%s%u %d %d %d %s: %d %d %s %08X", NAME_NUMBERS, exp, bit_min, bit_max, NUM_CLASSES, MFAKTC_VERSION, *cur_class, *num_factors, factorsstring, chksum);
       if(*cur_class >= 0 && \
          *cur_class < NUM_CLASSES && \
          *num_factors >= 0 && \
          strlen(buffer) == strlen(buffer2) && \
-         strstr(buffer, buffer2) == buffer)
+         strstr(buffer, buffer2) == buffer && \
+         (*num_factors == 0 && strlen(factorsstring) == 1) || \
+          (*num_factors >= 1 && strlen(factorsstring) > 1))
       {
         ret=1;
       }
+      if (factorsstring[0] == '0')
+          factorsstring = 0;
     }
   }
   fclose(f);

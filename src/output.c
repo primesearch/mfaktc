@@ -58,15 +58,15 @@ void logf(mystuff_t* mystuff, const char* fmt, ...)
 {
     va_list args;
 
-    if (mystuff->logfileptr > 0) {
+    va_start(args, fmt);
+    vfprintf(stdout, fmt, args);
+    va_end(args);
+
+    if (mystuff->logging == 1 && mystuff->logfileptr != NULL) {
         va_start(args, fmt);
-        vfprintf(stdout, fmt, args);
+        vfprintf(mystuff->logfileptr, fmt, args);
         va_end(args);
     }
-
-    va_start(args, fmt);
-    vfprintf(mystuff->logfileptr, fmt, args);
-    va_end(args);
 }
 
 

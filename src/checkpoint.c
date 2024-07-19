@@ -122,7 +122,7 @@ returns 0 otherwise
         ret=1;
       }
       if (factorsstring[0] == '0')
-          factorsstring = 0;
+          factorsstring[0] = 0;
     }
   }
   fclose(f);

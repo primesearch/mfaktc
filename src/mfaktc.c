@@ -750,6 +750,7 @@ int main(int argc, char **argv)
   mystuff.bit_min = -1;
   mystuff.bit_max_assignment = -1;
   mystuff.bit_max_stage = -1;
+  mystuff.logging = -1;
   mystuff.gpu_sieving = 0;
   mystuff.gpu_sieve_size = GPU_SIEVE_SIZE_DEFAULT * 1024 * 1024;		/* Size (in bits) of the GPU sieve.  Default is 128M bits. */
   mystuff.gpu_sieve_primes = GPU_SIEVE_PRIMES_DEFAULT;				/* Default to sieving primes below about 1.05M */
@@ -838,7 +839,7 @@ int main(int argc, char **argv)
     }
     else if (!strcmp((char*)"-nolog", argv[i]))
     {
-      mystuff.logfile[0] = 0;
+      mystuff.logging = 0;
     }
     else if(!strcmp((char*)"-v", argv[i]))
     {
@@ -872,10 +873,7 @@ int main(int argc, char **argv)
     i++;
   }
 
-  if (mystuff.logfile)
-  {
-    mystuff.logfileptr = fopen(mystuff.logfile, "a");
-  }
+  read_config(&mystuff);
 
   logf(&mystuff, "mfaktc v%s (%dbit built)\n\n", MFAKTC_VERSION, (int)(sizeof(void*)*8));
 
@@ -923,8 +921,6 @@ int main(int argc, char **argv)
 #ifdef RAW_GPU_BENCH
   if(mystuff.verbosity >= 1)logf(&mystuff, "  RAW_GPU_BENCH             enabled (DEBUG option)\n");
 #endif
-
-  read_config(&mystuff);
 
   int drv_ver, rt_ver;
   if(mystuff.verbosity >= 1)logf(&mystuff, "\nCUDA version info\n");

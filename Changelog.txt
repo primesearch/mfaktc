@@ -399,3 +399,15 @@ version 0.02 (2010-01-13)
 - allocate and free arrays only ONCE (was per class before)
 - added check of return values of most *alloc()
 - siever: improved the loop which creates the candidate list
+- performance improvements whenever I find them ;)
+- change compiletime options to runtime options (if feasible and useful)
+- dynamic class count
+- documentation and comments in code
+- try to use double precision for the long integer divisions                  <-- unsure
+- json output for wagstaff numbers https://www.mersenneforum.org/showpost.php?p=662680&postcount=3769
+- factors-meta.<factor>.timestamp https://www.mersenneforum.org/showpost.php?p=662603&postcount=3750
+- factors-meta.<factor>.class https://www.mersenneforum.org/showpost.php?p=662720&postcount=3781
+- found factors support https://www.mersenneforum.org/showpost.php?p=662682&postcount=3770
+- os info https://www.mersenneforum.org/showpost.php?p=662648&postcount=3757
+- security checksum https://www.mersenneforum.org/showpost.php?p=662658&postcount=3761
+- security checksum https://www.mersenneforum.org/showpost.php?p=662658&postcount=3761

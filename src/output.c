@@ -19,6 +19,7 @@ along with mfaktc.  If not, see <http://www.gnu.org/licenses/>.
 
 
 #include <stdio.h>
+#include <stdarg.h>
 #include <math.h>
 #include <cuda_runtime.h>
 #include <time.h>
@@ -44,10 +45,28 @@ void print_help(char *string)
   printf("  -st                    run builtin selftest and exit\n");
   printf("  -st2                   same as -st but extended range for k_min/m_max\n");
   printf("  -v <number>            set verbosity (min = 0, default = 1, more = 2, max/debug = 3)\n");
+  printf("  -nolog                 don't create/append stdout to mfaktc.log\n");
   printf("\n");
   printf("options for debuging purposes\n");
   printf("  --timertest            run test of timer functions and exit\n");
   printf("  --sleeptest            run test of sleep functions and exit\n");
+}
+
+
+
+void logf(mystuff_t* mystuff, const char* fmt, ...)
+{
+    va_list args;
+
+    if (mystuff->logfileptr > 0) {
+        va_start(args, fmt);
+        vfprintf(stdout, fmt, args);
+        va_end(args);
+    }
+
+    va_start(args, fmt);
+    vfprintf(mystuff->logfileptr, fmt, args);
+    va_end(args);
 }
 
 
@@ -137,13 +156,24 @@ void print_dez192(int192 a, char *buf)
 
 void print_timestamp(FILE *outfile)
 {
-  time_t now;
-  char *ptr;
+  char* ptr;
+  const time_t now = time(NULL);
 
-  now = time(NULL);
-  ptr = ctime(&now);
+  ptr = asctime(gmtime(&now));
   ptr[24] = '\0'; // cut off the newline
   fprintf(outfile, "[%s]\n", ptr);
+}
+
+char* get_utc_timestamp()
+{
+    time_t now;
+    struct tm* utc_time;
+    char timestamp[20];
+
+    time(&now);
+    utc_time = gmtime(&now);
+    strftime(timestamp, sizeof(timestamp), "%Y-%m-%d %H:%M:%S", utc_time);
+    return timestamp;
 }
 
 
@@ -170,7 +200,7 @@ void print_status_line(mystuff_t *mystuff)
 
   if(mystuff->stats.output_counter == 0)
   {
-    printf("%s\n", mystuff->stats.progressheader);
+    logf(mystuff, "%s\n", mystuff->stats.progressheader);
     mystuff->stats.output_counter = 20;
   }
   if(mystuff->printmode == 0)mystuff->stats.output_counter--;
@@ -320,7 +350,7 @@ void print_status_line(mystuff_t *mystuff)
     if(index > 200) /* buffer has 256 bytes, single format strings are limited to 50 bytes */
     {
       buffer[index] = 0;
-      printf("%s", buffer);
+      logf(mystuff, "%s", buffer);
       index = 0;
     }
   }
@@ -337,7 +367,7 @@ void print_status_line(mystuff_t *mystuff)
   }
 
   buffer[index] = 0;
-  printf("%s", buffer);
+  logf(mystuff, "%s", buffer);
 }
 
 
@@ -350,10 +380,13 @@ void print_result_line(mystuff_t *mystuff, int factorsfound)
   char computerjson[65];  /* 50 (ComputerID) + 15 spare */
   char factorjson[513];
   char txtstring[200];
-  char jsonstring[1000];
   
   FILE *txtresultfile=NULL;
+
+#ifndef WAGSTAFF
+  char jsonstring[1000];
   FILE *jsonresultfile=NULL;
+#endif
    
   
   if(mystuff->V5UserID[0] && mystuff->ComputerID[0])
@@ -380,7 +413,9 @@ void print_result_line(mystuff_t *mystuff, int factorsfound)
   if(mystuff->mode == MODE_NORMAL)
   {
     txtresultfile = fopen(mystuff->resultfile, "a");
+#ifndef WAGSTAFF
     jsonresultfile = fopen(mystuff->jsonresultfile, "a");
+#endif
     if(mystuff->print_timestamp == 1)print_timestamp(txtresultfile);
   }
 #ifndef MORE_CLASSES
@@ -397,10 +432,10 @@ void print_result_line(mystuff_t *mystuff, int factorsfound)
   {
     sprintf(txtstring, "no factor for %s%u from 2^%d to 2^%d [mfaktc %s %s]", NAME_NUMBERS, mystuff->exponent, mystuff->bit_min, mystuff->bit_max_stage, MFAKTC_VERSION, mystuff->stats.kernelname);
   }
-  sprintf(jsonstring, "{\"exponent\":%u, \"worktype\":\"TF\", \"status\":\"%s\", \"bitlo\":%2d, \"bithi\":%2d, \"rangecomplete\":%s%s, \"program\":{\"name\":\"mfaktc\", \"version\":\"%s\", \"subversion\":\"%s\"}%s%s%s}",
-      mystuff->exponent, factorsfound > 0 ? "F" : "NF", mystuff->bit_min, mystuff->bit_max_stage, partialresult ? "false" : "true", factorjson, MFAKTC_VERSION, mystuff->stats.kernelname, aidjson, userjson, computerjson);
-  // TODO timestamp
-
+#ifndef WAGSTAFF
+  sprintf(jsonstring, "{\"exponent\":%u, \"worktype\":\"TF\", \"status\":\"%s\", \"bitlo\":%2d, \"bithi\":%2d, \"rangecomplete\":%s%s, \"program\":{\"name\":\"mfaktc\", \"version\":\"%s\", \"subversion\":\"%s\"}, \"timestamp\":\"%s\"%s%s%s}",
+      mystuff->exponent, factorsfound > 0 ? "F" : "NF", mystuff->bit_min, mystuff->bit_max_stage, partialresult ? "false" : "true", factorjson, MFAKTC_VERSION, mystuff->stats.kernelname, get_utc_timestamp(), userjson, computerjson, aidjson);
+#endif
   if(mystuff->mode != MODE_SELFTEST_SHORT)
   {
     printf("%s\n", txtstring);
@@ -409,8 +444,10 @@ void print_result_line(mystuff_t *mystuff, int factorsfound)
   {
     fprintf(txtresultfile, "%s%s\n", UID, txtstring);
     fclose(txtresultfile);
+#ifndef WAGSTAFF
     fprintf(jsonresultfile, "%s\n", jsonstring);
     fclose(jsonresultfile);
+#endif
   }
 }
 

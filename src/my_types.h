@@ -87,6 +87,8 @@ typedef struct
   char addfile[51];                    /* allow filenames up to 50 chars... */
   char resultfile[51];                 /* allow filenames up to 50 chars... */
   char jsonresultfile[51];             /* allow filenames up to 50 chars... */
+  char logfile[51];                    /* allow filenames up to 50 chars... */
+  FILE* logfileptr;
   int num_streams, cpu_streams;
   
   int compcapa_major;                  /* compute capability major */

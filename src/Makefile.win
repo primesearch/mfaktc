@@ -32,7 +32,7 @@ CUSRC = tf_72bit.cu tf_96bit.cu tf_barrett96.cu tf_barrett96_gs.cu gpusieve.cu
 CUOBJS = $(CUSRC:.cu=.obj) tf_75bit.obj
 COBJS  = $(CSRC:.c=.obj)
 
-LIBS = $(CUDA_DIR)\lib\x64\cudart.lib
+LIBS = $(CUDA_DIR)\lib\x64\cudart_static.lib
 
 ############################################################################################################
 

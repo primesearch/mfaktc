@@ -292,7 +292,7 @@ see benchmarks in src/kernel_benchmarks.txt */
 
   if(mystuff->mode == MODE_NORMAL)
   {
-    if((mystuff->checkpoints == 1) && (checkpoint_read(mystuff->exponent, mystuff->bit_min, mystuff->bit_max_stage, &cur_class, &factorsfound, mystuff->factorsstring) == 1))
+    if((mystuff->checkpoints == 1) && (checkpoint_read(mystuff->exponent, mystuff->bit_min, mystuff->bit_max_stage, &cur_class, &factorsfound, mystuff->factorsstring, &(mystuff->stats.class_time)) == 1))
     {
       logf(mystuff, "\nfound a valid checkpoint file!\n");
       if(mystuff->verbosity >= 1)logf(mystuff, "  last finished class was: %d\n", cur_class);
@@ -400,7 +400,7 @@ see benchmarks in src/kernel_benchmarks.txt */
             if (numfactors > 0 || timer_diff(&timer_last_checkpoint) / 1000000 >= (unsigned long long int)mystuff->checkpointdelay || mystuff->quit)
             {
                 timer_init(&timer_last_checkpoint);
-                checkpoint_write(mystuff->exponent, mystuff->bit_min, mystuff->bit_max_stage, cur_class, factorsfound, mystuff->factorsstring);
+                checkpoint_write(mystuff->exponent, mystuff->bit_min, mystuff->bit_max_stage, cur_class, factorsfound, mystuff->factorsstring, mystuff->stats.class_time);
             }
           }
           if((mystuff->addfiledelay > 0) && timer_diff(&timer_last_addfilecheck) / 1000000 >= (unsigned long long int)mystuff->addfiledelay)

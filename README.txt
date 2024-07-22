@@ -325,3 +325,12 @@ not planned for a specific release yet, no particular order!
 - change compiletime options to runtime options (if feasible and useful)
 - documentation and comments in code
 - try to use double precision for the long integer divisions                  <-- unsure
+- json output for wagstaff numbers https://www.mersenneforum.org/showpost.php?p=662680&postcount=3769
+- factors-meta.<factor>.timestamp https://www.mersenneforum.org/showpost.php?p=662603&postcount=3750
+- factors-meta.<factor>.class https://www.mersenneforum.org/showpost.php?p=662720&postcount=3781
+- found factors support https://www.mersenneforum.org/showpost.php?p=662682&postcount=3770
+- os info https://www.mersenneforum.org/showpost.php?p=662648&postcount=3757
+- security checksum https://www.mersenneforum.org/showpost.php?p=662658&postcount=3761
+- detailed runtime logging https://www.mersenneforum.org/showpost.php?p=662953&postcount=3845
+- begink and endk logging https://www.mersenneforum.org/showpost.php?p=662953&postcount=3845
+- only log every n seconds https://www.mersenneforum.org/showpost.php?p=662795&postcount=3826

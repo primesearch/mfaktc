@@ -837,10 +837,6 @@ int main(int argc, char **argv)
       sleeptest();
       return 0;
     }
-    else if (!strcmp((char*)"-nolog", argv[i]))
-    {
-      mystuff.logging = 0;
-    }
     else if(!strcmp((char*)"-v", argv[i]))
     {
       if(i+1 >= argc)

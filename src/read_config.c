@@ -88,13 +88,13 @@ int read_config(mystuff_t *mystuff)
   {
       if (my_read_int("mfaktc.ini", "Logging", &i))
       {
-          logf(mystuff, "WARNING: Cannot read Logging from mfaktc.ini, set to 1 by default\n");
-          i = 1;
+          logf(mystuff, "WARNING: Cannot read Logging from mfaktc.ini, set to 0 by default\n");
+          i = 0;
       }
       else if (i != 0 && i != 1)
       {
-          logf(mystuff, "WARNING: Logging must be 0 or 1, set to 1 by default\n");
-          i = 1;
+          logf(mystuff, "WARNING: Logging must be 0 or 1, set to 0 by default\n");
+          i = 0;
       }
       if (mystuff->verbosity >= 1)
       {

@@ -370,6 +370,26 @@ void print_status_line(mystuff_t *mystuff)
   logf(mystuff, "%s", buffer);
 }
 
+const char* getArchitectureJSON() {
+#if defined(__x86_64__) || defined(_M_X64)
+    return ", \"architecture\": \"x86_64\"";
+#elif defined(i386) || defined(__i386__) || defined(__i386) || defined(_M_IX86)
+    return ", \"architecture\": \"x86_32\"";
+#elif defined(__aarch64__) || defined(_M_ARM64)
+    return ", \"architecture\": \"ARM64\"";
+#else
+    return "";
+#endif
+}
+
+void getOSJSON(char* string) {
+#if defined(_WIN32) || defined(_WIN64)
+    sprintf(string, ", \"os\":{\"os\": \"Windows\"%s}", getArchitectureJSON());
+#elif defined(__linux__)
+    sprintf(string ", \"os\":{\"os\": \"Linux\"%s}", getArchitectureJSON());
+#endif
+}
+
 
 void print_result_line(mystuff_t *mystuff, int factorsfound)
 /* printf the final result line (STDOUT and resultfile) */
@@ -379,12 +399,13 @@ void print_result_line(mystuff_t *mystuff, int factorsfound)
   char userjson[61]; /* 50 (V5UserID) + 11 spare */
   char computerjson[65];  /* 50 (ComputerID) + 15 spare */
   char factorjson[513];
+  char osjson[200];
   char txtstring[200];
   
   FILE *txtresultfile=NULL;
 
 #ifndef WAGSTAFF
-  char jsonstring[1000];
+  char jsonstring[1100];
   FILE *jsonresultfile=NULL;
 #endif
    
@@ -393,22 +414,28 @@ void print_result_line(mystuff_t *mystuff, int factorsfound)
     sprintf(UID, "UID: %s/%s, ", mystuff->V5UserID, mystuff->ComputerID);
   else
     UID[0]=0;
+
   if (mystuff->assignment_key[0])
       sprintf(aidjson, ", \"aid\":\"%s\"", mystuff->assignment_key);
   else
       aidjson[0] = 0;
+
   if (mystuff->V5UserID[0])
       sprintf(userjson, ", \"user\":\"%s\"", mystuff->V5UserID);
   else
       userjson[0] = 0;
+
   if (mystuff->ComputerID[0])
       sprintf(computerjson, ", \"computer\":\"%s\"", mystuff->ComputerID);
   else
       computerjson[0] = 0;
+
   if (mystuff->factorsstring[0])
       sprintf(factorjson, ", \"factors\":[%s]", mystuff->factorsstring);
   else
       factorjson[0] = 0;
+
+  getOSJSON(osjson);
     
   if(mystuff->mode == MODE_NORMAL)
   {
@@ -433,8 +460,8 @@ void print_result_line(mystuff_t *mystuff, int factorsfound)
     sprintf(txtstring, "no factor for %s%u from 2^%d to 2^%d [mfaktc %s %s]", NAME_NUMBERS, mystuff->exponent, mystuff->bit_min, mystuff->bit_max_stage, MFAKTC_VERSION, mystuff->stats.kernelname);
   }
 #ifndef WAGSTAFF
-  sprintf(jsonstring, "{\"exponent\":%u, \"worktype\":\"TF\", \"status\":\"%s\", \"bitlo\":%2d, \"bithi\":%2d, \"rangecomplete\":%s%s, \"program\":{\"name\":\"mfaktc\", \"version\":\"%s\", \"subversion\":\"%s\"}, \"timestamp\":\"%s\"%s%s%s}",
-      mystuff->exponent, factorsfound > 0 ? "F" : "NF", mystuff->bit_min, mystuff->bit_max_stage, partialresult ? "false" : "true", factorjson, MFAKTC_VERSION, mystuff->stats.kernelname, get_utc_timestamp(), userjson, computerjson, aidjson);
+  sprintf(jsonstring, "{\"exponent\":%u, \"worktype\":\"TF\", \"status\":\"%s\", \"bitlo\":%2d, \"bithi\":%2d, \"rangecomplete\":%s%s, \"program\":{\"name\":\"mfaktc\", \"version\":\"%s\", \"subversion\":\"%s\"}, \"timestamp\":\"%s\"%s%s%s%s}",
+      mystuff->exponent, factorsfound > 0 ? "F" : "NF", mystuff->bit_min, mystuff->bit_max_stage, partialresult ? "false" : "true", factorjson, MFAKTC_VERSION, mystuff->stats.kernelname, get_utc_timestamp(), userjson, computerjson, aidjson, osjson);
 #endif
   if(mystuff->mode != MODE_SELFTEST_SHORT)
   {

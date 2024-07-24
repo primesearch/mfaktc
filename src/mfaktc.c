@@ -188,6 +188,7 @@ other return value
   }
   
   mystuff->stats.class_counter = 0;
+  mystuff->stats.bit_level_time = 0;
   
   k_min=calculate_k(mystuff->exponent, mystuff->bit_min);
   k_max=calculate_k(mystuff->exponent, mystuff->bit_max_stage);
@@ -292,12 +293,13 @@ see benchmarks in src/kernel_benchmarks.txt */
 
   if(mystuff->mode == MODE_NORMAL)
   {
-    if((mystuff->checkpoints == 1) && (checkpoint_read(mystuff->exponent, mystuff->bit_min, mystuff->bit_max_stage, &cur_class, &factorsfound, mystuff->factorsstring, &(mystuff->stats.class_time)) == 1))
+    if((mystuff->checkpoints == 1) && (checkpoint_read(mystuff->exponent, mystuff->bit_min, mystuff->bit_max_stage, &cur_class, &factorsfound, mystuff->factors_string, &(mystuff->stats.bit_level_time)) == 1))
     {
       logf(mystuff, "\nfound a valid checkpoint file!\n");
       if(mystuff->verbosity >= 1)logf(mystuff, "  last finished class was: %d\n", cur_class);
-      if(mystuff->verbosity >= 1)logf(mystuff, "  found %d factor(s) already\n\n", factorsfound);
-      else                          logf(mystuff, "\n");
+      if(mystuff->verbosity >= 1)logf(mystuff, "  found %d factor(s) already%s%s\n", factorsfound, factorsfound > 0 ? ": " : "", mystuff->factors_string);
+      if(mystuff->verbosity >= 1)logf(mystuff, "  previous work took %llu ms\n\n", mystuff->stats.bit_level_time);
+      else                       logf(mystuff, "\n");
       cur_class++; // the checkpoint contains the last complete processed class!
 
 /* calculate the number of classes which are allready processed. This value is needed to estimate ETA */
@@ -394,13 +396,13 @@ see benchmarks in src/kernel_benchmarks.txt */
                 factor.d1 = mystuff->h_RES[i * 3 + 2];
                 factor.d0 = mystuff->h_RES[i * 3 + 3];
                 print_dez96(factor, factorstring);
-                sprintf(mystuff->factorsstring, mystuff->factorsstring[0] ? "%s,\"%s\"" : "%s\"%s\"", mystuff->factorsstring, factorstring);
+                sprintf(mystuff->factors_string, mystuff->factors_string[0] ? "%s,\"%s\"" : "%s\"%s\"", mystuff->factors_string, factorstring);
               }
             }
             if (numfactors > 0 || timer_diff(&timer_last_checkpoint) / 1000000 >= (unsigned long long int)mystuff->checkpointdelay || mystuff->quit)
             {
                 timer_init(&timer_last_checkpoint);
-                checkpoint_write(mystuff->exponent, mystuff->bit_min, mystuff->bit_max_stage, cur_class, factorsfound, mystuff->factorsstring, mystuff->stats.class_time);
+                checkpoint_write(mystuff->exponent, mystuff->bit_min, mystuff->bit_max_stage, cur_class, factorsfound, mystuff->factors_string, mystuff->stats.bit_level_time);
             }
           }
           if((mystuff->addfiledelay > 0) && timer_diff(&timer_last_addfilecheck) / 1000000 >= (unsigned long long int)mystuff->addfiledelay)
@@ -1126,7 +1128,7 @@ int main(int argc, char **argv)
         mystuff.bit_max_assignment = bit_max;
         mystuff.assignment_key[0] = 0;
       }
-      mystuff.factorsstring[0] = 0;
+      mystuff.factors_string[0] = 0;
       if(parse_ret == OK)
       {
         if(mystuff.verbosity >= 1)logf(&mystuff, "got assignment: exp=%u bit_min=%d bit_max=%d (%.2f GHz-days)\n", mystuff.exponent, mystuff.bit_min, mystuff.bit_max_assignment, primenet_ghzdays(mystuff.exponent, mystuff.bit_min, mystuff.bit_max_assignment));

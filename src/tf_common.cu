@@ -251,7 +251,8 @@ extern "C" __host__ int tf_class_barrett92(unsigned long long int k_min, unsigne
 #endif  
 
   mystuff->stats.grid_count = count;
-  mystuff->stats.class_time = timer_diff(&timer)/1000;
+  mystuff->stats.class_time = timer_diff(&timer) / 1000;
+  mystuff->stats.bit_level_time += timer_diff(&timer) / 1000;
 /* prevent division by zero if timer resolution is too low */
   if(mystuff->stats.class_time == 0)mystuff->stats.class_time = 1;
 

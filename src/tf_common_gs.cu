@@ -196,9 +196,10 @@ extern "C" __host__ int tf_class_barrett92_gs(unsigned long long int k_min, unsi
   // the candidates processed to be completely compatible.
   mystuff->stats.grid_count = count;
 
-  // Keep track of time spent TFing this class
+  // Keep track of time spent TFing this class and this bitlevel
   /* prevent division by zero if timer resolution is too low */
-  mystuff->stats.class_time = timer_diff(&timer)/1000;
+  mystuff->stats.class_time = timer_diff(&timer) / 1000;
+  mystuff->stats.bit_level_time += timer_diff(&timer) / 1000;
   if(mystuff->stats.class_time == 0)mystuff->stats.class_time = 1;
 
   // GPU sieving does not wait on the CPU (also used by print_status_line to indicate this is a GPU sieving kernel)

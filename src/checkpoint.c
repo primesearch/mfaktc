@@ -63,9 +63,9 @@ checkpoint_write() writes the checkpoint file.
   }
   else
   {
-    sprintf(buffer,"%s%u %d %d %d %s: %d %d %s %d", NAME_NUMBERS, exp, bit_min, bit_max, NUM_CLASSES, MFAKTC_VERSION, cur_class, num_factors, strlen(factors_string) ? factors_string : "0", class_time);
+    sprintf(buffer,"%s%u %d %d %d %s: %d %d %s %llu", NAME_NUMBERS, exp, bit_min, bit_max, NUM_CLASSES, MFAKTC_VERSION, cur_class, num_factors, strlen(factors_string) ? factors_string : "0", class_time);
     i=checkpoint_checksum(buffer,strlen(buffer));
-    fprintf(f,"%s%u %d %d %d %s: %d %d %s %d %08X", NAME_NUMBERS, exp, bit_min, bit_max, NUM_CLASSES, MFAKTC_VERSION, cur_class, num_factors, strlen(factors_string) ? factors_string : "0", class_time, i);
+    fprintf(f,"%s%u %d %d %d %s: %d %d %s %llu %08X", NAME_NUMBERS, exp, bit_min, bit_max, NUM_CLASSES, MFAKTC_VERSION, cur_class, num_factors, strlen(factors_string) ? factors_string : "0", class_time, i);
     fclose(f);
   }
 }
@@ -75,8 +75,8 @@ int checkpoint_read(unsigned int exp, int bit_min, int bit_max, int *cur_class, 
 /*
 checkpoint_read() reads the checkpoint file and compares values for exp,
 bit_min, bit_max, NUM_CLASSES read from file with current values.
-If these parameters are equal than it sets cur_class and num_factors to the
-values from the checkpoint file.
+If these parameters are equal than it sets cur_class, num_factors,
+factors_string, and class_time to the values from the checkpoint file.
 
 returns 1 on success (valid checkpoint file)
 returns 0 otherwise
@@ -107,17 +107,17 @@ returns 0 otherwise
     if(i<70)
     {
       ptr=&(buffer[i]);
-      sscanf(ptr,"%d %d %s", cur_class, num_factors, factors_string);
-      sprintf(buffer2,"%s%u %d %d %d %s: %d %d %s %d", NAME_NUMBERS, exp, bit_min, bit_max, NUM_CLASSES, MFAKTC_VERSION, *cur_class, *num_factors, factors_string, class_time);
+      sscanf(ptr,"%d %d %s %llu", cur_class, num_factors, factors_string, class_time);
+      sprintf(buffer2,"%s%u %d %d %d %s: %d %d %s %llu", NAME_NUMBERS, exp, bit_min, bit_max, NUM_CLASSES, MFAKTC_VERSION, *cur_class, *num_factors, factors_string, *class_time);
       chksum=checkpoint_checksum(buffer2,strlen(buffer2));
-      sprintf(buffer2,"%s%u %d %d %d %s: %d %d %s %d %08X", NAME_NUMBERS, exp, bit_min, bit_max, NUM_CLASSES, MFAKTC_VERSION, *cur_class, *num_factors, factors_string, class_time, chksum);
+      sprintf(buffer2,"%s%u %d %d %d %s: %d %d %s %llu %08X", NAME_NUMBERS, exp, bit_min, bit_max, NUM_CLASSES, MFAKTC_VERSION, *cur_class, *num_factors, factors_string, *class_time, chksum);
       if(*cur_class >= 0 && \
          *cur_class < NUM_CLASSES && \
          *num_factors >= 0 && \
          strlen(buffer) == strlen(buffer2) && \
          strstr(buffer, buffer2) == buffer && \
-         (*num_factors == 0 && strlen(factors_string) == 1) || \
-          (*num_factors >= 1 && strlen(factors_string) > 1))
+         ((*num_factors == 0 && strlen(factors_string) == 1) || \
+          (*num_factors >= 1 && strlen(factors_string) > 1)))
       {
         ret=1;
       }

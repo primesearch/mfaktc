@@ -45,7 +45,6 @@ void print_help(char *string)
   printf("  -st                    run builtin selftest and exit\n");
   printf("  -st2                   same as -st but extended range for k_min/m_max\n");
   printf("  -v <number>            set verbosity (min = 0, default = 1, more = 2, max/debug = 3)\n");
-  printf("  -nolog                 don't create/append stdout to mfaktc.log\n");
   printf("\n");
   printf("options for debuging purposes\n");
   printf("  --timertest            run test of timer functions and exit\n");

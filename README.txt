@@ -334,3 +334,4 @@ not planned for a specific release yet, no particular order!
 - detailed runtime logging https://www.mersenneforum.org/showpost.php?p=662953&postcount=3845
 - begink and endk logging https://www.mersenneforum.org/showpost.php?p=662953&postcount=3845
 - only log every n seconds https://www.mersenneforum.org/showpost.php?p=662795&postcount=3826
+- catch HUP https://www.mersenneforum.org/showpost.php?p=662777&postcount=3815

@@ -179,6 +179,7 @@ char* get_utc_timestamp()
 void print_status_line(mystuff_t *mystuff)
 {
   unsigned long long int eta;
+  unsigned long long int elapsed;
   int i = 0, max_class_number;
   char buffer[256];
   int index = 0;
@@ -228,7 +229,7 @@ void print_status_line(mystuff_t *mystuff)
       else if(mystuff->stats.progressformat[i+1] == 'g')
       {
         if(mystuff->mode == MODE_NORMAL)
-          index += sprintf(buffer + index, "%7.2f", mystuff->stats.ghzdays * 86400000.0f / ((double)mystuff->stats.class_time * (double)max_class_number));
+          index += sprintf(buffer + index, "%8.2f", mystuff->stats.ghzdays * 86400000.0f / ((double)mystuff->stats.class_time * (double)max_class_number));
         else
           index += sprintf(buffer + index, "   n.a.");
       }
@@ -238,6 +239,17 @@ void print_status_line(mystuff_t *mystuff)
         else if(mystuff->stats.class_time < 1000000ULL )index += sprintf(buffer + index, "%6.2f", (double)mystuff->stats.class_time/1000.0);
         else if(mystuff->stats.class_time < 10000000ULL)index += sprintf(buffer + index, "%6.1f", (double)mystuff->stats.class_time/1000.0);
         else                                            index += sprintf(buffer + index, "%6.0f", (double)mystuff->stats.class_time/1000.0);
+      }
+      else if (mystuff->stats.progressformat[i + 1] == 'E')
+      {
+          if (mystuff->mode == MODE_NORMAL)
+          {
+              elapsed = mystuff->stats.bit_level_time / 1000;
+                   if (elapsed < 3600) index += sprintf(buffer + index, "%2" PRIu64 "m%02" PRIu64 "s", elapsed / 60, elapsed % 60);
+              else if (elapsed < 86400)index += sprintf(buffer + index, "%2" PRIu64 "h%02" PRIu64 "m", elapsed / 3600, (elapsed / 60) % 60);
+              else                     index += sprintf(buffer + index, "%2" PRIu64 "d%02" PRIu64 "h", elapsed / 86400, (elapsed / 3600) % 24);
+          }
+          else if (mystuff->mode == MODE_SELFTEST_FULL)index += sprintf(buffer + index, "  n.a.");
       }
       else if(mystuff->stats.progressformat[i+1] == 'e')
       {

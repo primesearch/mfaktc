@@ -16,6 +16,6 @@ You should have received a copy of the GNU General Public License
 along with mfaktc.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-void checkpoint_write(unsigned int exp, int bit_min, int bit_max, int cur_class, int num_factors, char *factors_string, unsigned long long int class_time);
-int checkpoint_read(unsigned int exp, int bit_min, int bit_max, int *cur_class, int *num_factors, char *factors_string, unsigned long long int *class_time);
+void checkpoint_write(unsigned int exp, int bit_min, int bit_max, int cur_class, int num_factors, char *factors_string, unsigned long long int bit_level_time);
+int checkpoint_read(unsigned int exp, int bit_min, int bit_max, int *cur_class, int *num_factors, char *factors_string, unsigned long long int *bit_level_time);
 void checkpoint_delete(unsigned int exp);

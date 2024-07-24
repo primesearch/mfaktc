@@ -429,8 +429,8 @@ void print_result_line(mystuff_t *mystuff, int factorsfound)
   else
       computerjson[0] = 0;
 
-  if (mystuff->factorsstring[0])
-      sprintf(factorjson, ", \"factors\":[%s]", mystuff->factorsstring);
+  if (mystuff->factors_string[0])
+      sprintf(factorjson, ", \"factors\":[%s]", mystuff->factors_string);
   else
       factorjson[0] = 0;
 

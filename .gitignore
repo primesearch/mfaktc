@@ -1,0 +1,11 @@
+.vs/
+*.obj
+mfaktc
+*.exe
+*.txt
+*.ckp
+*.zip
+*.log
+*.lib
+*.exp
+*.o

@@ -54,7 +54,7 @@ void print_help(char *string)
 
 
 
-void logf(mystuff_t* mystuff, const char* fmt, ...)
+void logprintf(mystuff_t* mystuff, const char* fmt, ...)
 {
     va_list args;
 
@@ -62,9 +62,9 @@ void logf(mystuff_t* mystuff, const char* fmt, ...)
     vfprintf(stdout, fmt, args);
     va_end(args);
 
-    if (mystuff->logging == 1 && mystuff->logfileptr != NULL) {
+    if (mystuff->logging == 1 && mystuff->logprintfileptr != NULL) {
         va_start(args, fmt);
-        vfprintf(mystuff->logfileptr, fmt, args);
+        vfprintf(mystuff->logprintfileptr, fmt, args);
         va_end(args);
     }
 }
@@ -201,7 +201,7 @@ void print_status_line(mystuff_t *mystuff)
 
   if(mystuff->stats.output_counter == 0)
   {
-    logf(mystuff, "%s\n", mystuff->stats.progressheader);
+    logprintf(mystuff, "%s\n", mystuff->stats.progressheader);
     mystuff->stats.output_counter = 20;
   }
   if(mystuff->printmode == 0)mystuff->stats.output_counter--;
@@ -362,7 +362,7 @@ void print_status_line(mystuff_t *mystuff)
     if(index > 200) /* buffer has 256 bytes, single format strings are limited to 50 bytes */
     {
       buffer[index] = 0;
-      logf(mystuff, "%s", buffer);
+      logprintf(mystuff, "%s", buffer);
       index = 0;
     }
   }
@@ -379,7 +379,7 @@ void print_status_line(mystuff_t *mystuff)
   }
 
   buffer[index] = 0;
-  logf(mystuff, "%s", buffer);
+  logprintf(mystuff, "%s", buffer);
 }
 
 const char* getArchitectureJSON() {

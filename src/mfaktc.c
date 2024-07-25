@@ -129,9 +129,9 @@ k_min *MUST* be aligned in that way that k_min is in class 0!
 
 void close_log(mystuff_t *mystuff)
 {
-    if (mystuff->logfileptr > 0)
+    if (mystuff->logprintfileptr > 0)
     {
-        fclose(mystuff->logfileptr);
+        fclose(mystuff->logprintfileptr);
     }
 }
 
@@ -173,10 +173,10 @@ other return value
   mystuff->stats.output_counter = 0; /* reset output counter, needed for status headline */
   mystuff->stats.ghzdays = primenet_ghzdays(mystuff->exponent, mystuff->bit_min, mystuff->bit_max_stage);
 
-  if(mystuff->mode != MODE_SELFTEST_SHORT)logf(mystuff, "Starting trial factoring %s%u from 2^%d to 2^%d (%.2f GHz-days)\n", NAME_NUMBERS, mystuff->exponent, mystuff->bit_min, mystuff->bit_max_stage, mystuff->stats.ghzdays);
+  if(mystuff->mode != MODE_SELFTEST_SHORT)logprintf(mystuff, "Starting trial factoring %s%u from 2^%d to 2^%d (%.2f GHz-days)\n", NAME_NUMBERS, mystuff->exponent, mystuff->bit_min, mystuff->bit_max_stage, mystuff->stats.ghzdays);
   if((mystuff->mode != MODE_NORMAL) && (mystuff->mode != MODE_SELFTEST_SHORT) && (mystuff->mode != MODE_SELFTEST_FULL))
   {
-    logf(mystuff, "ERROR, invalid mode for tf(): %d\n", mystuff->mode);
+    logprintf(mystuff, "ERROR, invalid mode for tf(): %d\n", mystuff->mode);
     return -1;
   }
   timer_init(&timer);
@@ -214,9 +214,9 @@ other return value
 
   if(mystuff->mode != MODE_SELFTEST_SHORT && (mystuff->verbosity >= 2 || (mystuff->mode == MODE_NORMAL && mystuff->verbosity >= 1)))
   {
-    logf(mystuff, " k_min =  %" PRIu64 "\n", k_min);
-    if(k_hint > 0)logf(mystuff, " k_hint = %" PRIu64 "\n", k_hint);
-    logf(mystuff, " k_max =  %" PRIu64 "\n", k_max);
+    logprintf(mystuff, " k_min =  %" PRIu64 "\n", k_min);
+    if(k_hint > 0)logprintf(mystuff, " k_hint = %" PRIu64 "\n", k_hint);
+    logprintf(mystuff, " k_max =  %" PRIu64 "\n", k_max);
   }
 
   if(kernel == AUTOSELECT_KERNEL)
@@ -289,17 +289,17 @@ see benchmarks in src/kernel_benchmarks.txt */
   
   else                                  sprintf(mystuff->stats.kernelname, "UNKNOWN kernel");
 
-  if(mystuff->mode != MODE_SELFTEST_SHORT && mystuff->verbosity >= 1)logf(mystuff, "Using GPU kernel \"%s\"\n", mystuff->stats.kernelname);
+  if(mystuff->mode != MODE_SELFTEST_SHORT && mystuff->verbosity >= 1)logprintf(mystuff, "Using GPU kernel \"%s\"\n", mystuff->stats.kernelname);
 
   if(mystuff->mode == MODE_NORMAL)
   {
     if((mystuff->checkpoints == 1) && (checkpoint_read(mystuff->exponent, mystuff->bit_min, mystuff->bit_max_stage, &cur_class, &factorsfound, mystuff->factors_string, &(mystuff->stats.bit_level_time)) == 1))
     {
-      logf(mystuff, "\nfound a valid checkpoint file!\n");
-      if(mystuff->verbosity >= 1)logf(mystuff, "  last finished class was: %d\n", cur_class);
-      if(mystuff->verbosity >= 1)logf(mystuff, "  found %d factor(s) already%s%s\n", factorsfound, factorsfound > 0 ? ": " : "", mystuff->factors_string);
-      if(mystuff->verbosity >= 1)logf(mystuff, "  previous work took %llu ms\n\n", mystuff->stats.bit_level_time);
-      else                       logf(mystuff, "\n");
+      logprintf(mystuff, "\nfound a valid checkpoint file!\n");
+      if(mystuff->verbosity >= 1)logprintf(mystuff, "  last finished class was: %d\n", cur_class);
+      if(mystuff->verbosity >= 1)logprintf(mystuff, "  found %d factor(s) already%s%s\n", factorsfound, factorsfound > 0 ? ": " : "", mystuff->factors_string);
+      if(mystuff->verbosity >= 1)logprintf(mystuff, "  previous work took %llu ms\n\n", mystuff->stats.bit_level_time);
+      else                       logprintf(mystuff, "\n");
       cur_class++; // the checkpoint contains the last complete processed class!
 
 /* calculate the number of classes which are allready processed. This value is needed to estimate ETA */
@@ -331,7 +331,7 @@ see benchmarks in src/kernel_benchmarks.txt */
    we can be sure that if RET_QUIT is returned the last class hasn't
    finished. The signal handler which sets mystuff->quit not active during
    selftests so we need to check for RET_QUIT only when doing real work. */
-        if(mystuff->printmode == 1)logf(mystuff, "\n");
+        if(mystuff->printmode == 1)logprintf(mystuff, "\n");
         return RET_QUIT;
       }
       else
@@ -372,13 +372,13 @@ see benchmarks in src/kernel_benchmarks.txt */
 
         else
         {
-          logf(mystuff, "ERROR: Unknown kernel selected (%d)!\n", kernel);
+          logprintf(mystuff, "ERROR: Unknown kernel selected (%d)!\n", kernel);
           return RET_CUDA_ERROR;
         }
         cudaError = cudaGetLastError();
         if(cudaError != cudaSuccess)
         {
-          logf(mystuff, "ERROR: cudaGetLastError() returned %d: %s\n", cudaError, cudaGetErrorString(cudaError));
+          logprintf(mystuff, "ERROR: cudaGetLastError() returned %d: %s\n", cudaError, cudaGetErrorString(cudaError));
           return RET_CUDA_ERROR; /* bail out, we might have a serios problem (detected by cudaGetLastError())... */
         }
         factorsfound += numfactors;
@@ -419,7 +419,7 @@ see benchmarks in src/kernel_benchmarks.txt */
       fflush(NULL);
     }
   }
-  if(mystuff->mode != MODE_SELFTEST_SHORT && mystuff->printmode == 1)logf(mystuff, "\n");
+  if(mystuff->mode != MODE_SELFTEST_SHORT && mystuff->printmode == 1)logprintf(mystuff, "\n");
   print_result_line(mystuff, factorsfound);
 
   if(mystuff->mode == MODE_NORMAL)
@@ -431,8 +431,8 @@ see benchmarks in src/kernel_benchmarks.txt */
   {
     if(mystuff->h_RES[0] == 0)
     {
-      logf(mystuff, "ERROR: selftest failed for %s%u\n", NAME_NUMBERS, mystuff->exponent);
-      logf(mystuff, "  no factor found\n");
+      logprintf(mystuff, "ERROR: selftest failed for %s%u\n", NAME_NUMBERS, mystuff->exponent);
+      logprintf(mystuff, "  no factor found\n");
       retval = 1;
     }
     else // mystuff->h_RES[0] > 0
@@ -478,17 +478,17 @@ k_max and k_min are used as 64bit temporary integers here...
       }
       if(k_min != 1) /* the factor should appear ONCE */
       {
-        logf(mystuff, "ERROR: selftest failed for %s%u!\n", NAME_NUMBERS, mystuff->exponent);
-        logf(mystuff, "  expected result: %08X %08X %08X\n", f_hi, f_med, f_low);
+        logprintf(mystuff, "ERROR: selftest failed for %s%u!\n", NAME_NUMBERS, mystuff->exponent);
+        logprintf(mystuff, "  expected result: %08X %08X %08X\n", f_hi, f_med, f_low);
         for(i=0; ((unsigned int)i < mystuff->h_RES[0]) && (i < 10); i++)
         {
-          logf(mystuff, "  reported result: %08X %08X %08X\n", mystuff->h_RES[i*3 + 1], mystuff->h_RES[i*3 + 2], mystuff->h_RES[i*3 + 3]);
+          logprintf(mystuff, "  reported result: %08X %08X %08X\n", mystuff->h_RES[i*3 + 1], mystuff->h_RES[i*3 + 2], mystuff->h_RES[i*3 + 3]);
         }
         retval = 2;
       }
       else
       {
-        if(mystuff->mode != MODE_SELFTEST_SHORT)logf(mystuff, "selftest for %s%u passed!\n", NAME_NUMBERS, mystuff->exponent);
+        if(mystuff->mode != MODE_SELFTEST_SHORT)logprintf(mystuff, "selftest for %s%u passed!\n", NAME_NUMBERS, mystuff->exponent);
       }
     }
   }
@@ -496,8 +496,8 @@ k_max and k_min are used as 64bit temporary integers here...
   {
     time_run = timer_diff(&timer)/1000;
     
-    if(restart == 0)logf(mystuff, "tf(): total time spent: ");
-    else            logf(mystuff, "tf(): time spent since restart:   ");
+    if(restart == 0)logprintf(mystuff, "tf(): total time spent: ");
+    else            logprintf(mystuff, "tf(): time spent since restart:   ");
 
 /*  restart == 0 ==> time_est = time_run */
 #ifndef MORE_CLASSES
@@ -506,19 +506,19 @@ k_max and k_min are used as 64bit temporary integers here...
     time_est = (time_run * 960ULL ) / (unsigned long long int)(960-restart);
 #endif
 
-    if(time_est > 86400000ULL)logf(mystuff, "%" PRIu64 "d ",   time_run / 86400000ULL);
-    if(time_est > 3600000ULL) logf(mystuff, "%2" PRIu64 "h ", (time_run /  3600000ULL) % 24ULL);
-    if(time_est > 60000ULL)   logf(mystuff, "%2" PRIu64 "m ", (time_run /    60000ULL) % 60ULL);
-                              logf(mystuff, "%2" PRIu64 ".%03" PRIu64 "s\n", (time_run / 1000ULL) % 60ULL, time_run % 1000ULL);
+    if(time_est > 86400000ULL)logprintf(mystuff, "%" PRIu64 "d ",   time_run / 86400000ULL);
+    if(time_est > 3600000ULL) logprintf(mystuff, "%2" PRIu64 "h ", (time_run /  3600000ULL) % 24ULL);
+    if(time_est > 60000ULL)   logprintf(mystuff, "%2" PRIu64 "m ", (time_run /    60000ULL) % 60ULL);
+                              logprintf(mystuff, "%2" PRIu64 ".%03" PRIu64 "s\n", (time_run / 1000ULL) % 60ULL, time_run % 1000ULL);
     if(restart != 0)
     {
-      logf(mystuff, "      estimated total time spent: ");
-      if(time_est > 86400000ULL)logf(mystuff, "%" PRIu64 "d ",   time_est / 86400000ULL);
-      if(time_est > 3600000ULL) logf(mystuff, "%2" PRIu64 "h ", (time_est /  3600000ULL) % 24ULL);
-      if(time_est > 60000ULL)   logf(mystuff, "%2" PRIu64 "m ", (time_est /    60000ULL) % 60ULL);
-                                logf(mystuff, "%2" PRIu64 ".%03" PRIu64 "s\n", (time_est / 1000ULL) % 60ULL, time_est % 1000ULL);
+      logprintf(mystuff, "      estimated total time spent: ");
+      if(time_est > 86400000ULL)logprintf(mystuff, "%" PRIu64 "d ",   time_est / 86400000ULL);
+      if(time_est > 3600000ULL) logprintf(mystuff, "%2" PRIu64 "h ", (time_est /  3600000ULL) % 24ULL);
+      if(time_est > 60000ULL)   logprintf(mystuff, "%2" PRIu64 "m ", (time_est /    60000ULL) % 60ULL);
+                                logprintf(mystuff, "%2" PRIu64 ".%03" PRIu64 "s\n", (time_est / 1000ULL) % 60ULL, time_est % 1000ULL);
     }
-    logf(mystuff, "\n");
+    logprintf(mystuff, "\n");
   }
   return retval;
 }
@@ -569,7 +569,7 @@ RET_CUDA_ERROR we might have a serios problem (detected by cudaGetLastError())
   {
     for(i = 0; i < NUM_SELFTESTS; i++)
     {
-      logf(mystuff, "########## testcase %d/%d ##########\n", i+1, NUM_SELFTESTS);
+      logprintf(mystuff, "########## testcase %d/%d ##########\n", i+1, NUM_SELFTESTS);
       f_class = (int)(k[i] % NUM_CLASSES);
 
       mystuff->exponent           = exp[i];
@@ -667,54 +667,54 @@ RET_CUDA_ERROR we might have a serios problem (detected by cudaGetLastError())
     }
   }
 
-  logf(mystuff, "Selftest statistics\n");
-  logf(mystuff, "  number of tests           %d\n", num_selftests);
-  logf(mystuff, "  successfull tests         %d\n", st_success);
-  if(st_nofactor > 0)   logf(mystuff, "  no factor found           %d\n", st_nofactor);
-  if(st_wrongfactor > 0)logf(mystuff, "  wrong factor reported     %d\n", st_wrongfactor);
-  if(st_unknown > 0)    logf(mystuff, "  unknown return value      %d\n", st_unknown);
+  logprintf(mystuff, "Selftest statistics\n");
+  logprintf(mystuff, "  number of tests           %d\n", num_selftests);
+  logprintf(mystuff, "  successfull tests         %d\n", st_success);
+  if(st_nofactor > 0)   logprintf(mystuff, "  no factor found           %d\n", st_nofactor);
+  if(st_wrongfactor > 0)logprintf(mystuff, "  wrong factor reported     %d\n", st_wrongfactor);
+  if(st_unknown > 0)    logprintf(mystuff, "  unknown return value      %d\n", st_unknown);
   if(type == 0)
   {
-    logf(mystuff, "\n");
-    logf(mystuff, "  kernel             | success |   fail\n");
-    logf(mystuff, "  -------------------+---------+-------\n");
+    logprintf(mystuff, "\n");
+    logprintf(mystuff, "  kernel             | success |   fail\n");
+    logprintf(mystuff, "  -------------------+---------+-------\n");
     for(i = 0; i <= NUM_KERNEL; i++)
     {
-           if(i == _71BIT_MUL24)       logf(mystuff, "  71bit_mul24        | %6d  | %6d\n", kernel_success[i], kernel_fail[i]);
-      else if(i == _75BIT_MUL32)       logf(mystuff, "  75bit_mul32        | %6d  | %6d\n", kernel_success[i], kernel_fail[i]);
-      else if(i == _95BIT_MUL32)       logf(mystuff, "  95bit_mul32        | %6d  | %6d\n", kernel_success[i], kernel_fail[i]);
+           if(i == _71BIT_MUL24)       logprintf(mystuff, "  71bit_mul24        | %6d  | %6d\n", kernel_success[i], kernel_fail[i]);
+      else if(i == _75BIT_MUL32)       logprintf(mystuff, "  75bit_mul32        | %6d  | %6d\n", kernel_success[i], kernel_fail[i]);
+      else if(i == _95BIT_MUL32)       logprintf(mystuff, "  95bit_mul32        | %6d  | %6d\n", kernel_success[i], kernel_fail[i]);
 
-      else if(i == _75BIT_MUL32_GS)    logf(mystuff, "  75bit_mul32_gs     | %6d  | %6d\n", kernel_success[i], kernel_fail[i]);
-      else if(i == _95BIT_MUL32_GS)    logf(mystuff, "  95bit_mul32_gs     | %6d  | %6d\n", kernel_success[i], kernel_fail[i]);
+      else if(i == _75BIT_MUL32_GS)    logprintf(mystuff, "  75bit_mul32_gs     | %6d  | %6d\n", kernel_success[i], kernel_fail[i]);
+      else if(i == _95BIT_MUL32_GS)    logprintf(mystuff, "  95bit_mul32_gs     | %6d  | %6d\n", kernel_success[i], kernel_fail[i]);
 
-      else if(i == BARRETT76_MUL32)    logf(mystuff, "  barrett76_mul32    | %6d  | %6d\n", kernel_success[i], kernel_fail[i]);
-      else if(i == BARRETT77_MUL32)    logf(mystuff, "  barrett77_mul32    | %6d  | %6d\n", kernel_success[i], kernel_fail[i]);
-      else if(i == BARRETT79_MUL32)    logf(mystuff, "  barrett79_mul32    | %6d  | %6d\n", kernel_success[i], kernel_fail[i]);
-      else if(i == BARRETT87_MUL32)    logf(mystuff, "  barrett87_mul32    | %6d  | %6d\n", kernel_success[i], kernel_fail[i]);
-      else if(i == BARRETT88_MUL32)    logf(mystuff, "  barrett88_mul32    | %6d  | %6d\n", kernel_success[i], kernel_fail[i]);
-      else if(i == BARRETT92_MUL32)    logf(mystuff, "  barrett92_mul32    | %6d  | %6d\n", kernel_success[i], kernel_fail[i]);
+      else if(i == BARRETT76_MUL32)    logprintf(mystuff, "  barrett76_mul32    | %6d  | %6d\n", kernel_success[i], kernel_fail[i]);
+      else if(i == BARRETT77_MUL32)    logprintf(mystuff, "  barrett77_mul32    | %6d  | %6d\n", kernel_success[i], kernel_fail[i]);
+      else if(i == BARRETT79_MUL32)    logprintf(mystuff, "  barrett79_mul32    | %6d  | %6d\n", kernel_success[i], kernel_fail[i]);
+      else if(i == BARRETT87_MUL32)    logprintf(mystuff, "  barrett87_mul32    | %6d  | %6d\n", kernel_success[i], kernel_fail[i]);
+      else if(i == BARRETT88_MUL32)    logprintf(mystuff, "  barrett88_mul32    | %6d  | %6d\n", kernel_success[i], kernel_fail[i]);
+      else if(i == BARRETT92_MUL32)    logprintf(mystuff, "  barrett92_mul32    | %6d  | %6d\n", kernel_success[i], kernel_fail[i]);
 
-      else if(i == BARRETT76_MUL32_GS) logf(mystuff, "  barrett76_mul32_gs | %6d  | %6d\n", kernel_success[i], kernel_fail[i]);
-      else if(i == BARRETT77_MUL32_GS) logf(mystuff, "  barrett77_mul32_gs | %6d  | %6d\n", kernel_success[i], kernel_fail[i]);
-      else if(i == BARRETT79_MUL32_GS) logf(mystuff, "  barrett79_mul32_gs | %6d  | %6d\n", kernel_success[i], kernel_fail[i]);
-      else if(i == BARRETT87_MUL32_GS) logf(mystuff, "  barrett87_mul32_gs | %6d  | %6d\n", kernel_success[i], kernel_fail[i]);
-      else if(i == BARRETT88_MUL32_GS) logf(mystuff, "  barrett88_mul32_gs | %6d  | %6d\n", kernel_success[i], kernel_fail[i]);
-      else if(i == BARRETT92_MUL32_GS) logf(mystuff, "  barrett92_mul32_gs | %6d  | %6d\n", kernel_success[i], kernel_fail[i]);
+      else if(i == BARRETT76_MUL32_GS) logprintf(mystuff, "  barrett76_mul32_gs | %6d  | %6d\n", kernel_success[i], kernel_fail[i]);
+      else if(i == BARRETT77_MUL32_GS) logprintf(mystuff, "  barrett77_mul32_gs | %6d  | %6d\n", kernel_success[i], kernel_fail[i]);
+      else if(i == BARRETT79_MUL32_GS) logprintf(mystuff, "  barrett79_mul32_gs | %6d  | %6d\n", kernel_success[i], kernel_fail[i]);
+      else if(i == BARRETT87_MUL32_GS) logprintf(mystuff, "  barrett87_mul32_gs | %6d  | %6d\n", kernel_success[i], kernel_fail[i]);
+      else if(i == BARRETT88_MUL32_GS) logprintf(mystuff, "  barrett88_mul32_gs | %6d  | %6d\n", kernel_success[i], kernel_fail[i]);
+      else if(i == BARRETT92_MUL32_GS) logprintf(mystuff, "  barrett92_mul32_gs | %6d  | %6d\n", kernel_success[i], kernel_fail[i]);
 
-      else                             logf(mystuff, "  UNKNOWN kernel     | %6d  | %6d\n", kernel_success[i], kernel_fail[i]);
+      else                             logprintf(mystuff, "  UNKNOWN kernel     | %6d  | %6d\n", kernel_success[i], kernel_fail[i]);
     }
   }
-  logf(mystuff, "\n");
+  logprintf(mystuff, "\n");
 
   if(st_success == num_selftests)
   {
-    logf(mystuff, "selftest PASSED!\n\n");
+    logprintf(mystuff, "selftest PASSED!\n\n");
     retval=0;
   }
   else
   {
-    logf(mystuff, "selftest FAILED!\n");
-    logf(mystuff, "  random selftest offset was: %d\n\n", mystuff->selftestrandomoffset);
+    logprintf(mystuff, "selftest FAILED!\n");
+    logprintf(mystuff, "  random selftest offset was: %d\n\n", mystuff->selftestrandomoffset);
   }
   return retval;
 }
@@ -728,7 +728,7 @@ void print_last_CUDA_error(mystuff_t *mystuff)
   cudaError = cudaGetLastError();
   if(cudaError != cudaSuccess)
   {
-    logf(mystuff, "  cudaGetLastError() returned %d: %s\n", cudaError, cudaGetErrorString(cudaError));
+    logprintf(mystuff, "  cudaGetLastError() returned %d: %s\n", cudaError, cudaGetErrorString(cudaError));
   }
 }
 
@@ -759,7 +759,7 @@ int main(int argc, char **argv)
   mystuff.gpu_sieve_processing_size = GPU_SIEVE_PROCESS_SIZE_DEFAULT * 1024;	/* Default to 8K bits processed by each block in a Barrett kernel. */
   sprintf(mystuff.resultfile, "results.txt");
   sprintf(mystuff.jsonresultfile, "results.json.txt");
-  sprintf(mystuff.logfile, "mfaktc.log");
+  sprintf(mystuff.logprintfile, "mfaktc.log");
   sprintf(mystuff.workfile, "worktodo.txt");
   sprintf(mystuff.addfile, "worktodo.add");
   mystuff.addfilestatus = -1;                                                   /* -1 -> timer not initialized! */
@@ -775,13 +775,13 @@ int main(int argc, char **argv)
     {
       if(i+1 >= argc)
       {
-        logf(&mystuff, "ERROR: no device number specified for option \"-d\"\n");
+        logprintf(&mystuff, "ERROR: no device number specified for option \"-d\"\n");
         return 1;
       }
       devicenumber = (int)strtol(argv[i+1], &ptr, 10);
       if(*ptr || errno || devicenumber != strtol(argv[i+1], &ptr, 10) )
       {
-        logf(&mystuff, "ERROR: can't parse <device number> for option \"-d\"\n");
+        logprintf(&mystuff, "ERROR: can't parse <device number> for option \"-d\"\n");
         return 1;
       }
       i++;
@@ -790,25 +790,25 @@ int main(int argc, char **argv)
     {
       if(i+3 >= argc)
       {
-        logf(&mystuff, "ERROR: missing parameters for option \"-tf\"\n");
+        logprintf(&mystuff, "ERROR: missing parameters for option \"-tf\"\n");
         return 1;
       }
       exponent = (unsigned int)strtoul(argv[i+1], &ptr, 10);
       if(*ptr || errno || (unsigned long)exponent != strtoul(argv[i+1],&ptr,10) )
       {
-        logf(&mystuff, "ERROR: can't parse parameter <exp> for option \"-tf\"\n");
+        logprintf(&mystuff, "ERROR: can't parse parameter <exp> for option \"-tf\"\n");
         return 1;
       }
       bit_min = (int)strtol(argv[i+2], &ptr, 10);
       if(*ptr || errno || (long)bit_min != strtol(argv[i+2],&ptr,10) )
       {
-        logf(&mystuff, "ERROR: can't parse parameter <min> for option \"-tf\"\n");
+        logprintf(&mystuff, "ERROR: can't parse parameter <min> for option \"-tf\"\n");
         return 1;
       }
       bit_max = (int)strtol(argv[i+3], &ptr, 10);
       if(*ptr || errno || (long)bit_max != strtol(argv[i+3],&ptr,10) )
       {
-        logf(&mystuff, "ERROR: can't parse parameter <max> for option \"-tf\"\n");
+        logprintf(&mystuff, "ERROR: can't parse parameter <max> for option \"-tf\"\n");
         return 1;
       }
       if(!valid_assignment(exponent, bit_min, bit_max, mystuff.verbosity))
@@ -843,26 +843,26 @@ int main(int argc, char **argv)
     {
       if(i+1 >= argc)
       {
-        logf(&mystuff, "ERROR: no verbosity level specified for option \"-v\"\n");
+        logprintf(&mystuff, "ERROR: no verbosity level specified for option \"-v\"\n");
         return 1;
       }
       tmp = (int)strtol(argv[i+1], &ptr, 10);
       if(*ptr || errno || tmp != strtol(argv[i+1], &ptr, 10) )
       {
-        logf(&mystuff, "ERROR: can't parse verbosity level for option \"-v\"\n");
+        logprintf(&mystuff, "ERROR: can't parse verbosity level for option \"-v\"\n");
         return 1;
       }
       i++;
       
       if(tmp > 3)
       {
-        logf(&mystuff, "WARNING: maximum verbosity level is 3\n");
+        logprintf(&mystuff, "WARNING: maximum verbosity level is 3\n");
         tmp = 3;
       }
       
       if(tmp < 0)
       {
-        logf(&mystuff, "WARNING: minumum verbosity level is 0\n");
+        logprintf(&mystuff, "WARNING: minumum verbosity level is 0\n");
         tmp = 0;
       }
 
@@ -873,72 +873,72 @@ int main(int argc, char **argv)
 
   read_config(&mystuff);
 
-  logf(&mystuff, "mfaktc v%s (%dbit built)\n\n", MFAKTC_VERSION, (int)(sizeof(void*)*8));
+  logprintf(&mystuff, "mfaktc v%s (%dbit built)\n\n", MFAKTC_VERSION, (int)(sizeof(void*)*8));
 
 /* print current configuration */
   
-  if(mystuff.verbosity >= 1)logf(&mystuff, "Compiletime options\n");
-  if(mystuff.verbosity >= 1)logf(&mystuff, "  THREADS_PER_BLOCK         %d\n", THREADS_PER_BLOCK);
-  if(mystuff.verbosity >= 1)logf(&mystuff, "  SIEVE_SIZE_LIMIT          %dkiB\n", SIEVE_SIZE_LIMIT);
-  if(mystuff.verbosity >= 1)logf(&mystuff, "  SIEVE_SIZE                %dbits\n", SIEVE_SIZE);
+  if(mystuff.verbosity >= 1)logprintf(&mystuff, "Compiletime options\n");
+  if(mystuff.verbosity >= 1)logprintf(&mystuff, "  THREADS_PER_BLOCK         %d\n", THREADS_PER_BLOCK);
+  if(mystuff.verbosity >= 1)logprintf(&mystuff, "  SIEVE_SIZE_LIMIT          %dkiB\n", SIEVE_SIZE_LIMIT);
+  if(mystuff.verbosity >= 1)logprintf(&mystuff, "  SIEVE_SIZE                %dbits\n", SIEVE_SIZE);
   if(SIEVE_SIZE <= 0)
   {
-    logf(&mystuff, "ERROR: SIEVE_SIZE is <= 0, consider to increase SIEVE_SIZE_LIMIT in params.h\n");
+    logprintf(&mystuff, "ERROR: SIEVE_SIZE is <= 0, consider to increase SIEVE_SIZE_LIMIT in params.h\n");
     close_log(&mystuff);
     return 1;
   }
-  if(mystuff.verbosity >= 1)logf(&mystuff, "  SIEVE_SPLIT               %d\n", SIEVE_SPLIT);
+  if(mystuff.verbosity >= 1)logprintf(&mystuff, "  SIEVE_SPLIT               %d\n", SIEVE_SPLIT);
   if(SIEVE_SPLIT > SIEVE_PRIMES_MIN)
   {
-    logf(&mystuff, "ERROR: SIEVE_SPLIT must be <= SIEVE_PRIMES_MIN\n");
+    logprintf(&mystuff, "ERROR: SIEVE_SPLIT must be <= SIEVE_PRIMES_MIN\n");
     close_log(&mystuff);
     return 1;
   }
 #ifdef MORE_CLASSES
-  if(mystuff.verbosity >= 1)logf(&mystuff, "  MORE_CLASSES              enabled\n");
+  if(mystuff.verbosity >= 1)logprintf(&mystuff, "  MORE_CLASSES              enabled\n");
 #else
-  if(mystuff.verbosity >= 1)logf(&mystuff, "  MORE_CLASSES              disabled\n");
+  if(mystuff.verbosity >= 1)logprintf(&mystuff, "  MORE_CLASSES              disabled\n");
 #endif
 
 #ifdef WAGSTAFF
-  if(mystuff.verbosity >= 1)logf(&mystuff, "  Wagstaff mode             enabled\n");  
+  if(mystuff.verbosity >= 1)logprintf(&mystuff, "  Wagstaff mode             enabled\n");  
 #endif
 
 #ifdef USE_DEVICE_PRINTF
-  if(mystuff.verbosity >= 1)logf(&mystuff, "  USE_DEVICE_PRINTF         enabled (DEBUG option)\n");
+  if(mystuff.verbosity >= 1)logprintf(&mystuff, "  USE_DEVICE_PRINTF         enabled (DEBUG option)\n");
 #endif
 #ifdef DEBUG_GPU_MATH
-  if(mystuff.verbosity >= 1)logf(&mystuff, "  DEBUG_GPU_MATH            enabled (DEBUG option)\n");
+  if(mystuff.verbosity >= 1)logprintf(&mystuff, "  DEBUG_GPU_MATH            enabled (DEBUG option)\n");
 #endif
 #ifdef DEBUG_STREAM_SCHEDULE
-  if(mystuff.verbosity >= 1)logf(&mystuff, "  DEBUG_STREAM_SCHEDULE     enabled (DEBUG option)\n");
+  if(mystuff.verbosity >= 1)logprintf(&mystuff, "  DEBUG_STREAM_SCHEDULE     enabled (DEBUG option)\n");
 #endif
 #ifdef DEBUG_STREAM_SCHEDULE_CHECK
-  if(mystuff.verbosity >= 1)logf(&mystuff, "  DEBUG_STREAM_SCHEDULE_CHECK\n                            enabled (DEBUG option)\n");
+  if(mystuff.verbosity >= 1)logprintf(&mystuff, "  DEBUG_STREAM_SCHEDULE_CHECK\n                            enabled (DEBUG option)\n");
 #endif
 #ifdef RAW_GPU_BENCH
-  if(mystuff.verbosity >= 1)logf(&mystuff, "  RAW_GPU_BENCH             enabled (DEBUG option)\n");
+  if(mystuff.verbosity >= 1)logprintf(&mystuff, "  RAW_GPU_BENCH             enabled (DEBUG option)\n");
 #endif
 
   int drv_ver, rt_ver;
-  if(mystuff.verbosity >= 1)logf(&mystuff, "\nCUDA version info\n");
-  if(mystuff.verbosity >= 1)logf(&mystuff, "  binary compiled for CUDA  %d.%d\n", CUDART_VERSION/1000, CUDART_VERSION%100);
+  if(mystuff.verbosity >= 1)logprintf(&mystuff, "\nCUDA version info\n");
+  if(mystuff.verbosity >= 1)logprintf(&mystuff, "  binary compiled for CUDA  %d.%d\n", CUDART_VERSION/1000, CUDART_VERSION%100);
 #if CUDART_VERSION >= 2020
   cudaRuntimeGetVersion(&rt_ver);
-  if(mystuff.verbosity >= 1)logf(&mystuff, "  CUDA runtime version      %d.%d\n", rt_ver/1000, rt_ver%100);
+  if(mystuff.verbosity >= 1)logprintf(&mystuff, "  CUDA runtime version      %d.%d\n", rt_ver/1000, rt_ver%100);
   cudaDriverGetVersion(&drv_ver);  
-  if(mystuff.verbosity >= 1)logf(&mystuff, "  CUDA driver version       %d.%d\n", drv_ver/1000, drv_ver%100);
+  if(mystuff.verbosity >= 1)logprintf(&mystuff, "  CUDA driver version       %d.%d\n", drv_ver/1000, drv_ver%100);
   
   if(drv_ver < CUDART_VERSION)
   {
-    logf(&mystuff, "ERROR: current CUDA driver version is lower than the CUDA toolkit version used during compile!\n");
-    logf(&mystuff, "       Please update your graphics driver.\n");
+    logprintf(&mystuff, "ERROR: current CUDA driver version is lower than the CUDA toolkit version used during compile!\n");
+    logprintf(&mystuff, "       Please update your graphics driver.\n");
     close_log(&mystuff);
     return 1;
   }
   if(rt_ver != CUDART_VERSION)
   {
-    logf(&mystuff, "ERROR: CUDA runtime version must match the CUDA toolkit version used during compile!\n");
+    logprintf(&mystuff, "ERROR: CUDA runtime version must match the CUDA toolkit version used during compile!\n");
     close_log(&mystuff);
     return 1;
   }
@@ -946,7 +946,7 @@ int main(int argc, char **argv)
 
   if(cudaSetDevice(devicenumber)!=cudaSuccess)
   {
-    logf(&mystuff, "cudaSetDevice(%d) failed\n",devicenumber);
+    logprintf(&mystuff, "cudaSetDevice(%d) failed\n",devicenumber);
     print_last_CUDA_error(&mystuff);
     close_log(&mystuff);
     return 1;
@@ -963,12 +963,12 @@ int main(int argc, char **argv)
 #endif
   if(mystuff.verbosity >= 1)
   {
-    logf(&mystuff, "\nCUDA device info\n");
-    logf(&mystuff, "  name                      %s\n",deviceinfo.name);
-    logf(&mystuff, "  compute capability        %d.%d\n",deviceinfo.major,deviceinfo.minor);
-    logf(&mystuff, "  max threads per block     %d\n",deviceinfo.maxThreadsPerBlock);
-    logf(&mystuff, "  max shared memory per MP  %d byte\n", mystuff.max_shared_memory);
-    logf(&mystuff, "  number of multiprocessors %d\n", deviceinfo.multiProcessorCount);
+    logprintf(&mystuff, "\nCUDA device info\n");
+    logprintf(&mystuff, "  name                      %s\n",deviceinfo.name);
+    logprintf(&mystuff, "  compute capability        %d.%d\n",deviceinfo.major,deviceinfo.minor);
+    logprintf(&mystuff, "  max threads per block     %d\n",deviceinfo.maxThreadsPerBlock);
+    logprintf(&mystuff, "  max shared memory per MP  %d byte\n", mystuff.max_shared_memory);
+    logprintf(&mystuff, "  number of multiprocessors %d\n", deviceinfo.multiProcessorCount);
    
 /* map deviceinfo.major + deviceinfo.minor to number of CUDA cores per MP. 
    This is just information, I doesn't matter whether it is correct or not */
@@ -981,27 +981,27 @@ int main(int argc, char **argv)
     
     if(i > 0)
     {             
-      logf(&mystuff, "  CUDA cores per MP         %d\n", i);
-      logf(&mystuff, "  CUDA cores - total        %d\n", i * deviceinfo.multiProcessorCount);
+      logprintf(&mystuff, "  CUDA cores per MP         %d\n", i);
+      logprintf(&mystuff, "  CUDA cores - total        %d\n", i * deviceinfo.multiProcessorCount);
     }
     
-    logf(&mystuff, "  clock rate (CUDA cores)   %dMHz\n", deviceinfo.clockRate / 1000);
+    logprintf(&mystuff, "  clock rate (CUDA cores)   %dMHz\n", deviceinfo.clockRate / 1000);
 #if CUDART_VERSION >= 5000
-    logf(&mystuff, "  memory clock rate:        %dMHz\n", deviceinfo.memoryClockRate / 1000);
-    logf(&mystuff, "  memory bus width:         %d bit\n", deviceinfo.memoryBusWidth);
+    logprintf(&mystuff, "  memory clock rate:        %dMHz\n", deviceinfo.memoryClockRate / 1000);
+    logprintf(&mystuff, "  memory bus width:         %d bit\n", deviceinfo.memoryBusWidth);
 #endif
   }
 
   if((mystuff.compcapa_major == 1) && (mystuff.compcapa_minor == 0))
   {
-    logf(&mystuff, "Sorry, devices with compute capability 1.0 are not supported!\n");
+    logprintf(&mystuff, "Sorry, devices with compute capability 1.0 are not supported!\n");
     close_log(&mystuff);
     return 1;
   }
 
   if(THREADS_PER_BLOCK > deviceinfo.maxThreadsPerBlock)
   {
-    logf(&mystuff, "\nERROR: THREADS_PER_BLOCK > deviceinfo.maxThreadsPerBlock\n");
+    logprintf(&mystuff, "\nERROR: THREADS_PER_BLOCK > deviceinfo.maxThreadsPerBlock\n");
     close_log(&mystuff);
     return 1;
   }
@@ -1009,7 +1009,7 @@ int main(int argc, char **argv)
   // Don't do a CPU spin loop waiting for the GPU
   cudaSetDeviceFlags(cudaDeviceBlockingSync);
 
-  if(mystuff.verbosity >= 1)logf(&mystuff, "\nAutomatic parameters\n");
+  if(mystuff.verbosity >= 1)logprintf(&mystuff, "\nAutomatic parameters\n");
 #if CUDART_VERSION >= 2000
   i = THREADS_PER_BLOCK * deviceinfo.multiProcessorCount;
   while( (i * 2) <= mystuff.threads_per_grid_max) i = i * 2;
@@ -1017,24 +1017,24 @@ int main(int argc, char **argv)
 #else
   mystuff.threads_per_grid = mystuff.threads_per_grid_max;
 #endif
-  if(mystuff.verbosity >= 1)logf(&mystuff, "  threads per grid          %d\n", mystuff.threads_per_grid);
+  if(mystuff.verbosity >= 1)logprintf(&mystuff, "  threads per grid          %d\n", mystuff.threads_per_grid);
   
   if(mystuff.threads_per_grid % THREADS_PER_BLOCK)
   {
-    logf(&mystuff, "ERROR: mystuff.threads_per_grid is _NOT_ a multiple of THREADS_PER_BLOCK\n");
+    logprintf(&mystuff, "ERROR: mystuff.threads_per_grid is _NOT_ a multiple of THREADS_PER_BLOCK\n");
     close_log(&mystuff);
     return 1;
   }
 
   srandom(time(NULL));
   mystuff.selftestrandomoffset = random() % 25000000;
-  if(mystuff.verbosity >= 2)logf(&mystuff, "  random selftest offset    %d\n", mystuff.selftestrandomoffset);
+  if(mystuff.verbosity >= 2)logprintf(&mystuff, "  random selftest offset    %d\n", mystuff.selftestrandomoffset);
   
   for(i=0;i<mystuff.num_streams;i++)
   {
     if( cudaStreamCreate(&(mystuff.stream[i])) != cudaSuccess)
     {
-      logf(&mystuff, "ERROR: cudaStreamCreate() failed for stream %d\n", i);
+      logprintf(&mystuff, "ERROR: cudaStreamCreate() failed for stream %d\n", i);
       print_last_CUDA_error(&mystuff);
       close_log(&mystuff);
       return 1;
@@ -1045,7 +1045,7 @@ int main(int argc, char **argv)
   {
     if( cudaHostAlloc((void**)&(mystuff.h_ktab[i]), mystuff.threads_per_grid * sizeof(int), 0) != cudaSuccess )
     {
-      logf(&mystuff, "ERROR: cudaHostAlloc(h_ktab[%d]) failed\n", i);
+      logprintf(&mystuff, "ERROR: cudaHostAlloc(h_ktab[%d]) failed\n", i);
       print_last_CUDA_error(&mystuff);
       close_log(&mystuff);
       return 1;
@@ -1055,7 +1055,7 @@ int main(int argc, char **argv)
   {
     if( cudaMalloc((void**)&(mystuff.d_ktab[i]), mystuff.threads_per_grid * sizeof(int)) != cudaSuccess )
     {
-      logf(&mystuff, "ERROR: cudaMalloc(d_ktab1[%d]) failed\n", i);
+      logprintf(&mystuff, "ERROR: cudaMalloc(d_ktab1[%d]) failed\n", i);
       print_last_CUDA_error(&mystuff);
       close_log(&mystuff);
       return 1;
@@ -1063,14 +1063,14 @@ int main(int argc, char **argv)
   }
   if( cudaHostAlloc((void**)&(mystuff.h_RES),32 * sizeof(int), 0) != cudaSuccess )
   {
-    logf(&mystuff, "ERROR: cudaHostAlloc(h_RES) failed\n");
+    logprintf(&mystuff, "ERROR: cudaHostAlloc(h_RES) failed\n");
     print_last_CUDA_error(&mystuff);
     close_log(&mystuff);
     return 1;
   }
   if( cudaMalloc((void**)&(mystuff.d_RES), 32 * sizeof(int)) != cudaSuccess )
   {
-    logf(&mystuff, "ERROR: cudaMalloc(d_RES) failed\n");
+    logprintf(&mystuff, "ERROR: cudaMalloc(d_RES) failed\n");
     print_last_CUDA_error(&mystuff);
     close_log(&mystuff);
     return 1;
@@ -1078,14 +1078,14 @@ int main(int argc, char **argv)
 #ifdef DEBUG_GPU_MATH
   if( cudaHostAlloc((void**)&(mystuff.h_modbasecase_debug), 32 * sizeof(int), 0) != cudaSuccess )
   {
-    logf(&mystuff, "ERROR: cudaHostAlloc(h_modbasecase_debug) failed\n");
+    logprintf(&mystuff, "ERROR: cudaHostAlloc(h_modbasecase_debug) failed\n");
     print_last_CUDA_error(&mystuff);
     close_log(&mystuff);
     return 1;
   }
   if( cudaMalloc((void**)&(mystuff.d_modbasecase_debug), 32 * sizeof(int)) != cudaSuccess )
   {
-    logf(&mystuff, "ERROR: cudaMalloc(d_modbasecase_debug) failed\n");
+    logprintf(&mystuff, "ERROR: cudaMalloc(d_modbasecase_debug) failed\n");
     print_last_CUDA_error(&mystuff);
     close_log(&mystuff);
     return 1;
@@ -1095,7 +1095,7 @@ int main(int argc, char **argv)
   sieve_init();
   if(mystuff.gpu_sieving)gpusieve_init(&mystuff);
 
-  if(mystuff.verbosity >= 1)logf(&mystuff, "\n");
+  if(mystuff.verbosity >= 1)logprintf(&mystuff, "\n");
 
   mystuff.sieve_primes_upper_limit = mystuff.sieve_primes_max;
   if(mystuff.mode == MODE_NORMAL)
@@ -1103,7 +1103,7 @@ int main(int argc, char **argv)
 
 /* before we start real work run a small selftest */  
     mystuff.mode = MODE_SELFTEST_SHORT;
-    logf(&mystuff, "running a simple selftest...\n");
+    logprintf(&mystuff, "running a simple selftest...\n");
     if(selftest(&mystuff, 1) != 0)return 1; /* selftest failed :( */
     mystuff.mode = MODE_NORMAL;
     
@@ -1131,12 +1131,12 @@ int main(int argc, char **argv)
       mystuff.factors_string[0] = 0;
       if(parse_ret == OK)
       {
-        if(mystuff.verbosity >= 1)logf(&mystuff, "got assignment: exp=%u bit_min=%d bit_max=%d (%.2f GHz-days)\n", mystuff.exponent, mystuff.bit_min, mystuff.bit_max_assignment, primenet_ghzdays(mystuff.exponent, mystuff.bit_min, mystuff.bit_max_assignment));
+        if(mystuff.verbosity >= 1)logprintf(&mystuff, "got assignment: exp=%u bit_min=%d bit_max=%d (%.2f GHz-days)\n", mystuff.exponent, mystuff.bit_min, mystuff.bit_max_assignment, primenet_ghzdays(mystuff.exponent, mystuff.bit_min, mystuff.bit_max_assignment));
         if(mystuff.gpu_sieving && mystuff.exponent < mystuff.gpu_sieve_min_exp)
         {
-          logf(&mystuff, "ERROR: GPU sieve requested but current settings don't allow exponents below\n");
-          logf(&mystuff, "       %u. You can decrease the value of GPUSievePrimes in mfaktc.ini \n", mystuff.gpu_sieve_min_exp);
-          logf(&mystuff, "       lower this limit.\n");
+          logprintf(&mystuff, "ERROR: GPU sieve requested but current settings don't allow exponents below\n");
+          logprintf(&mystuff, "       %u. You can decrease the value of GPUSievePrimes in mfaktc.ini \n", mystuff.gpu_sieve_min_exp);
+          logprintf(&mystuff, "       lower this limit.\n");
           return 1;
         }
 
@@ -1183,11 +1183,11 @@ int main(int argc, char **argv)
               if(mystuff.bit_max_stage == mystuff.bit_max_assignment)parse_ret = clear_assignment(mystuff.workfile, mystuff.exponent, mystuff.bit_min, mystuff.bit_max_assignment, 0);
               else                                                   parse_ret = clear_assignment(mystuff.workfile, mystuff.exponent, mystuff.bit_min, mystuff.bit_max_assignment, mystuff.bit_max_stage);
 
-                   if(parse_ret == CANT_OPEN_WORKFILE)   logf(&mystuff, "ERROR: clear_assignment() / modify_assignment(): can't open \"%s\"\n", mystuff.workfile);
-              else if(parse_ret == CANT_OPEN_TEMPFILE)   logf(&mystuff, "ERROR: clear_assignment() / modify_assignment(): can't open \"__worktodo__.tmp\"\n");
-              else if(parse_ret == ASSIGNMENT_NOT_FOUND) logf(&mystuff, "ERROR: clear_assignment() / modify_assignment(): assignment not found in \"%s\"\n", mystuff.workfile);
-              else if(parse_ret == CANT_RENAME)          logf(&mystuff, "ERROR: clear_assignment() / modify_assignment(): can't rename workfiles\n");
-              else if(parse_ret != OK)                   logf(&mystuff, "ERROR: clear_assignment() / modify_assignment(): Unknown error (%d)\n", parse_ret);
+                   if(parse_ret == CANT_OPEN_WORKFILE)   logprintf(&mystuff, "ERROR: clear_assignment() / modify_assignment(): can't open \"%s\"\n", mystuff.workfile);
+              else if(parse_ret == CANT_OPEN_TEMPFILE)   logprintf(&mystuff, "ERROR: clear_assignment() / modify_assignment(): can't open \"__worktodo__.tmp\"\n");
+              else if(parse_ret == ASSIGNMENT_NOT_FOUND) logprintf(&mystuff, "ERROR: clear_assignment() / modify_assignment(): assignment not found in \"%s\"\n", mystuff.workfile);
+              else if(parse_ret == CANT_RENAME)          logprintf(&mystuff, "ERROR: clear_assignment() / modify_assignment(): can't rename workfiles\n");
+              else if(parse_ret != OK)                   logprintf(&mystuff, "ERROR: clear_assignment() / modify_assignment(): Unknown error (%d)\n", parse_ret);
             }
 
             mystuff.bit_min = mystuff.bit_max_stage;
@@ -1195,9 +1195,9 @@ int main(int argc, char **argv)
           }
         }
       }
-      else if(parse_ret == CANT_OPEN_FILE)             logf(&mystuff, "ERROR: get_next_assignment(): can't open \"%s\"\n", mystuff.workfile);
-      else if(parse_ret == VALID_ASSIGNMENT_NOT_FOUND) logf(&mystuff, "ERROR: get_next_assignment(): no valid assignment found in \"%s\"\n", mystuff.workfile);
-      else if(parse_ret != OK)                         logf(&mystuff, "ERROR: get_next_assignment(): Unknown error (%d)\n", parse_ret);
+      else if(parse_ret == CANT_OPEN_FILE)             logprintf(&mystuff, "ERROR: get_next_assignment(): can't open \"%s\"\n", mystuff.workfile);
+      else if(parse_ret == VALID_ASSIGNMENT_NOT_FOUND) logprintf(&mystuff, "ERROR: get_next_assignment(): no valid assignment found in \"%s\"\n", mystuff.workfile);
+      else if(parse_ret != OK)                         logprintf(&mystuff, "ERROR: get_next_assignment(): Unknown error (%d)\n", parse_ret);
     }
     while(parse_ret == OK && use_worktodo && !mystuff.quit);
   }

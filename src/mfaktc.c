@@ -129,9 +129,9 @@ k_min *MUST* be aligned in that way that k_min is in class 0!
 
 void close_log(mystuff_t *mystuff)
 {
-    if (mystuff->logprintfileptr > 0)
+    if (mystuff->logfileptr > 0)
     {
-        fclose(mystuff->logprintfileptr);
+        fclose(mystuff->logfileptr);
     }
 }
 
@@ -759,7 +759,7 @@ int main(int argc, char **argv)
   mystuff.gpu_sieve_processing_size = GPU_SIEVE_PROCESS_SIZE_DEFAULT * 1024;	/* Default to 8K bits processed by each block in a Barrett kernel. */
   sprintf(mystuff.resultfile, "results.txt");
   sprintf(mystuff.jsonresultfile, "results.json.txt");
-  sprintf(mystuff.logprintfile, "mfaktc.log");
+  sprintf(mystuff.logfile, "mfaktc.log");
   sprintf(mystuff.workfile, "worktodo.txt");
   sprintf(mystuff.addfile, "worktodo.add");
   mystuff.addfilestatus = -1;                                                   /* -1 -> timer not initialized! */

@@ -105,7 +105,7 @@ int read_config(mystuff_t *mystuff)
   }
   if (mystuff->logging == 1)
   {
-      mystuff->logprintfileptr = fopen(mystuff->logprintfile, "a");
+      mystuff->logfileptr = fopen(mystuff->logfile, "a");
   }
 
   /*****************************************************************************/

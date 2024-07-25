@@ -62,9 +62,9 @@ void logprintf(mystuff_t* mystuff, const char* fmt, ...)
     vfprintf(stdout, fmt, args);
     va_end(args);
 
-    if (mystuff->logging == 1 && mystuff->logprintfileptr != NULL) {
+    if (mystuff->logging == 1 && mystuff->logfileptr != NULL) {
         va_start(args, fmt);
-        vfprintf(mystuff->logprintfileptr, fmt, args);
+        vfprintf(mystuff->logfileptr, fmt, args);
         va_end(args);
     }
 }

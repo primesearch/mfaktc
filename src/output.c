@@ -20,6 +20,7 @@ along with mfaktc.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <stdio.h>
 #include <stdarg.h>
+#include <stdbool.h>
 #include <math.h>
 #include <cuda_runtime.h>
 #include <time.h>
@@ -397,7 +398,7 @@ void getOSJSON(char* string) {
 #if defined(_WIN32) || defined(_WIN64)
     sprintf(string, ", \"os\":{\"os\": \"Windows\"%s}", getArchitectureJSON());
 #elif defined(__linux__)
-    sprintf(string ", \"os\":{\"os\": \"Linux\"%s}", getArchitectureJSON());
+    sprintf(string, ", \"os\":{\"os\": \"Linux\"%s}", getArchitectureJSON());
 #endif
 }
 

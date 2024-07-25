@@ -67,6 +67,7 @@ checkpoint_write() writes the checkpoint file.
     i=checkpoint_checksum(buffer,strlen(buffer));
     fprintf(f,"%s%u %d %d %d %s: %d %d %s %llu %08X", NAME_NUMBERS, exp, bit_min, bit_max, NUM_CLASSES, MFAKTC_VERSION, cur_class, num_factors, strlen(factors_string) ? factors_string : "0", bit_level_time, i);
     fclose(f);
+    f = NULL;
   }
 }
 
@@ -126,6 +127,7 @@ returns 0 otherwise
     }
   }
   fclose(f);
+  f = NULL;
   return ret;
 }
 

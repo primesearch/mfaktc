@@ -313,6 +313,7 @@ enum ASSIGNMENT_ERRORS get_next_assignment(char *filename, unsigned int *exponen
   while (TRUE);
   
   fclose(f_in);
+  f_in = NULL;
   if (NO_WARNING == value)
   {
     *exponent = assignment.exponent;
@@ -366,6 +367,7 @@ enum ASSIGNMENT_ERRORS clear_assignment(char *filename, unsigned int exponent, i
   if (NULL == f_out)
   {
     fclose(f_in);
+    f_in = NULL;
     return CANT_OPEN_TEMPFILE;
   }
   
@@ -399,10 +401,12 @@ enum ASSIGNMENT_ERRORS clear_assignment(char *filename, unsigned int exponent, i
   if (fseek(f_in,0L,SEEK_SET))
   {
     fclose(f_in);
+    f_in = NULL;
     f_in = fopen(filename, "r");
     if (NULL == f_in)
     {
       fclose(f_out);
+      f_out = NULL;
       return CANT_OPEN_WORKFILE;
     }
   }
@@ -439,7 +443,9 @@ enum ASSIGNMENT_ERRORS clear_assignment(char *filename, unsigned int exponent, i
     }
   }	// while.....
   fclose(f_in);
+  f_in = NULL;
   fclose(f_out);
+  f_out = NULL;
   if (!found)
     return ASSIGNMENT_NOT_FOUND;
   if(remove(filename) != 0)
@@ -479,6 +485,7 @@ int process_add_file(char *workfilename, char *addfilename, int *addfilesstatus,
       if(workfile == NULL)
       {
         fclose(addfile);
+        addfile = NULL;
         printf("WARNING: process_add_file() could not open \"%s\"", workfilename);
         printf("         Disabled worktodo.add feature until restart of mfaktc!\n");
         return CANT_OPEN_WORKFILE;
@@ -490,7 +497,9 @@ int process_add_file(char *workfilename, char *addfilename, int *addfilesstatus,
           if(fwrite(buffer, 1, n, workfile) != n)
           {
             fclose(workfile);
+            workfile = NULL;
             fclose(addfile);
+            addfile = NULL;
             printf("WARNING: process_add_file() could not write to \"%s\"", workfilename);
             printf("         Disabled worktodo.add feature until restart of mfaktc!\n");
             return CANT_WRITE;
@@ -499,12 +508,15 @@ int process_add_file(char *workfilename, char *addfilename, int *addfilesstatus,
         if(!feof(addfile))
         {
           fclose(workfile);
+          workfile = NULL;
           fclose(addfile);
+          addfile = NULL;
           printf("WARNING: process_add_file() could not read from \"%s\"", addfilename);
           printf("         Disabled worktodo.add feature until restart of mfaktc!\n");
           return CANT_READ;
         }
         fclose(workfile);
+        workfile = NULL;
       }
     }
     else // (*addfilesstatus) < 2
@@ -512,6 +524,7 @@ int process_add_file(char *workfilename, char *addfilename, int *addfilesstatus,
       if(verbosity >= 2)printf("  -> will wait until next check of \"%s\"\n", addfilename);
     }
     fclose(addfile);
+    addfile = NULL;
     if((*addfilesstatus) == 0) /* status was 2 before and is 0 now, try to delete addfile! */
     {
       if(remove(addfilename) != 0)

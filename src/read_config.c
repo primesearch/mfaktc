@@ -41,6 +41,7 @@ int my_read_int(char *inifile, char *name, int *value)
     }
   }
   fclose(in);
+  in = NULL;
   if(found)return 0;
   return 1;
 }
@@ -72,6 +73,7 @@ int my_read_string(char *inifile, char *name, char *string, unsigned int len)
     }
   }  
   fclose(in);
+  in = NULL;
   if(found >= 1)return 0;
   return 1;
 }
@@ -106,6 +108,10 @@ int read_config(mystuff_t *mystuff)
   if (mystuff->logging == 1)
   {
       mystuff->logfileptr = fopen(mystuff->logfile, "a");
+      if (mystuff->logfileptr == NULL)
+      {
+          printf("WARNING: Cannot open %s for appending, error: %d", mystuff->logfile, errno);
+      }
   }
 
   /*****************************************************************************/

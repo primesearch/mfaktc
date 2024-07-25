@@ -132,6 +132,7 @@ void close_log(mystuff_t *mystuff)
     if (mystuff->logfileptr != NULL)
     {
         fclose(mystuff->logfileptr);
+        mystuff->logfileptr = NULL;
     }
 }
 

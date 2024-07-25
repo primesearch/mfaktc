@@ -164,16 +164,14 @@ void print_timestamp(FILE *outfile)
   fprintf(outfile, "[%s]\n", ptr);
 }
 
-char* get_utc_timestamp()
+void get_utc_timestamp(char* timestamp)
 {
     time_t now;
     struct tm* utc_time;
-    char timestamp[20];
 
     time(&now);
     utc_time = gmtime(&now);
     strftime(timestamp, sizeof(timestamp), "%Y-%m-%d %H:%M:%S", utc_time);
-    return timestamp;
 }
 
 
@@ -413,6 +411,7 @@ void print_result_line(mystuff_t *mystuff, int factorsfound)
   char factorjson[513];
   char osjson[200];
   char txtstring[200];
+  char timestamp[20];
   
   FILE *txtresultfile=NULL;
 
@@ -448,6 +447,7 @@ void print_result_line(mystuff_t *mystuff, int factorsfound)
       factorjson[0] = 0;
 
   getOSJSON(osjson);
+  get_utc_timestamp(timestamp);
     
   if(mystuff->mode == MODE_NORMAL)
   {
@@ -473,7 +473,7 @@ void print_result_line(mystuff_t *mystuff, int factorsfound)
   }
 #ifndef WAGSTAFF
   sprintf(jsonstring, "{\"exponent\":%u, \"worktype\":\"TF\", \"status\":\"%s\", \"bitlo\":%2d, \"bithi\":%2d, \"rangecomplete\":%s%s, \"program\":{\"name\":\"mfaktc\", \"version\":\"%s\", \"subversion\":\"%s\"}, \"timestamp\":\"%s\"%s%s%s%s}",
-      mystuff->exponent, factorsfound > 0 ? "F" : "NF", mystuff->bit_min, mystuff->bit_max_stage, partialresult ? "false" : "true", factorjson, MFAKTC_VERSION, mystuff->stats.kernelname, get_utc_timestamp(), userjson, computerjson, aidjson, osjson);
+      mystuff->exponent, factorsfound > 0 ? "F" : "NF", mystuff->bit_min, mystuff->bit_max_stage, partialresult ? "false" : "true", factorjson, MFAKTC_VERSION, mystuff->stats.kernelname, timestamp, userjson, computerjson, aidjson, osjson);
 #endif
   if(mystuff->mode != MODE_SELFTEST_SHORT)
   {
@@ -483,9 +483,11 @@ void print_result_line(mystuff_t *mystuff, int factorsfound)
   {
     fprintf(txtresultfile, "%s%s\n", UID, txtstring);
     fclose(txtresultfile);
+    txtresultfile = NULL;
 #ifndef WAGSTAFF
     fprintf(jsonresultfile, "%s\n", jsonstring);
     fclose(jsonresultfile);
+    jsonresultfile = NULL;
 #endif
   }
 }

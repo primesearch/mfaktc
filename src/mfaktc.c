@@ -129,7 +129,7 @@ k_min *MUST* be aligned in that way that k_min is in class 0!
 
 void close_log(mystuff_t *mystuff)
 {
-    if (mystuff->logfileptr > 0)
+    if (mystuff->logfileptr != NULL)
     {
         fclose(mystuff->logfileptr);
     }

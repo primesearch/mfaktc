@@ -747,6 +747,7 @@ int main(int argc, char **argv)
   int use_worktodo = 1;
     
   i = 1;
+  memset(&mystuff, 0, sizeof(mystuff));
   mystuff.mode = MODE_NORMAL;
   mystuff.quit = 0;
   mystuff.verbosity = 1;

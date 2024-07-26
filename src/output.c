@@ -394,8 +394,12 @@ const char* getArchitectureJSON() {
 void getOSJSON(char* string) {
 #if defined(_WIN32) || defined(_WIN64)
     sprintf(string, ", \"os\":{\"os\": \"Windows\"%s}", getArchitectureJSON());
+#elif defined(__APPLE__)
+    sprintf(string, ", \"os\":{\"os\": \"Apple\"%s}", getArchitectureJSON());
 #elif defined(__linux__)
     sprintf(string, ", \"os\":{\"os\": \"Linux\"%s}", getArchitectureJSON());
+#elif defined(__unix__)
+    sprintf(string, ", \"os\":{\"os\": \"Unix\"%s}", getArchitectureJSON());
 #endif
 }
 

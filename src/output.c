@@ -164,17 +164,6 @@ void print_timestamp(FILE *outfile)
   fprintf(outfile, "[%s]\n", ptr);
 }
 
-void get_utc_timestamp(char* timestamp)
-{
-    time_t now;
-    struct tm* utc_time;
-
-    time(&now);
-    utc_time = gmtime(&now);
-    strftime(timestamp, sizeof(timestamp), "%Y-%m-%d %H:%M:%S", utc_time);
-}
-
-
 void print_status_line(mystuff_t *mystuff)
 {
   unsigned long long int eta;
@@ -380,6 +369,16 @@ void print_status_line(mystuff_t *mystuff)
   logprintf(mystuff, "%s", buffer);
 }
 
+void get_utc_timestamp(char* timestamp)
+{
+    time_t now;
+    struct tm* utc_time;
+
+    time(&now);
+    utc_time = gmtime(&now);
+    strftime(timestamp, sizeof(char[50]), "%Y-%m-%d %H:%M:%S", utc_time);
+}
+
 const char* getArchitectureJSON() {
 #if defined(__x86_64__) || defined(_M_X64)
     return ", \"architecture\": \"x86_64\"";
@@ -411,7 +410,7 @@ void print_result_line(mystuff_t *mystuff, int factorsfound)
   char factorjson[513];
   char osjson[200];
   char txtstring[200];
-  char timestamp[20];
+  char timestamp[50];
   
   FILE *txtresultfile=NULL;
 

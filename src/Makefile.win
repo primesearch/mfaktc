@@ -8,17 +8,17 @@ CUFLAGS = -DWIN64 -Xcompiler /EHsc,/W3,/nologo,/Ox $(NVCCFLAGS)
 
 ############################################################
 
-NVCCFLAGS += --generate-code arch=compute_90,code=sm_90
-NVCCFLAGS += --generate-code arch=compute_89,code=sm_89
-NVCCFLAGS += --generate-code arch=compute_87,code=sm_87
-NVCCFLAGS += --generate-code arch=compute_86,code=sm_86
-NVCCFLAGS += --generate-code arch=compute_80,code=sm_80
-NVCCFLAGS += --generate-code arch=compute_75,code=sm_75
-NVCCFLAGS += --generate-code arch=compute_72,code=sm_72
-NVCCFLAGS += --generate-code arch=compute_70,code=sm_70
-NVCCFLAGS += --generate-code arch=compute_62,code=sm_62
-NVCCFLAGS += --generate-code arch=compute_61,code=sm_61
 NVCCFLAGS += --generate-code arch=compute_60,code=sm_60
+NVCCFLAGS += --generate-code arch=compute_61,code=sm_61
+NVCCFLAGS += --generate-code arch=compute_62,code=sm_62
+NVCCFLAGS += --generate-code arch=compute_70,code=sm_70
+NVCCFLAGS += --generate-code arch=compute_72,code=sm_72
+NVCCFLAGS += --generate-code arch=compute_75,code=sm_75
+NVCCFLAGS += --generate-code arch=compute_80,code=sm_80
+NVCCFLAGS += --generate-code arch=compute_86,code=sm_86
+NVCCFLAGS += --generate-code arch=compute_87,code=sm_87
+NVCCFLAGS += --generate-code arch=compute_89,code=sm_89
+NVCCFLAGS += --generate-code arch=compute_90,code=sm_90
 
 ############################################################
 

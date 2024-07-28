@@ -765,6 +765,13 @@ int main(int argc, char **argv)
   sprintf(mystuff.workfile, "worktodo.txt");
   sprintf(mystuff.addfile, "worktodo.add");
   mystuff.addfilestatus = -1;                                                   /* -1 -> timer not initialized! */
+
+  // need to see if we should log all the output before all of the other preamble
+  my_read_int("mfaktc.ini", "Logging", &(mystuff.logging));
+  if (mystuff.logging == 1 && mystuff.logfileptr == NULL)
+  {
+     mystuff.logfileptr = fopen(mystuff.logfile, "a");
+  }
   
   while(i < argc)
   {
@@ -873,8 +880,6 @@ int main(int argc, char **argv)
     i++;
   }
 
-  read_config(&mystuff);
-
   logprintf(&mystuff, "mfaktc v%s (%dbit built)\n\n", MFAKTC_VERSION, (int)(sizeof(void*)*8));
 
 /* print current configuration */
@@ -921,6 +926,8 @@ int main(int argc, char **argv)
 #ifdef RAW_GPU_BENCH
   if(mystuff.verbosity >= 1)logprintf(&mystuff, "  RAW_GPU_BENCH             enabled (DEBUG option)\n");
 #endif
+
+  read_config(&mystuff);
 
   int drv_ver, rt_ver;
   if(mystuff.verbosity >= 1)logprintf(&mystuff, "\nCUDA version info\n");

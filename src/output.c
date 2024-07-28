@@ -21,6 +21,7 @@ along with mfaktc.  If not, see <http://www.gnu.org/licenses/>.
 #include <stdio.h>
 #include <stdarg.h>
 #include <stdbool.h>
+#include <string.h>
 #include <math.h>
 #include <cuda_runtime.h>
 #include <time.h>
@@ -429,7 +430,7 @@ void print_result_line(mystuff_t *mystuff, int factorsfound)
   else
     UID[0]=0;
 
-  if (mystuff->assignment_key[0])
+  if (mystuff->assignment_key[0] && strcmp(mystuff->assignment_key, "N/A") && strcmp(mystuff->assignment_key, "0"))
       sprintf(aidjson, ", \"aid\":\"%s\"", mystuff->assignment_key);
   else
       aidjson[0] = 0;

@@ -87,36 +87,6 @@ int read_config(mystuff_t *mystuff)
 
   /*****************************************************************************/
 
-  if (mystuff->logging == -1) // logging not overwritten by command line flag
-  {
-      if (my_read_int("mfaktc.ini", "Logging", &i))
-      {
-          logprintf(mystuff, "WARNING: Cannot read Logging from mfaktc.ini, set to 0 by default\n");
-          i = 0;
-      }
-      else if (i != 0 && i != 1)
-      {
-          logprintf(mystuff, "WARNING: Logging must be 0 or 1, set to 0 by default\n");
-          i = 0;
-      }
-      if (mystuff->verbosity >= 1)
-      {
-          if (i == 0)logprintf(mystuff, "  Logging                   disabled\n");
-          else      logprintf(mystuff, "  Logging                   enabled\n");
-      }
-      mystuff->logging = i;
-  }
-  if (mystuff->logging == 1)
-  {
-      mystuff->logfileptr = fopen(mystuff->logfile, "a");
-      if (mystuff->logfileptr == NULL)
-      {
-          printf("WARNING: Cannot open %s for appending, error: %d", mystuff->logfile, errno);
-      }
-  }
-
-  /*****************************************************************************/
-
   if (mystuff->verbosity >= 1)logprintf(mystuff, "\nRuntime options\n");
 
   /*****************************************************************************/
@@ -488,6 +458,34 @@ int read_config(mystuff_t *mystuff)
     else      logprintf(mystuff, "  PrintMode                 compact\n");
   }
   mystuff->printmode = i;
+
+  /*****************************************************************************/
+
+
+  if (my_read_int("mfaktc.ini", "Logging", &i))
+  {
+    logprintf(mystuff, "WARNING: Cannot read Logging from mfaktc.ini, set to 0 by default\n");
+    i = 0;
+  }
+  else if (i != 0 && i != 1)
+  {
+    logprintf(mystuff, "WARNING: Logging must be 0 or 1, set to 0 by default\n");
+    i = 0;
+  }
+  if (mystuff->verbosity >= 1)
+  {
+    if (i == 0)logprintf(mystuff, "  Logging                   disabled\n");
+    else      logprintf(mystuff, "  Logging                   enabled\n");
+  }
+  mystuff->logging = i;
+  if (mystuff->logging == 1 && mystuff->logfileptr == NULL)
+  {
+    mystuff->logfileptr = fopen(mystuff->logfile, "a");
+    if (mystuff->logfileptr == NULL)
+    {
+      logprintf(mystuff, "WARNING: Cannot open %s for appending, error: %d", mystuff->logfile, errno);
+    }
+  }
 
 /*****************************************************************************/
 

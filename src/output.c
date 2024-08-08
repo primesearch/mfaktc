@@ -430,7 +430,7 @@ void print_result_line(mystuff_t *mystuff, int factorsfound)
   else
     UID[0]=0;
 
-  if (mystuff->assignment_key[0] && strcmp(mystuff->assignment_key, "N/A") && strcmp(mystuff->assignment_key, "0"))
+  if (mystuff->assignment_key[0] && strspn(mystuff->assignment_key, "0123456789abcdefABCDEF") == 32 && strlen(mystuff->assignment_key) == 32)
       sprintf(aidjson, ", \"aid\":\"%s\"", mystuff->assignment_key);
   else
       aidjson[0] = 0;

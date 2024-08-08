@@ -1,16 +1,18 @@
 version 0.23 (2024-7-19)
 - contributors
   - GP2 (AID saving code) tybusby (rest)
-- added results.json.txt to comply with primenet results reporting
-- doesn't clobber AID from worktodo lines
-- added logging to mfaktc.log by default
-- added -nolog switch to disable logging
+- added results.json.txt to comply with primenet results reporting, with the following new fields
+	- aid (assignment id)
+	- os (operating system info)
+	- timestamp (completion timestamp)
+	- and more!
+- added option for logging to mfaktc.log (off by default)
 - store found factors in .ckp file
 - change all timestamps to UTC to comply with gimps reporting
 
-version 0.22 (2018-??-??)
-- lost to the sands of time...
-- may still exist on a harddrive somewhere
+version 0.22 (??-??-??)
+- currently unreleased
+- definitely still exist on a harddrive somewhere
 - possibly included CRC32 checksum of results
 
 version 0.21 (2015-02-17)

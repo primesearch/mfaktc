@@ -35,7 +35,7 @@ NVCCFLAGS += --compiler-options=-Wall
 
 # Linker
 LD = gcc
-LDFLAGS = -fPIC $(CUDA_LIB) -lcudart -lm -lstdc++
+LDFLAGS = -fPIC $(CUDA_LIB) -lcudart_static -lm -lstdc++
 
 ##############################################################################
 

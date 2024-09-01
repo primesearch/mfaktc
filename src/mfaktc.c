@@ -385,21 +385,21 @@ see benchmarks in src/kernel_benchmarks.txt */
         factorsfound += numfactors;
         if(mystuff->mode == MODE_NORMAL)
         {
+          if (numfactors > 0)
+          {
+            char factorstring[50];
+            int96 factor;
+            for (i = 0; (i < numfactors) && (i < 10); i++)
+            {
+              factor.d2 = mystuff->h_RES[i * 3 + 1];
+              factor.d1 = mystuff->h_RES[i * 3 + 2];
+              factor.d0 = mystuff->h_RES[i * 3 + 3];
+              print_dez96(factor, factorstring);
+              sprintf(mystuff->factors_string, mystuff->factors_string[0] ? "%s,\"%s\"" : "%s\"%s\"", mystuff->factors_string, factorstring);
+            }
+          }
           if(mystuff->checkpoints == 1)
           {
-            if (numfactors > 0)
-            {
-              char factorstring[50];
-              int96 factor;
-              for (i = 0; (i < numfactors) && (i < 10); i++)
-              {
-                factor.d2 = mystuff->h_RES[i * 3 + 1];
-                factor.d1 = mystuff->h_RES[i * 3 + 2];
-                factor.d0 = mystuff->h_RES[i * 3 + 3];
-                print_dez96(factor, factorstring);
-                sprintf(mystuff->factors_string, mystuff->factors_string[0] ? "%s,\"%s\"" : "%s\"%s\"", mystuff->factors_string, factorstring);
-              }
-            }
             if (numfactors > 0 || timer_diff(&timer_last_checkpoint) / 1000000 >= (unsigned long long int)mystuff->checkpointdelay || mystuff->quit)
             {
                 timer_init(&timer_last_checkpoint);
@@ -1115,7 +1115,8 @@ int main(int argc, char **argv)
     logprintf(&mystuff, "running a simple selftest...\n");
     if(selftest(&mystuff, 1) != 0)return 1; /* selftest failed :( */
     mystuff.mode = MODE_NORMAL;
-    
+    mystuff.h_RES[0] = 0;
+
 /* signal handler blablabla */
     register_signal_handler(&mystuff);
     

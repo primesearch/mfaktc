@@ -40,15 +40,15 @@ mfaktc 0.07-0.14 to see Luigis code.
 
 /************************************************************************************************************
  * Input/output file function library                                                                       *
- *                                                   							    *
- *   return codes:											    *
- *     0 - OK												    *
- *     1 - get_next_assignment : cannot open file							    *
- *     2 - get_next_assignment : no valid assignment found						    *
- *     3 - clear_assignment    : cannot open file <filename>						    *
- *     4 - clear_assignment    : cannot open file "__worktodo__.tmp"					    *
- *     5 - clear_assignment    : assignment not found							    *
- *     6 - clear_assignment    : cannot rename temporary workfile to regular workfile			    *
+ *                                                                                                          *
+ *   return codes:                                                                                          *
+ *     0 - OK                                                                                               *
+ *     1 - get_next_assignment : cannot open file                                                           *
+ *     2 - get_next_assignment : no valid assignment found                                                  *
+ *     3 - clear_assignment    : cannot open file <filename>                                                *
+ *     4 - clear_assignment    : cannot open file "__worktodo__.tmp"                                        *
+ *     5 - clear_assignment    : assignment not found                                                       *
+ *     6 - clear_assignment    : cannot rename temporary workfile to regular workfile                       *
  ************************************************************************************************************/
 
 #include <stdio.h>
@@ -251,17 +251,17 @@ output
 
 /************************************************************************************************************
  * Function name : get_next_assignment                                                                      *
- *   													    *
- *     INPUT  :	char *filename										    *
- *		unsigned int *exponent									    *
- *		int *bit_min										    *
- *		int *bit_max										    *
- *		char *assignment_key[100];
- *     OUTPUT :                                        							    *
  *                                                                                                          *
- *     0 - OK												    *
- *     1 - get_next_assignment : cannot open file							    *
- *     2 - get_next_assignment : no valid assignment found						    *
+ *     INPUT  : char *filename                                                                              *
+ *      unsigned int *exponent                                                                              *
+ *      int *bit_min                                                                                        *
+ *      int *bit_max                                                                                        *
+ *      char *assignment_key[100];                                                                          *
+ *     OUTPUT :                                                                                             *
+ *                                                                                                          *
+ *     0 - OK                                                                                               *
+ *     1 - get_next_assignment : cannot open file                                                           *
+ *     2 - get_next_assignment : no valid assignment found                                                  *
  ************************************************************************************************************/
 enum ASSIGNMENT_ERRORS get_next_assignment(char *filename, unsigned int *exponent, int *bit_min, int *bit_max, LINE_BUFFER *key, int verbosity)
 {
@@ -331,19 +331,19 @@ enum ASSIGNMENT_ERRORS get_next_assignment(char *filename, unsigned int *exponen
 
 /************************************************************************************************************
  * Function name : clear_assignment                                                                         *
- *   													    *
- *     INPUT  :	char *filename										    *
- *		unsigned int exponent									    *
- *		int bit_min		- from old assignment file			    *
- *		int bit_max										    *
- *		int bit_min_new	- new bit_min,what was factored to--if 0,reached bit_max	    *
- *     OUTPUT :                                        							    *
  *                                                                                                          *
- *     0 - OK												    *
- *     3 - clear_assignment    : cannot open file <filename>						    *
- *     4 - clear_assignment    : cannot open file "__worktodo__.tmp"					    *
- *     5 - clear_assignment    : assignment not found							    *
- *     6 - clear_assignment    : cannot rename temporary workfile to regular workfile			    *
+ *     INPUT  : char *filename                                                                              *
+ *      unsigned int exponent                                                                               *
+ *      int bit_min     - from old assignment file                                                          *
+ *      int bit_max                                                                                         *
+ *      int bit_min_new - new bit_min,what was factored to--if 0,reached bit_max                            *
+ *     OUTPUT :                                                                                             *
+ *                                                                                                          *
+ *     0 - OK                                                                                               *
+ *     3 - clear_assignment    : cannot open file <filename>                                                *
+ *     4 - clear_assignment    : cannot open file "__worktodo__.tmp"                                        *
+ *     5 - clear_assignment    : assignment not found                                                       *
+ *     6 - clear_assignment    : cannot rename temporary workfile to regular workfile                       *
  *                                                                                                          *
  * If bit_min_new is zero then the specified assignment will be cleared. If bit_min_new is greater than     *
  * zero the specified assignment will be modified                                                           *

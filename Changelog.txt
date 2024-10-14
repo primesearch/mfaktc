@@ -1,4 +1,4 @@
-version 0.23 (2024-7-19)
+version 0.23.0
 - contributors
   - GP2 (AID saving code) tybusby (rest)
 - added results.json.txt to comply with primenet results reporting, with the following new fields
@@ -8,6 +8,7 @@ version 0.23 (2024-7-19)
 	- and more!
 - added option for logging to mfaktc.log (off by default)
 - store found factors in .ckp file
+- store time spent in .ckp file, for accurate progress reporting
 - change all timestamps to UTC to comply with gimps reporting
 
 version 0.22 (??-??-??)

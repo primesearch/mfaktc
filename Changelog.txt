@@ -11,6 +11,7 @@ version 0.23 (2024-7-19)
 	- and more!
 - added option for logging to mfaktc.log (off by default)
 - store found factors in .ckp file
+- store time spent in .ckp file, for accurate progress reporting
 - change all timestamps to UTC to comply with gimps reporting
 
 version 0.22-pre9 (2024-07-26)
@@ -26,12 +27,6 @@ version 0.22-pre9 (2024-07-26)
   different mfaktc versions as long as there is a reason not to do so.
 - minor speedup for squaring on Pascal generation cards
 - rised max GPUSieveSize to 1024 Mbits
-
-missing changelog for version 0.21 (2015-02-17)
-Thank you James Heinrich for pointing out!
-- add support for GPU sieving for (rather old) kernels 75bit_mul32 and
-  95bit_mul32. As a sideeffect GPU sieving is now available for factor
-  candidates below 2^64.
 
 version 0.21 (2015-02-17)
 - contributors

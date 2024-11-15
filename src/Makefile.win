@@ -8,6 +8,7 @@ CUFLAGS = -DWIN64 -Xcompiler /EHsc,/W3,/nologo,/Ox $(NVCCFLAGS)
 
 ############################################################
 
+NVCCFLAGS += --generate-code arch=compute_50,code=sm_50
 NVCCFLAGS += --generate-code arch=compute_60,code=sm_60
 NVCCFLAGS += --generate-code arch=compute_61,code=sm_61
 NVCCFLAGS += --generate-code arch=compute_62,code=sm_62

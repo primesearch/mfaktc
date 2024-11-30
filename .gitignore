@@ -1,11 +1,23 @@
-.vs/
+# build artifacts
+*.o
 *.obj
+
+# intermediate build files
+*.exp
+*.lib
+
+# binaries
 mfaktc
 *.exe
-*.txt
+
+# device-specific mfaktc files
 *.ckp
+results.txt
+results.json.txt
+worktodo.txt
+worktodo.add
+
+# other
+.vs/
 *.zip
 *.log
-*.lib
-*.exp
-*.o

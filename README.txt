@@ -35,12 +35,13 @@ CPU and GPU resources).
 # 1 Supported Hardware #
 ########################
 
-mfaktc should run all all CUDA capable Nvidia GPUs with compute capability
->= 1.1. From my knowledge there is only one CUDA capable GPU with compute
-capability 1.0: the G80 chip which is found on Geforce 8800 Ultra / GTX /
-GTS 640 / GTS 320 and their Quadro and Tesla variants.
-For AMD Radeon GPUs check out the OpenCL port of mfaktc: mfakto by Bertram
-Franz
+mfaktc should run on all CUDA-capable Nvidia GPUs with Compute Capability 1.1
+and above. To my knowledge, the only GPU with Compute Capability 1.0 is the G80
+chip in the GeForce 8800 Ultra / GTX / GTS 640 / GTS 320 and their Quadro and
+Tesla variants.
+
+For AMD GPUs, there is an OpenCL port of mfaktc by Bertram Franz called mfakto:
+https://github.com/primesearch/mfakto
 
 
 #################
@@ -57,8 +58,8 @@ There are some compiletime settings in the file src/params.h possible:
 - the third part contains some defines which should _NOT_ be changed unless
   you really know what they do. It is easily possible to screw up something.
 
-A 64bit built is prefered except for some old lowend GPUs because the
-performance critical CPU code runs ~33% faster compared to 32bit. (measured
+A 64-bit build is preferred except for some old low-end GPUs because the
+performance critical CPU code runs ~33% faster compared to 32-bit. (measured
 on a Intel Core i7)
 
 
@@ -69,7 +70,7 @@ on a Intel Core i7)
 Change into the subdirectory "src/"
 
 Adjust the path to your CUDA installation in "Makefile" and run 'make'.
-The binary "mfaktc.exe" is placed into the parent directory.
+The binary "mfaktc" is placed into the parent directory.
 
 I'm using
 - OpenSUSE 12.2 x86_64
@@ -116,7 +117,7 @@ other than CUDA 6.5 and MSVS 2012. The binaries "mfaktc-win-64.exe" or
 # 3 Running mfaktc (Linux) #
 ############################
 
-Just run './mfaktc.exe -h'. It will tell you what parameters it accepts.
+Just run './mfaktc -h'. It will tell you what parameters it accepts.
 Maybe you want to tweak the parameters in mfaktc.ini. A small description
 of those parameters is included in mfaktc.ini, too.
 Typically you want to get work from a worktodo file. You can specify the
@@ -135,7 +136,7 @@ Factor=bla,66362159,64,68
 Factor=bla,3321932839,50,71
 -- cut here --
 
-Than run e.g. './mfaktc.exe'. If everything is working as expected this
+Than run e.g. './mfaktc'. If everything is working as expected this
 should trial factor M66362159 from 2^64 to 2^68 and after that trial factor
 M3321932839 from 2^50 to 2^71.
 
@@ -277,10 +278,10 @@ Submitting results:
   factoring above 2^64 up to 2^95 (factor sizes). ==> mfaktc needs
   "long runs"!
 - mfaktc can find factors outside the given range.
-  E.g. './mfaktc.exe -tf 66362159 40 41' has a high change to report
+  E.g. './mfaktc -tf 66362159 40 41' has a high change to report
   124246422648815633 as a factor. Actually this is a factor of M66362159 but
   it's size is between 2^56 and 2^57! Of course
-  './mfaktc.exe -tf 66362159 56 57' will find this factor, too. The reason
+  './mfaktc -tf 66362159 56 57' will find this factor, too. The reason
   for this behaviour is that mfaktc works on huge factor blocks. This is
   controlled by GridSize in mfaktc.ini. The default value is 3 which means
   that mfaktc runs up to 1048576 factor candidates at once (per class). So

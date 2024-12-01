@@ -11,13 +11,12 @@ Content
 2.2 Compilation (Windows)
 3   Running mfaktc (Linux)
 3.1 Running mfaktc (Windows)
-4   How to get work and report results from/to the Primenet server
+4   Getting work and reporting results
 5   Known issues
 5.1 Stuff that looks like an issue but actually isn't an issue
 6   Tuning
 7   FAQ
 8   .plan
-
 
 
 ####################
@@ -32,7 +31,6 @@ It runs almost entirely on the GPU since v0.20 (previous versions used both
 CPU and GPU resources).
 
 
-
 ########################
 # 1 Supported Hardware #
 ########################
@@ -43,7 +41,6 @@ capability 1.0: the G80 chip which is found on Geforce 8800 Ultra / GTX /
 GTS 640 / GTS 320 and their Quadro and Tesla variants.
 For AMD Radeon GPUs check out the open CL port of mfaktc: mfakto by Bertram
 Franz
-
 
 
 #################
@@ -63,7 +60,6 @@ There are some compiletime settings in the file src/params.h possible:
 A 64bit built is prefered except for some old lowend GPUs because the
 performance critical CPU code runs ~33% faster compared to 32bit. (measured
 on a Intel Core i7)
-
 
 
 ###########################
@@ -93,7 +89,6 @@ When you compile mfaktc on a 32bit system you must change the library path
 in "Makefile" (replace "lib64" with "lib").
 
 
-
 #############################
 # 2.2 Compilation (Windows) #
 #############################
@@ -115,7 +110,6 @@ You will have to adjust the paths to your CUDA installation and the
 Microsoft Visual Studio binaries in the makefiles if you have something
 other than CUDA 6.5 and MSVS 2012. The binaries "mfaktc-win-64.exe" or
 "mfaktc-win-32.exe" are placed in the parent directory.
-
 
 
 ############################
@@ -146,7 +140,6 @@ should trial factor M66362159 from 2^64 to 2^68 and after that trial factor
 M3321932839 from 2^50 to 2^71.
 
 
-
 ################################
 # 3.1 Running mfaktc (Windows) #
 ################################
@@ -155,27 +148,40 @@ Similar to Linux (read above!).
 Open a command window and run 'mfaktc.exe -h'.
 
 
+########################################
+# 4 Getting work and reporting results #
+########################################
 
-####################################################################
-# 4 How to get work and report results from/to the Primenet server #
-####################################################################
+You must have a PrimeNet account to participate. Simply go to the GIMPS website
+at https://mersenne.org and click "Register" to create one. Once you've signed
+up, you can get assignments in several ways.
 
-Getting work:
-    Step 1) go to http://www.mersenne.org/ and login with your username and
-            password
-    Step 2) on the menu on the left click "Manual Testing" and then
-            "Assignments"
-    Step 3) choose the number of assignments by choosing
-            "Number of CPUs (cores) you need assignments for (maximum 12)"
-            and "Number of assignments you want for each core"
-    Step 4) Change "Preferred work type" to "Trial factoring"
-    Step 5) click the button "Get Assignments"
-    Step 6) copy&paste the "Factor=..." lines directly into the worktodo.txt
-            in your mfaktc directory
+From the GIMPS website:
+    Step 1) log in to the GIMPS website with your username and password
+    Step 2) on the menu bar, select Manual Testing > Assignments
+    Step 3) open the link to the manual GPU assignment request form
+    Step 4) enter the number of assignments or GHz-days you want
+    Step 5) click "Get Assignments"
 
-You can also use www.GPU72.org to get assignments and 
-you can also you MISFIT to get and report results
-http://www.mersenneforum.org/misfit/
+    Users with older GPUs may want to use the regular form.
+
+    Using the GPU to 72 service:
+        GPU to 72 "subcontracts" assignments from the PrimeNet server, and was
+        previously the only means to obtain work at high bit levels. GIMPS now has a
+        manual GPU assignment form that serves this purpose, but GPU to 72 remains
+        a popular option.
+
+        GPU to 72 website: https://gpu72.com
+
+    Using the MISFIT tool:
+        MISFIT is a Windows tool that automatically requests assignments and
+        submits results. You can get it here: https://mersenneforum.org/misfit
+
+    From mersenne.ca:
+        James Heinrich's website mersenne.ca offers assignments for exponents up
+        to 32 bits. You can get such work here: https://mersenne.ca/tf1G
+
+        Be aware mfaktc currently does not support exponents below 100,000.
 
 Start mfaktc and stress your GPU ;)
 
@@ -207,7 +213,25 @@ Advanced usage (extend the upper limit):
     report the results once you've finished up to the desired level. (Do not
     report partial results before completing the exponent!)
 
+Submitting results:
+    mfaktc does not natively communicate with the PrimeNet server, but there is
+    a program called AutoPrimeNet that does so. See the AutoPrimeNet download
+    page for instructions: https://download.mersenne.ca/AutoPrimeNet
 
+    Another option is to manually submit the results:
+
+    Step 1) log in to the GIMPS website with your username and password
+    Step 2) on the menu bar, select Manual Testing > Results
+    Step 3) upload the results.json.txt file produced by mfakto. You may
+            archive or delete the file after it has been processed.
+
+    To prevent abuse, admin approval is required for manual submissions. You
+    can request approval by contacting George Woltman at woltman@alum.mit.edu
+    or posting on the GIMPS forum:
+    https://mersenneforum.org/forumdisplay.php?f=38
+
+    Important note: the results.txt file is deprecated and will no longer be
+    accepted from 2025 onwards.
 
 ##################
 # 5 Known issues #

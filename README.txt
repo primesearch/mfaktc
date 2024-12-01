@@ -39,7 +39,7 @@ mfaktc should run all all CUDA capable Nvidia GPUs with compute capability
 >= 1.1. From my knowledge there is only one CUDA capable GPU with compute
 capability 1.0: the G80 chip which is found on Geforce 8800 Ultra / GTX /
 GTS 640 / GTS 320 and their Quadro and Tesla variants.
-For AMD Radeon GPUs check out the open CL port of mfaktc: mfakto by Bertram
+For AMD Radeon GPUs check out the OpenCL port of mfaktc: mfakto by Bertram
 Franz
 
 
@@ -120,7 +120,7 @@ Just run './mfaktc.exe -h'. It will tell you what parameters it accepts.
 Maybe you want to tweak the parameters in mfaktc.ini. A small description
 of those parameters is included in mfaktc.ini, too.
 Typically you want to get work from a worktodo file. You can specify the
-name in mfaktc.ini. It was tested with primenet v5 worktodo files but v4
+name in mfaktc.ini. It was tested with PrimeNet v5 worktodo files but v4
 should work, too.
 
 Please run the builtin selftest each time you've
@@ -183,8 +183,6 @@ From the GIMPS website:
 
         Be aware mfaktc currently does not support exponents below 100,000.
 
-Start mfaktc and stress your GPU ;)
-
 Once mfaktc has finished all the work report the results to the primenet
 server:
     Step 1) go to http://www.mersenne.org/ and login with your username and
@@ -209,9 +207,19 @@ Advanced usage (extend the upper limit):
     TF up to 2^71 or even 2^72 directly. Just replace the 66 at the end of
     the line with e.g. 72 before you start mfaktc:
         e.g. Factor=<some hex key>,78467119,65,72
-    When you increase the upper limit of your assignments it is import to
-    report the results once you've finished up to the desired level. (Do not
-    report partial results before completing the exponent!)
+
+    It is important to submit the results once you're done. Do not report
+    partial results as PrimeNet may reassign the exponent to someone else in
+    the meantime; this can lead to duplicate work and wasted cycles. You can
+    easily avoid this by setting Stages=0 in the INI file.
+
+    Please do not manually extend assignments from GPU to 72 as users are
+    requested not to "trial factor past the level you've pledged."
+
+
+    Once you have your assignments, copy the "Factor=..." lines directly into
+    your worktodo.txt file. Start mfakto, sit back and let it do its job.
+    Running mfaktc is also a great way to stress test your GPU. ;-)
 
 Submitting results:
     mfaktc does not natively communicate with the PrimeNet server, but there is
@@ -222,7 +230,7 @@ Submitting results:
 
     Step 1) log in to the GIMPS website with your username and password
     Step 2) on the menu bar, select Manual Testing > Results
-    Step 3) upload the results.json.txt file produced by mfakto. You may
+    Step 3) upload the results.json.txt file produced by mfaktc. You may
             archive or delete the file after it has been processed.
 
     To prevent abuse, admin approval is required for manual submissions. You

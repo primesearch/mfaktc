@@ -245,7 +245,7 @@ Submitting results:
 - The user interface isn't hardened against malformed input. There are some
   checks but when you really try you should be able to screw it up.
 - The GUI of your OS might be very laggy while running mfaktc. (newer GPUs
-  with compute capabilty 2.0 or higher can handle this _MUCH_ better)
+  with compute capability 2.0 or higher can handle this _MUCH_ better)
   Comment from James Heinrich:
     Slower/older GPUs (e.g. compute v1.1) that experience noticeable lag can
     get a significant boost in system usability by reducing the NumStreams
@@ -276,13 +276,13 @@ Submitting results:
 - mfaktc can find factors outside the given range.
   E.g. './mfaktc -tf 66362159 40 41' has a high change to report
   124246422648815633 as a factor. Actually this is a factor of M66362159 but
-  it's size is between 2^56 and 2^57! Of course
+  its size is between 2^56 and 2^57! Of course
   './mfaktc -tf 66362159 56 57' will find this factor, too. The reason
   for this behaviour is that mfaktc works on huge factor blocks. This is
   controlled by GridSize in mfaktc.ini. The default value is 3 which means
   that mfaktc runs up to 1048576 factor candidates at once (per class). So
   the last block of each class is filled up with factor candidates above to
-  upper limit. While this is a huge overhead for small ranges it's save to
+  upper limit. While this is a huge overhead for small ranges it's safe to
   ignore it on bigger ranges. If a class contains 100 blocks the overhead is
   on average 0.5%. When a class needs 1000 blocks the overhead is 0.05%...
 

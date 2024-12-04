@@ -12,6 +12,7 @@ mfaktc
 
 # device-specific mfaktc files
 *.ckp
+*.log
 results.txt
 results.json.txt
 worktodo.txt
@@ -20,4 +21,3 @@ worktodo.add
 # other
 .vs/
 *.zip
-*.log

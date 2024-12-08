@@ -193,34 +193,33 @@ From mersenne.ca:
 
     Be aware mfaktc currently does not support exponents below 100,000.
 
-Advanced usage (extend the upper limit):
-    Since mfaktc works best on long running jobs you may want to extend the
-    upper TF limit of your assignments a little bit. Take a look how much TF
-    is usually done here: http://www.mersenne.org/various/math.php
-    Lets assume that you've received an assignment like this:
-        Factor=<some hex key>,78467119,65,66
-    This means that Primenet server assigned you to TF M78467119 from 2^65
-    to 2^66. Take a look at the site noted above, those exponent should be
-    TFed up to 2^71. Primenet will do this in multiple assignments (step by
-    step) but since mfaktc runs very fast on modern GPUs you might want to
-    TF up to 2^71 or even 2^72 directly. Just replace the 66 at the end of
-    the line with e.g. 72 before you start mfaktc:
-        e.g. Factor=<some hex key>,78467119,65,72
+A note on extending assignments:
+    Because modern GPUs are much more efficient than CPUs, they are often used
+    to search for factors beyond traditional Prime95 limits:
+    https://mersenne.org/various/math.php
 
-    It is important to submit the results once you're done. Do not report
-    partial results as PrimeNet may reassign the exponent to someone else in
-    the meantime; this can lead to duplicate work and wasted cycles.
+    Users have historically edited worktodo.txt to manually extend assignments,
+    but this is no longer necessary as both the manual GPU assignment form and
+    GPU to 72 allow higher bit levels to be requested. However, the PrimeNet
+    server still accepts results whose bit levels are higher than assigned.
 
     Please do not manually extend assignments from GPU to 72 as users are
     requested not to "trial factor past the level you've pledged."
 
+---
 
     Once you have your assignments, create an empty file called worktodo.txt
     and copy all the "Factor=..." lines into that file. Start mfaktc, sit back
     and let it do its job. Running mfaktc is also a great way to stress test
     your GPU. ;-)
 
+---
+
 Submitting results:
+    It is important to submit the results once you're done. Do not report
+    partial results as PrimeNet may reassign the exponent to someone else in
+    the meantime; this can lead to duplicate work and wasted cycles.
+
     AutoPrimeNet automatically submits results in addition to obtaining
     assignments. For computers without Internet access, you can manually submit
     the results instead:
@@ -264,7 +263,6 @@ Submitting results:
   factor candidates out of the specified range.
 
 
-
 ##################################################################
 # 5.1 Stuff that looks like an issue but actually isn't an issue #
 ##################################################################
@@ -287,13 +285,11 @@ Submitting results:
   on average 0.5%. When a class needs 1000 blocks the overhead is 0.05%...
 
 
-
 ############
 # 6 Tuning #
 ############
 
 Read mfaktc.ini and read before editing. ;)
-
 
 
 #########

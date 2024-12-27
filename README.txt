@@ -11,13 +11,12 @@ Content
 2.2 Compilation (Windows)
 3   Running mfaktc (Linux)
 3.1 Running mfaktc (Windows)
-4   How to get work and report results from/to the Primenet server
+4   Getting work and reporting results
 5   Known issues
 5.1 Stuff that looks like an issue but actually isn't an issue
 6   Tuning
 7   FAQ
 8   .plan
-
 
 
 ####################
@@ -32,18 +31,17 @@ It runs almost entirely on the GPU since v0.20 (previous versions used both
 CPU and GPU resources).
 
 
-
 ########################
 # 1 Supported Hardware #
 ########################
 
-mfaktc should run all all CUDA capable Nvidia GPUs with compute capability
->= 1.1. From my knowledge there is only one CUDA capable GPU with compute
-capability 1.0: the G80 chip which is found on Geforce 8800 Ultra / GTX /
-GTS 640 / GTS 320 and their Quadro and Tesla variants.
-For AMD Radeon GPUs check out the open CL port of mfaktc: mfakto by Bertram
-Franz
+mfaktc should run on all CUDA-capable Nvidia GPUs with Compute Capability 1.1
+and above. To my knowledge, the only GPU with Compute Capability 1.0 is the G80
+chip in the GeForce 8800 Ultra / GTX / GTS 640 / GTS 320 and their Quadro and
+Tesla variants.
 
+For AMD GPUs, there is an OpenCL port of mfaktc by Bertram Franz called mfakto:
+https://github.com/primesearch/mfakto
 
 
 #################
@@ -60,10 +58,9 @@ There are some compiletime settings in the file src/params.h possible:
 - the third part contains some defines which should _NOT_ be changed unless
   you really know what they do. It is easily possible to screw up something.
 
-A 64bit built is prefered except for some old lowend GPUs because the
-performance critical CPU code runs ~33% faster compared to 32bit. (measured
+A 64-bit build is preferred except for some old low-end GPUs because the
+performance critical CPU code runs ~33% faster compared to 32-bit. (measured
 on a Intel Core i7)
-
 
 
 ###########################
@@ -73,7 +70,7 @@ on a Intel Core i7)
 Change into the subdirectory "src/"
 
 Adjust the path to your CUDA installation in "Makefile" and run 'make'.
-The binary "mfaktc.exe" is placed into the parent directory.
+The binary "mfaktc" is placed into the parent directory.
 
 I'm using
 - OpenSUSE 12.2 x86_64
@@ -91,7 +88,6 @@ drop Linux 32bit support totally. ;)
 
 When you compile mfaktc on a 32bit system you must change the library path
 in "Makefile" (replace "lib64" with "lib").
-
 
 
 #############################
@@ -117,16 +113,15 @@ other than CUDA 6.5 and MSVS 2012. The binaries "mfaktc-win-64.exe" or
 "mfaktc-win-32.exe" are placed in the parent directory.
 
 
-
 ############################
 # 3 Running mfaktc (Linux) #
 ############################
 
-Just run './mfaktc.exe -h'. It will tell you what parameters it accepts.
+Just run './mfaktc -h'. It will tell you what parameters it accepts.
 Maybe you want to tweak the parameters in mfaktc.ini. A small description
 of those parameters is included in mfaktc.ini, too.
 Typically you want to get work from a worktodo file. You can specify the
-name in mfaktc.ini. It was tested with primenet v5 worktodo files but v4
+name in mfaktc.ini. It was tested with PrimeNet v5 worktodo files but v4
 should work, too.
 
 Please run the builtin selftest each time you've
@@ -141,10 +136,9 @@ Factor=bla,66362159,64,68
 Factor=bla,3321932839,50,71
 -- cut here --
 
-Than run e.g. './mfaktc.exe'. If everything is working as expected this
+Than run e.g. './mfaktc'. If everything is working as expected this
 should trial factor M66362159 from 2^64 to 2^68 and after that trial factor
 M3321932839 from 2^50 to 2^71.
-
 
 
 ################################
@@ -155,59 +149,93 @@ Similar to Linux (read above!).
 Open a command window and run 'mfaktc.exe -h'.
 
 
+########################################
+# 4 Getting work and reporting results #
+########################################
 
-####################################################################
-# 4 How to get work and report results from/to the Primenet server #
-####################################################################
+You must have a PrimeNet account to participate. Simply go to the GIMPS website
+at https://mersenne.org and click "Register" to create one. Once you've signed
+up, you can get assignments in several ways.
 
-Getting work:
-    Step 1) go to http://www.mersenne.org/ and login with your username and
-            password
-    Step 2) on the menu on the left click "Manual Testing" and then
-            "Assignments"
-    Step 3) choose the number of assignments by choosing
-            "Number of CPUs (cores) you need assignments for (maximum 12)"
-            and "Number of assignments you want for each core"
-    Step 4) Change "Preferred work type" to "Trial factoring"
-    Step 5) click the button "Get Assignments"
-    Step 6) copy&paste the "Factor=..." lines directly into the worktodo.txt
-            in your mfaktc directory
+Using the AutoPrimeNet application:
+    AutoPrimeNet allows clients that do not natively support PrimeNet to obtain
+    work and submit results. It is recommended to use this tool when possible.
+    See the AutoPrimeNet download page for instructions:
+    https://download.mersenne.ca/AutoPrimeNet
 
-You can also use www.GPU72.org to get assignments and 
-you can also you MISFIT to get and report results
-http://www.mersenneforum.org/misfit/
+From the GIMPS website:
+    Step 1) log in to the GIMPS website with your username and password
+    Step 2) on the menu bar, select Manual Testing > Assignments
+    Step 3) open the link to the manual GPU assignment request form
+    Step 4) enter the number of assignments or GHz-days you want
+    Step 5) click "Get Assignments"
 
-Start mfaktc and stress your GPU ;)
+    Users with older GPUs may want to use the regular form.
 
-Once mfaktc has finished all the work report the results to the primenet
-server:
-    Step 1) go to http://www.mersenne.org/ and login with your username and
-            password
-    Step 2) on the menu on the left click "Manual Testing" and then
-            "Results"
-    Step 3) upload the results.txt file generated by mfaktc using the
-            "search" and "upload" button
-    Step 4) once you've verified that the Primenet server has recognized
-            your results delete or rename the results.txt from mfaktc
+Using the GPU to 72 website:
+    GPU to 72 "subcontracts" assignments from the PrimeNet server, and was
+    previously the only means to obtain work at high bit levels. GIMPS now has a
+    manual GPU assignment form that serves this purpose, but GPU to 72 remains
+    a popular option.
 
-Advanced usage (extend the upper limit):
-    Since mfaktc works best on long running jobs you may want to extend the
-    upper TF limit of your assignments a little bit. Take a look how much TF
-    is usually done here: http://www.mersenne.org/various/math.php
-    Lets assume that you've received an assignment like this:
-        Factor=<some hex key>,78467119,65,66
-    This means that Primenet server assigned you to TF M78467119 from 2^65
-    to 2^66. Take a look at the site noted above, those exponent should be
-    TFed up to 2^71. Primenet will do this in multiple assignments (step by
-    step) but since mfaktc runs very fast on modern GPUs you might want to
-    TF up to 2^71 or even 2^72 directly. Just replace the 66 at the end of
-    the line with e.g. 72 before you start mfaktc:
-        e.g. Factor=<some hex key>,78467119,65,72
-    When you increase the upper limit of your assignments it is import to
-    report the results once you've finished up to the desired level. (Do not
-    report partial results before completing the exponent!)
+    Please note results should be submitted to PrimeNet and not the GPU to 72
+    website.
 
+    GPU to 72 can be accessed here: https://gpu72.com
 
+Using the MISFIT application:
+    MISFIT is a Windows tool that automatically requests assignments and
+    submits results. You can get it here: https://mersenneforum.org/misfit
+
+From mersenne.ca:
+    James Heinrich's website mersenne.ca offers assignments for exponents up
+    to 32 bits. You can get such work here: https://mersenne.ca/tf1G
+
+    Be aware mfaktc currently does not support exponents below 100,000.
+
+A note on extending assignments:
+    Because modern GPUs are much more efficient than CPUs, they are often used
+    to search for factors beyond traditional Prime95 limits:
+    https://mersenne.org/various/math.php
+
+    Users have historically edited worktodo.txt to manually extend assignments,
+    but this is no longer necessary as both the manual GPU assignment form and
+    GPU to 72 allow higher bit levels to be requested. However, the PrimeNet
+    server still accepts results whose bit levels are higher than assigned.
+
+    Please do not manually extend assignments from GPU to 72 as users are
+    requested not to "trial factor past the level you've pledged."
+
+---
+
+    Once you have your assignments, create an empty file called worktodo.txt
+    and copy all the "Factor=..." lines into that file. Start mfaktc, sit back
+    and let it do its job. Running mfaktc is also a great way to stress test
+    your GPU. ;-)
+
+---
+
+Submitting results:
+    It is important to submit the results once you're done. Do not report
+    partial results as PrimeNet may reassign the exponent to someone else in
+    the meantime; this can lead to duplicate work and wasted cycles.
+
+    AutoPrimeNet automatically submits results in addition to obtaining
+    assignments. For computers without Internet access, you can manually submit
+    the results instead:
+
+    Step 1) log in to the GIMPS website with your username and password
+    Step 2) on the menu bar, select Manual Testing > Results
+    Step 3) upload the results.json.txt file produced by mfaktc. You may
+            archive or delete the file after it has been processed.
+
+    To prevent abuse, admin approval is required for manual submissions. You
+    can request approval by contacting George Woltman at woltman@alum.mit.edu
+    or posting on the GIMPS forum:
+    https://mersenneforum.org/forumdisplay.php?f=38
+
+    Important note: the results.txt file is deprecated and will no longer be
+    accepted from 2025 onwards.
 
 ##################
 # 5 Known issues #
@@ -216,7 +244,7 @@ Advanced usage (extend the upper limit):
 - The user interface isn't hardened against malformed input. There are some
   checks but when you really try you should be able to screw it up.
 - The GUI of your OS might be very laggy while running mfaktc. (newer GPUs
-  with compute capabilty 2.0 or higher can handle this _MUCH_ better)
+  with compute capability 2.0 or higher can handle this _MUCH_ better)
   Comment from James Heinrich:
     Slower/older GPUs (e.g. compute v1.1) that experience noticeable lag can
     get a significant boost in system usability by reducing the NumStreams
@@ -235,7 +263,6 @@ Advanced usage (extend the upper limit):
   factor candidates out of the specified range.
 
 
-
 ##################################################################
 # 5.1 Stuff that looks like an issue but actually isn't an issue #
 ##################################################################
@@ -245,18 +272,17 @@ Advanced usage (extend the upper limit):
   factoring above 2^64 up to 2^95 (factor sizes). ==> mfaktc needs
   "long runs"!
 - mfaktc can find factors outside the given range.
-  E.g. './mfaktc.exe -tf 66362159 40 41' has a high change to report
+  E.g. './mfaktc -tf 66362159 40 41' has a high change to report
   124246422648815633 as a factor. Actually this is a factor of M66362159 but
-  it's size is between 2^56 and 2^57! Of course
-  './mfaktc.exe -tf 66362159 56 57' will find this factor, too. The reason
+  its size is between 2^56 and 2^57! Of course
+  './mfaktc -tf 66362159 56 57' will find this factor, too. The reason
   for this behaviour is that mfaktc works on huge factor blocks. This is
   controlled by GridSize in mfaktc.ini. The default value is 3 which means
   that mfaktc runs up to 1048576 factor candidates at once (per class). So
   the last block of each class is filled up with factor candidates above to
-  upper limit. While this is a huge overhead for small ranges it's save to
+  upper limit. While this is a huge overhead for small ranges it's safe to
   ignore it on bigger ranges. If a class contains 100 blocks the overhead is
   on average 0.5%. When a class needs 1000 blocks the overhead is 0.05%...
-
 
 
 ############
@@ -264,7 +290,6 @@ Advanced usage (extend the upper limit):
 ############
 
 Read mfaktc.ini and read before editing. ;)
-
 
 
 #########

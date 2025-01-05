@@ -22,6 +22,7 @@ extern "C" {
 #endif
 void print_help(char *string);
 void logprintf(mystuff_t* mystuff, const char* fmt, ...);
+void _logf(mystuff_t* mystuff, const char* fmt, ...);
 
 void print_dez96(int96 a, char *buf);
 void print_dez192(int192 a, char *buf);

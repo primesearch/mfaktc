@@ -69,7 +69,13 @@ void logprintf(mystuff_t* mystuff, const char* fmt, ...)
 
     va_start(args, fmt);
     vfprintf(stdout, fmt, args);
+    _logf(mystuff, fmt, args);
     va_end(args);
+}
+
+void _logf(mystuff_t* mystuff, const char* fmt, ...)
+{
+    va_list args;
 
     if (mystuff->logging == 1 && mystuff->logfileptr != NULL) {
         va_start(args, fmt);
@@ -366,16 +372,28 @@ void print_status_line(mystuff_t *mystuff)
   
   if(mystuff->mode == MODE_NORMAL)
   {
-    if(mystuff->printmode == 1)index += sprintf(buffer + index, "\r");
-    else                       index += sprintf(buffer + index, "\n");
+    if (mystuff->printmode == 1)
+    {
+      buffer[index] = 0;
+      printf("%s\r", buffer);
+      _logf(mystuff, "%s\n", buffer);
+    }
+    else
+    {
+      index += sprintf(buffer + index, "\n");
+      buffer[index] = 0;
+      logprintf(mystuff, "%s", buffer);
+    }
   }
-  if(mystuff->mode == MODE_SELFTEST_FULL && mystuff->printmode == 0)
+  else
   {
-    index += sprintf(buffer + index, "\n");
+    if (mystuff->mode == MODE_SELFTEST_FULL && mystuff->printmode == 0)
+    {
+      index += sprintf(buffer + index, "\n");
+    }
+    buffer[index] = 0;
+    logprintf(mystuff, "%s", buffer);
   }
-
-  buffer[index] = 0;
-  logprintf(mystuff, "%s", buffer);
 }
 
 void get_utc_timestamp(char* timestamp)

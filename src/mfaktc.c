@@ -387,6 +387,7 @@ see benchmarks in src/kernel_benchmarks.txt */
         {
           if (numfactors > 0)
           {
+            char temp_factors_string[500];
             char factorstring[50];
             int96 factor;
             for (i = 0; (i < numfactors) && (i < 10); i++)
@@ -395,7 +396,8 @@ see benchmarks in src/kernel_benchmarks.txt */
               factor.d1 = mystuff->h_RES[i * 3 + 2];
               factor.d0 = mystuff->h_RES[i * 3 + 3];
               print_dez96(factor, factorstring);
-              sprintf(mystuff->factors_string, mystuff->factors_string[0] ? "%s,\"%s\"" : "%s\"%s\"", mystuff->factors_string, factorstring);
+              sprintf(temp_factors_string, mystuff->factors_string[0] ? "%s,\"%s\"" : "%s\"%s\"", mystuff->factors_string, factorstring);
+              sprintf(mystuff->factors_string, temp_factors_string);
             }
           }
           if(mystuff->checkpoints == 1)

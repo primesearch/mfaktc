@@ -22,6 +22,7 @@ along with mfaktc.  If not, see <http://www.gnu.org/licenses/>.
 #include <stdarg.h>
 #include <stdbool.h>
 #include <string.h>
+#include <stdlib.h>
 #include <math.h>
 #include <cuda_runtime.h>
 #include <time.h>
@@ -61,14 +62,29 @@ void logprintf(mystuff_t* mystuff, const char* fmt, ...)
     va_list args;
 
     va_start(args, fmt);
-    vfprintf(stdout, fmt, args);
+    int len = vfprintf(stdout, fmt, args);
     va_end(args);
 
-    if (mystuff->logging == 1 && mystuff->logfileptr != NULL) {
+    if (mystuff->logging == 1 && mystuff->logfileptr != NULL && len > 0)
+      if (mystuff->printmode == 1) {
+        char* buffer = (char*)malloc(len + 1);
+        va_start(args, fmt);
+        vsnprintf(buffer, len + 1, fmt, args);
+        va_end(args);
+
+        // Replace to CR to LF if it's last char in the string when writing to logfile
+        if (buffer[len - 1] == '\r')
+          buffer[len - 1] = '\n';
+
+        fprintf(mystuff->logfileptr, "%s", buffer);
+        free(buffer);
+      }
+      else
+      {
         va_start(args, fmt);
         vfprintf(mystuff->logfileptr, fmt, args);
         va_end(args);
-    }
+      }
 }
 
 

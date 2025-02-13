@@ -4,7 +4,7 @@ CC = cl
 CFLAGS = /Ox /Oy /W2 /fp:fast /I$(CUDA_DIR)\include /I$(CUDA_DIR)\include\cudart /nologo
 
 NVCCFLAGS = -m64 --ptxas-options=-v
-CUFLAGS = -DWIN64 -Xcompiler /EHsc,/W3,/nologo,/Ox $(NVCCFLAGS)
+CUFLAGS = -DWIN64 -Xcompiler "/EHsc /W3 /nologo /Ox" $(NVCCFLAGS)
 
 ############################################################
 

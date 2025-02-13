@@ -60,3 +60,5 @@ tf_75bit.obj : tf_96bit.cu
 
 ..\\%.ini : %.ini
 	$(CP) $< ..
+
+.PHONY: all clean

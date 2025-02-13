@@ -118,7 +118,7 @@ OS-specific requirements:
 - make for Windows
 
 mfaktc was originally built using Visual Studio 2012 Professional on a 64-bit
-Windows 7 machine. However, these instructions will work for different Windows
+Windows 7 machine. However, these instructions will work for all recent Windows
 and Visual Studio versions.
 
 You will need a GNU-compatible version of make as the makefiles are not
@@ -138,7 +138,7 @@ Steps:
   - use Makefile.win for 64 bits, or Makefile.win32 for 32 bits
   - for 32 bits: also make sure the "ccbin" parameter in CUFLAGS points to the
     32-bit cl.exe
-  - you can run "which cl" to see where cl.exe is located
+  - you can run "where cl" to see where cl.exe is located
 - optional: run "make -f Makefile.win clean" or "make -f Makefile.win32 clean"
   to remove any build artifacts
 - run "make -f Makefile.win" to build for 64 bits, or "make -f Makefile.win32"
@@ -152,14 +152,14 @@ mfaktc root folder.
 # 3 Running mfaktc (Linux) #
 ############################
 
-Just run './mfaktc -h'. It will tell you what parameters it accepts.
+Just run './mfaktc -h' to see the parameters it accepts.
 Maybe you want to tweak the parameters in mfaktc.ini. A small description
 of those parameters is included in mfaktc.ini, too.
 Typically you want to get work from a worktodo file. You can specify the
 name in mfaktc.ini. It was tested with PrimeNet v5 worktodo files but v4
 should work, too.
 
-Please run the builtin selftest each time you've
+Please run the built-in self-test each time you've
 - recompiled the code
 - downloaded a new binary from somewhere
 - changed the Nvidia driver

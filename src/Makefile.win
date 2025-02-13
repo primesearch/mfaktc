@@ -1,4 +1,4 @@
-CUDA_DIR = "C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.5"
+CUDA_DIR = "$(CUDA_PATH)"
 
 CC = cl
 CFLAGS = /Ox /Oy /W2 /fp:fast /I$(CUDA_DIR)\include /I$(CUDA_DIR)\include\cudart /nologo

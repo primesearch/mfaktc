@@ -73,3 +73,5 @@ tf_75bit.o : tf_96bit.cu
 
 ../%.ini : %.ini
 	$(CP) $< ..
+
+.PHONY: all clean

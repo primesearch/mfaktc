@@ -37,6 +37,8 @@ NVCCFLAGS += --compiler-options=-Wall
 LD = gcc
 LDFLAGS = -fPIC $(CUDA_LIB) -lcudart_static -lm -lstdc++
 
+CP = cp
+
 ##############################################################################
 
 CSRC  = sieve.c timer.c parse.c read_config.c mfaktc.c checkpoint.c \
@@ -49,7 +51,7 @@ CUOBJS = $(CUSRC:.cu=.o) tf_75bit.o
 
 ##############################################################################
 
-all: ../mfaktc
+all: ../mfaktc ../mfaktc.ini
 
 ../mfaktc : $(COBJS) $(CUOBJS)
 	$(LD) $^ -o $@ $(LDFLAGS)
@@ -68,6 +70,9 @@ tf_75bit.o : tf_96bit.cu
 
 %.o : %.c
 	$(CC) $(CFLAGS) -c $< -o $@
+
+../%.ini : %.ini
+	$(CP) $< ..
 
 ##############################################################################
 #

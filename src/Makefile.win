@@ -36,9 +36,11 @@ COBJS  = $(CSRC:.c=.obj)
 
 LIBS = $(CUDA_DIR)\lib\x64\cudart_static.lib
 
+CP = copy
+
 ############################################################################################################
 
-all : ..\mfaktc-win-64.exe
+all : ..\mfaktc-win-64.exe ..\mfaktc.ini
 
 ..\mfaktc-win-64.exe : $(COBJS) $(CUOBJS)
 	$(LINK) $(LFLAGS) $^ $(LIBS) /out:$@
@@ -56,6 +58,9 @@ tf_75bit.obj : tf_96bit.cu
 
 %.obj : %.cu
 	nvcc -O2 -c $< -o $@ $(CUFLAGS)
+
+..\\%.ini : %.ini
+	$(CP) $< ..
 
 ############################################################################################################
 #

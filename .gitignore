@@ -17,6 +17,8 @@ results.txt
 results.json.txt
 worktodo.txt
 worktodo.add
+*.ini
+!src/*.ini
 
 # other
 .vs/

@@ -5,10 +5,10 @@
 Content
 
 0   What is mfaktc?
-1   Supported Hardware
+1   Supported hardware
 2   Compilation
-2.1 Compilation (Linux)
-2.2 Compilation (Windows)
+2.1 Linux
+2.2 Windows
 3   Running mfaktc (Linux)
 3.1 Running mfaktc (Windows)
 4   Getting work and reporting results
@@ -23,16 +23,26 @@ Content
 # 0 What is mfaktc #
 ####################
 
-mfaktc is a program for trial factoring of Mersenne numbers. The name mfaktc
-is "Mersenne FAKTorisation with Cuda". Faktorisation is a mixture of the
-English word "factorisation" and the German word "Faktorisierung".
-It uses CPU and GPU resources.
-It runs almost entirely on the GPU since v0.20 (previous versions used both
-CPU and GPU resources).
+mfaktc is a program that trial factors Mersenne numbers for the Great Internet
+Mersenne Prime Search. It stands for "Mersenne faktorisation* with CUDA" and
+was written for Nvidia GPUs. mfaktc runs almost entirely on the GPU in version
+0.20 and later.
+
+Primality tests are computationally intensive, but we can save time by finding
+small factors. GPUs are very efficient at this task due to their parallel
+nature. Only one factor is needed to prove a number composite.
+
+mfaktc uses a modified Sieve of Eratosthenes to generate a list of possible
+factors for a given Mersenne number. It then uses modular exponentiation to
+test these factors. You can find more details at the GIMPS website:
+https://mersenne.org/various/math.php#trial_factoring
+
+* portmanteau of the English word "factorisation" and the German word
+"Faktorisierung"
 
 
 ########################
-# 1 Supported Hardware #
+# 1 Supported hardware #
 ########################
 
 mfaktc should run on all CUDA-capable Nvidia GPUs with Compute Capability 1.1
@@ -48,69 +58,94 @@ https://github.com/primesearch/mfakto
 # 2 Compilation #
 #################
 
-It is assumed that you've already set up your compiler and CUDA environment.
-There are some compiletime settings in the file src/params.h possible:
-- in the upper part of the file there are some settings which "advanced
-  users" can chance if they think it is beneficial. Those settings are
-  verified for reasonable values.
-- in the middle are some debug options which can be turned on. These options
-  are only useful for debugging purposes.
-- the third part contains some defines which should _NOT_ be changed unless
-  you really know what they do. It is easily possible to screw up something.
+General requirements:
+- CUDA Toolkit
+  - see https://developer.nvidia.com/cuda-toolkit for download and installation
+    instructions
+- C compiler
 
-A 64-bit build is preferred except for some old low-end GPUs because the
-performance critical CPU code runs ~33% faster compared to 32-bit. (measured
-on a Intel Core i7)
+Some compile-time settings in the file src/params.h can be changed:
+- in the first section are settings which "advanced users" can change if they
+  think it is beneficial. These settings have been verified for reasonable
+  values.
+- in the middle are debug options which can be enabled. These are only useful
+  for debugging purposes.
+- the last part contains defines which should *not* be changed unless you
+  fully understand them. It is possible to easily screw something up.
 
+Be aware that 32-bit applications are not supported in CUDA Toolkit 12.2 and
+later. You will need to use an older CUDA Toolkit to build mfaktc for 32 bits.
+See this thread for details:
+https://forums.developer.nvidia.com/t/whats-the-last-version-of-the-cuda-toolkit-to-support-32-bit-applications/323106/4
 
-###########################
-# 2.1 Compilation (Linux) #
-###########################
+In any case, a 64-bit build is preferred except on some old low-end GPUs.
+Testing on an Intel Core i7 CPU has shown that the performance-critical CPU
+code runs about 33% faster compared to 32 bits.
 
-Change into the subdirectory "src/"
+#############
+# 2.1 Linux #
+#############
 
-Adjust the path to your CUDA installation in "Makefile" and run 'make'.
-The binary "mfaktc" is placed into the parent directory.
+Steps:
+- navigate to the mfaktc root folder
+- cd src
+- open the makefile and verify CUDA_DIR points to the CUDA installation
+  - for 32-bit builds: also change "lib64" to "lib" in CUDA_LIB
+- optional: run "make clean" to remove any build artifacts
+- make
 
-I'm using
+nvcc may exit due to an "unsupported gpu architecture" error. If this happens,
+simply comment out the corresponding "NVCCFLAGS += ..." line in the makefile.
+You may have to do this more than once. Otherwise, the binary "mfaktc" should
+appear in the parent folder.
+
+mfaktc was originally compiled with:
 - OpenSUSE 12.2 x86_64
-- gcc 4.7.1 (OpenSUSE 12.2)
+- gcc 4.7.1
 - Nvidia driver 343.36
-- Nvidia CUDA Toolkit
-  - 6.5
+- CUDA Toolkit 6.5
 
-Older CUDA Toolkit versions should work, too.
-
-I didn't spend time testing mfaktc on 32bit Linux because I think 64bit
-(x86_64) is adopted by most Linux users now. Anyway mfaktc should work on
-32bit Linux, too. If problems are reported I'll try to fix them. So I don't
-drop Linux 32bit support totally. ;)
-
-When you compile mfaktc on a 32bit system you must change the library path
-in "Makefile" (replace "lib64" with "lib").
+It should be possible to use an older CUDA Toolkit to build mfaktc. However,
+this may not give the best performance.
 
 
-#############################
-# 2.2 Compilation (Windows) #
-#############################
+###############
+# 2.2 Windows #
+###############
 
-The following instructions have been tested on Windows 7 64bit using Visual
-Studio 2012 Professional. A GNU compatible version of make is also required
-as the Makefile is not compatible with nmake. GNU Make for Win32 can be
-downloaded from http://gnuwin32.sourceforge.net/packages/make.htm.
+OS-specific requirements:
+- Microsoft Visual Studio
+- make for Windows
 
-Run the Visual Studio 2012 x64 Win64 Command Prompt for x64 or
-Run the Visual Studio 2012 x86 Native Tools Command Prompt for x86 (32 bit)
+mfaktc was originally built using Visual Studio 2012 Professional on a 64-bit
+Windows 7 machine. However, these instructions will work for different Windows
+and Visual Studio versions.
 
- and change into the "\src" subdirectory.
+You will need a GNU-compatible version of make as the makefiles are not
+compatible with nmake. GnuWin32 provides a native port for 32-bit Windows:
+http://gnuwin32.sourceforge.net/packages/make.htm
 
-Run 'make -f Makefile.win' for a 64bit built (recommended on 64bit systems)
-or 'make -f Makefile.win32' for a 32bit built.
 
-You will have to adjust the paths to your CUDA installation and the
-Microsoft Visual Studio binaries in the makefiles if you have something
-other than CUDA 6.5 and MSVS 2012. The binaries "mfaktc-win-64.exe" or
-"mfaktc-win-32.exe" are placed in the parent directory.
+Steps:
+- open the Visual Studio Developer Command Prompt for the desired architecture
+  - for 64 bits: x64 Native Tools Command Prompt
+  - for 32 bits: x86 Native Tools Command Prompt
+- add make to the Path variable:
+  set Path=%Path%;C:\Program Files (x86)\GnuWin32\bin
+- navigate to the mfaktc root folder
+- cd src
+- open the makefile and verify CUDA_DIR points to the CUDA installation
+  - use Makefile.win for 64 bits, or Makefile.win32 for 32 bits
+  - for 32 bits: also make sure the "ccbin" parameter in CUFLAGS points to the
+    32-bit cl.exe
+  - you can run "which cl" to see where cl.exe is located
+- optional: run "make -f Makefile.win clean" or "make -f Makefile.win32 clean"
+  to remove any build artifacts
+- run "make -f Makefile.win" to build for 64 bits, or "make -f Makefile.win32"
+  for 32 bits
+
+You should see the binary "mfaktc-win-64.exe" or "mfaktc-win-32.exe" in the
+mfaktc root folder.
 
 
 ############################

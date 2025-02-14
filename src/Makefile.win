@@ -36,7 +36,7 @@ COBJS  = $(CSRC:.c=.obj)
 
 LIBS = $(CUDA_DIR)\lib\x64\cudart_static.lib
 
-CP = copy
+INSTALL = copy
 
 ############################################################################################################
 
@@ -60,6 +60,6 @@ tf_75bit.obj : tf_96bit.cu
 	nvcc -O2 -c $< -o $@ $(CUFLAGS)
 
 ..\\%.ini : %.ini
-	$(CP) $< ..
+	$(INSTALL) $< ..
 
 .PHONY: all clean

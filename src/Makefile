@@ -37,7 +37,7 @@ NVCCFLAGS += --compiler-options=-Wall
 LD = gcc
 LDFLAGS = -fPIC $(CUDA_LIB) -lcudart_static -lm -lstdc++
 
-CP = cp
+INSTALL = install
 
 ##############################################################################
 
@@ -72,6 +72,6 @@ tf_75bit.o : tf_96bit.cu
 	$(CC) $(CFLAGS) -c $< -o $@
 
 ../%.ini : %.ini
-	$(CP) $< ..
+	$(INSTALL) -m 644 $< ..
 
 .PHONY: all clean

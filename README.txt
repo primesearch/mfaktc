@@ -129,6 +129,9 @@ http://gnuwin32.sourceforge.net/packages/make.htm
 You can add C:\Program Files (x86)\GnuWin32\bin to the Path system variable so
 that make is always available.
 
+Before attempting to compile mfaktc, be sure the system variable CUDA_PATH
+points to your CUDA installation.
+
 
 Steps:
 - open the Visual Studio Developer Command Prompt for the desired architecture
@@ -136,12 +139,12 @@ Steps:
   - for 32 bits: x86 Native Tools Command Prompt
 - navigate to the mfaktc root folder
 - cd src
-- open the makefile and verify CUDA_DIR points to the CUDA installation
-  - use Makefile.win for 64 bits, or Makefile.win32 for 32 bits
-- optional: run "make -f Makefile.win clean" or "make -f Makefile.win32 clean"
-  to remove any build artifacts
-- run "make -f Makefile.win" to build for 64 bits, or "make -f Makefile.win32"
-  for 32 bits
+- optional: clean up any build artifacts
+  - for 64 bits: make -f Makefile.win clean
+  - for 32 bits: make -f Makefile.win32 clean
+- start the build
+  - for 64 bits: make -f Makefile.win
+  - for 32 bits: make -f Makefile.win32
 
 You should see the binary "mfaktc-win-64.exe" or "mfaktc-win-32.exe" in the
 mfaktc root folder.

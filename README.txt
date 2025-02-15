@@ -4,13 +4,14 @@
 
 Content
 
-0   What is mfaktc?
+0   About mfaktc
 1   Supported hardware
 2   Compilation
 2.1 Linux
 2.2 Windows
-3   Running mfaktc (Linux)
-3.1 Running mfaktc (Windows)
+3   Running mfaktc
+3.1 Linux
+3.2 Windows
 4   Getting work and reporting results
 5   Known issues
 5.1 Stuff that looks like an issue but actually isn't an issue
@@ -19,9 +20,9 @@ Content
 8   .plan
 
 
-####################
-# 0 What is mfaktc #
-####################
+##################
+# 0 About mfaktc #
+##################
 
 mfaktc is a program that trial factors Mersenne numbers for the Great Internet
 Mersenne Prime Search. It stands for "Mersenne faktorisation* with CUDA" and
@@ -146,40 +147,46 @@ You should see the binary "mfaktc-win-64.exe" or "mfaktc-win-32.exe" in the
 mfaktc root folder.
 
 
-############################
-# 3 Running mfaktc (Linux) #
-############################
+####################
+# 3 Running mfaktc #
+####################
 
-Just run './mfaktc -h' to see the parameters it accepts.
-Maybe you want to tweak the parameters in mfaktc.ini. A small description
-of those parameters is included in mfaktc.ini, too.
-Typically you want to get work from a worktodo file. You can specify the
-name in mfaktc.ini. It was tested with PrimeNet v5 worktodo files but v4
-should work, too.
+Just run 'mfaktc -h' to see what parameters it accepts. You can also check
+mfaktc.ini for additional options and a short description of each one. mfaktc
+typically fetches assignments from a worktodo.txt file, but this can be
+customized. See section 4 for steps to obtain assignments.
 
-Please run the built-in self-test each time you've
-- recompiled the code
-- downloaded a new binary from somewhere
-- changed the Nvidia driver
-- changed your hardware
+mfaktc has built-in self-test that checks for errors. Please run the full
+self-test each time you:
+- recompile the code
+- download a new binary from somewhere
+- update the Nvidia driver
+- change the hardware
 
-Example worktodo.txt
--- cut here --
-Factor=bla,66362159,64,68
-Factor=bla,3321932839,50,71
--- cut here --
+A typical worktodo.txt file looks like this:
+-- begin example --
+Factor=[assignment ID],66362159,64,68
+Factor=[assignment ID],3321932839,50,71
+-- end example --
 
-Than run e.g. './mfaktc'. If everything is working as expected this
-should trial factor M66362159 from 2^64 to 2^68 and after that trial factor
-M3321932839 from 2^50 to 2^71.
+You can launch mfaktc after getting the assignments. In this case, mfaktc
+should trial factor M66362159 from 64 to 68 bits, and then M3321932839 from 50
+to 71 bits.
 
 
-################################
-# 3.1 Running mfaktc (Windows) #
-################################
+#############
+# 3.1 Linux #
+#############
 
-Similar to Linux (read above!).
-Open a command window and run 'mfaktc.exe -h'.
+- build mfaktc using the above instructions or download a stable release
+- go to the mfaktc root folder and run "./mfaktc"
+
+###############
+# 3.2 Windows #
+###############
+
+mfaktc works very similarly on Windows. See the above instructions, but run
+"mfaktc" without the "./" to launch the executable.
 
 
 ########################################

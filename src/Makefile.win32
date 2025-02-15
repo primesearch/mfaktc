@@ -3,8 +3,10 @@ CUDA_DIR = "$(CUDA_PATH)"
 CC = cl
 CFLAGS = /Ox /Oy /GL /W2 /fp:fast /I$(CUDA_DIR)\include /I$(CUDA_DIR)\include\cudart /nologo
 
+CC_PATH = $(shell where cl)
+
 NVCCFLAGS = -m32 --ptxas-options=-v
-CUFLAGS = -ccbin="C:\Program Files (x86)\Microsoft Visual Studio 11.0\VC\bin" -Xcompiler "/EHsc /W3 /nologo /Ox /GL" $(NVCCFLAGS)
+CUFLAGS = -ccbin="$(CC_PATH)" -Xcompiler "/EHsc /W3 /nologo /Ox /GL" $(NVCCFLAGS)
 
 # generate code for various compute capabilities
 NVCCFLAGS += --generate-code arch=compute_11,code=sm_11 # CC 1.1, 1.2 and 1.3 GPUs will use this code (1.0 is not possible for mfaktc)

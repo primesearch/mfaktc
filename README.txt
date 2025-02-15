@@ -136,9 +136,6 @@ Steps:
 - cd src
 - open the makefile and verify CUDA_DIR points to the CUDA installation
   - use Makefile.win for 64 bits, or Makefile.win32 for 32 bits
-  - for 32 bits: also make sure the "ccbin" parameter in CUFLAGS points to the
-    32-bit cl.exe
-  - you can run "where cl" to see where cl.exe is located
 - optional: run "make -f Makefile.win clean" or "make -f Makefile.win32 clean"
   to remove any build artifacts
 - run "make -f Makefile.win" to build for 64 bits, or "make -f Makefile.win32"

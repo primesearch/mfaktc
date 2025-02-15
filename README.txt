@@ -125,13 +125,14 @@ You will need a GNU-compatible version of make as the makefiles are not
 compatible with nmake. GnuWin32 provides a native port for 32-bit Windows:
 http://gnuwin32.sourceforge.net/packages/make.htm
 
+You can add C:\Program Files (x86)\GnuWin32\bin to the Path system variable so
+that make is always available.
+
 
 Steps:
 - open the Visual Studio Developer Command Prompt for the desired architecture
   - for 64 bits: x64 Native Tools Command Prompt
   - for 32 bits: x86 Native Tools Command Prompt
-- add make to the Path variable:
-  set Path=%Path%;C:\Program Files (x86)\GnuWin32\bin
 - navigate to the mfaktc root folder
 - cd src
 - open the makefile and verify CUDA_DIR points to the CUDA installation

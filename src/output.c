@@ -21,6 +21,7 @@ along with mfaktc.  If not, see <http://www.gnu.org/licenses/>.
 #include <stdio.h>
 #include <stdarg.h>
 #include <string.h>
+#include <stdlib.h>
 #include <math.h>
 #include <cuda_runtime.h>
 #include <time.h>
@@ -68,20 +69,29 @@ void logprintf(mystuff_t* mystuff, const char* fmt, ...)
     va_list args;
 
     va_start(args, fmt);
-    vfprintf(stdout, fmt, args);
-    _logf(mystuff, fmt, args);
+    int len = vfprintf(stdout, fmt, args);
     va_end(args);
-}
 
-void _logf(mystuff_t* mystuff, const char* fmt, ...)
-{
-    va_list args;
+    if (mystuff->logging == 1 && mystuff->logfileptr != NULL && len > 0)
+      if (mystuff->printmode == 1) {
+        char* buffer = (char*)malloc(len + 1);
+        va_start(args, fmt);
+        vsnprintf(buffer, len + 1, fmt, args);
+        va_end(args);
 
-    if (mystuff->logging == 1 && mystuff->logfileptr != NULL) {
+        // Replace to CR to LF if it's last char in the string when writing to logfile
+        if (buffer[len - 1] == '\r')
+          buffer[len - 1] = '\n';
+
+        fprintf(mystuff->logfileptr, "%s", buffer);
+        free(buffer);
+      }
+      else
+      {
         va_start(args, fmt);
         vfprintf(mystuff->logfileptr, fmt, args);
         va_end(args);
-    }
+      }
 }
 
 
@@ -372,28 +382,16 @@ void print_status_line(mystuff_t *mystuff)
   
   if(mystuff->mode == MODE_NORMAL)
   {
-    if (mystuff->printmode == 1)
-    {
-      buffer[index] = 0;
-      printf("%s\r", buffer);
-      _logf(mystuff, "%s\n", buffer);
-    }
-    else
-    {
-      index += sprintf(buffer + index, "\n");
-      buffer[index] = 0;
-      logprintf(mystuff, "%s", buffer);
-    }
+    if(mystuff->printmode == 1)index += sprintf(buffer + index, "\r");
+    else                       index += sprintf(buffer + index, "\n");
   }
-  else
+  if(mystuff->mode == MODE_SELFTEST_FULL && mystuff->printmode == 0)
   {
-    if (mystuff->mode == MODE_SELFTEST_FULL && mystuff->printmode == 0)
-    {
-      index += sprintf(buffer + index, "\n");
-    }
-    buffer[index] = 0;
-    logprintf(mystuff, "%s", buffer);
+    index += sprintf(buffer + index, "\n");
   }
+
+  buffer[index] = 0;
+  logprintf(mystuff, "%s", buffer);
 }
 
 void get_utc_timestamp(char* timestamp)

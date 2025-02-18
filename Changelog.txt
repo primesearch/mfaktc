@@ -1,7 +1,15 @@
+<<<<<<< HEAD
 version 0.24
 - merge 0.22 and 0.23 together
 
 version 0.23 (2024-7-19)
+=======
+version 0.23.1
+- fix issue on some linux distros where multiple factors per assignment weren't reported in the json correctly
+- fix line ending bug
+
+version 0.23.0
+>>>>>>> b5c3fba (Add changelog notes and add more files to .gitignore)
 - contributors
   - GP2 (AID saving code) tybusby (rest)
 - added results.json.txt to comply with primenet results reporting, with the following new fields

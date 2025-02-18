@@ -1,3 +1,7 @@
+version 0.23.1
+- fix issue on some linux distros where multiple factors per assignment weren't reported in the json correctly
+- fix line ending bug
+
 version 0.23.0
 - contributors
   - GP2 (AID saving code) tybusby (rest)

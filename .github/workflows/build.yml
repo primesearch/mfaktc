@@ -6,6 +6,7 @@ on:
   workflow_dispatch:
 
 jobs:
+# Begin job "build"
   build:
     runs-on: ubuntu-latest
 
@@ -112,8 +113,7 @@ jobs:
           SCRIPT: cd /workspace/src && make -j$(nproc)
         run: docker exec build-container bash -c "$SCRIPT"
 
-      - name: Prepare zip archive for release and build description
-        if: startsWith(github.ref, 'refs/tags')
+      - name: Prepare zip archive with the description
         env:
           SCRIPT: |
             cd /workspace
@@ -123,13 +123,14 @@ jobs:
             ${{ steps.update_makefile.outputs.CCMAX }} | ${{ matrix.sys.ct_os }} | $(gcc --version | head -n1) | $(nvcc --version | tail -n1)" > ${BASE_NAME}.txt
         run: docker exec build-container bash -c "$SCRIPT"
 
-      - name: Upload build artifacts for release
-        if: startsWith(github.ref, 'refs/tags')
+      - name: Upload build artifacts
         uses: actions/upload-artifact@v4
         with:
           name: mfaktc-${{ github.ref_name }}-linux64-cuda${{ matrix.sys.cuda_version }}
           path: mfaktc-${{ github.ref_name }}-linux64-cuda${{ matrix.sys.cuda_version }}.*
+# End job "build"
 
+# Begin job "upload_release"
   upload_release:
     if: startsWith(github.ref, 'refs/tags/')
     needs: build

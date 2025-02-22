@@ -1,6 +1,6 @@
 /*
 This file is part of mfaktc.
-Copyright (C) 2009, 2010, 2011, 2012, 2013, 2014  Oliver Weihe (o.weihe@t-online.de)
+Copyright (C) 2009, 2010, 2011, 2012, 2013, 2014, 2015  Oliver Weihe (o.weihe@t-online.de)
 
 mfaktc is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -17,10 +17,6 @@ along with mfaktc.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 
-#ifdef TF_72BIT
-extern "C" __host__ int tf_class_71(unsigned long long int k_min, unsigned long long int k_max, mystuff_t *mystuff)
-#define MFAKTC_FUNC mfaktc_71
-#endif
 #ifdef TF_96BIT
   #ifdef SHORTCUT_75BIT
 extern "C" __host__ int tf_class_75(unsigned long long int k_min, unsigned long long int k_max, mystuff_t *mystuff)
@@ -58,10 +54,6 @@ extern "C" __host__ int tf_class_barrett92(unsigned long long int k_min, unsigne
   timeval timer;
   timeval timer2;
   unsigned long long int twait = 0;
-#ifdef TF_72BIT  
-  int72 factor,k_base;
-  int144 b_preinit;
-#endif
 #if defined(TF_96BIT) || defined(TF_BARRETT)
   int96 factor,k_base;
   int192 b_preinit;
@@ -103,14 +95,6 @@ extern "C" __host__ int tf_class_barrett92(unsigned long long int k_min, unsigne
 //  printf("shiftcount = %d\n",shiftcount);
 //  printf("ln2b = %d\n",ln2b);
   b_preinit.d5=0;b_preinit.d4=0;b_preinit.d3=0;b_preinit.d2=0;b_preinit.d1=0;b_preinit.d0=0;
-#ifdef TF_72BIT  
-  if     (ln2b<24 )b_preinit.d0=1<< ln2b;
-  else if(ln2b<48 )b_preinit.d1=1<<(ln2b-24);
-  else if(ln2b<72 )b_preinit.d2=1<<(ln2b-48);
-  else if(ln2b<96 )b_preinit.d3=1<<(ln2b-72);
-  else if(ln2b<120)b_preinit.d4=1<<(ln2b-96);
-  else             b_preinit.d5=1<<(ln2b-120);	// b_preinit = 2^ln2b
-#endif
 #if defined(TF_96BIT) || defined(TF_BARRETT)
   if     (ln2b<32 )b_preinit.d0=1<< ln2b;
   else if(ln2b<64 )b_preinit.d1=1<<(ln2b-32);
@@ -122,7 +106,7 @@ extern "C" __host__ int tf_class_barrett92(unsigned long long int k_min, unsigne
 
 
 /* set result array to 0 */  
-  cudaMemsetAsync(mystuff->d_RES, 0, 1*sizeof(int)); //first int of result array contains the number of factors found
+  cudaMemset(mystuff->d_RES, 0, 1*sizeof(int)); //first int of result array contains the number of factors found
 //  for(i=0;i<32;i++)mystuff->h_RES[i]=0;
 //  cudaMemcpy(mystuff->d_RES, mystuff->h_RES, 32*sizeof(int), cudaMemcpyHostToDevice);
 
@@ -190,11 +174,7 @@ extern "C" __host__ int tf_class_barrett92(unsigned long long int k_min, unsigne
 
         cudaMemcpyAsync(mystuff->d_ktab[stream], mystuff->h_ktab[h_ktab_inuse[stream]], size, cudaMemcpyHostToDevice, mystuff->stream[stream]);
 
-#ifdef TF_72BIT    
-        k_base.d0 =  k_min_grid[h_ktab_index] & 0xFFFFFF;
-        k_base.d1 = (k_min_grid[h_ktab_index] >> 24) & 0xFFFFFF;
-        k_base.d2 =  k_min_grid[h_ktab_index] >> 48;
-#elif defined(TF_96BIT) || defined(TF_BARRETT)
+#if defined(TF_96BIT) || defined(TF_BARRETT)
         k_base.d0 =  k_min_grid[h_ktab_index] & 0xFFFFFFFF;
         k_base.d1 =  k_min_grid[h_ktab_index] >> 32;
         k_base.d2 = 0;
@@ -213,7 +193,7 @@ extern "C" __host__ int tf_class_barrett92(unsigned long long int k_min, unsigne
         printf(" STREAM_SCHEDULE: started GPU kernel on stream %d using h_ktab[%d]\n\n", stream, h_ktab_inuse[stream]);
 #endif
 #ifdef DEBUG_GPU_MATH
-        cudaThreadSynchronize(); /* needed to get the output from device printf() */
+        cudaDeviceSynchronize(); /* needed to get the output from device printf() */
 #endif
 #ifdef DEBUG_STREAM_SCHEDULE_CHECK
         int j, index_count;
@@ -239,8 +219,8 @@ extern "C" __host__ int tf_class_barrett92(unsigned long long int k_min, unsigne
   }
 
 /* wait to finish the current calculations on the device */
-  cuda_ret = cudaThreadSynchronize();
-  if(cuda_ret != cudaSuccess)printf("per class final cudaThreadSynchronize failed!\n");
+  cuda_ret = cudaDeviceSynchronize();
+  if(cuda_ret != cudaSuccess)printf("per class final cudaDeviceSynchronize failed!\n");
 
 /* download results from GPU */
   cudaMemcpy(mystuff->h_RES, mystuff->d_RES, 32*sizeof(int), cudaMemcpyDeviceToHost);
@@ -251,7 +231,8 @@ extern "C" __host__ int tf_class_barrett92(unsigned long long int k_min, unsigne
 #endif  
 
   mystuff->stats.grid_count = count;
-  mystuff->stats.class_time = timer_diff(&timer)/1000;
+  mystuff->stats.class_time = timer_diff(&timer) / 1000;
+  mystuff->stats.bit_level_time += timer_diff(&timer) / 1000;
 /* prevent division by zero if timer resolution is too low */
   if(mystuff->stats.class_time == 0)mystuff->stats.class_time = 1;
 
@@ -285,9 +266,6 @@ extern "C" __host__ int tf_class_barrett92(unsigned long long int k_min, unsigne
     factor.d2=mystuff->h_RES[i*3 + 1];
     factor.d1=mystuff->h_RES[i*3 + 2];
     factor.d0=mystuff->h_RES[i*3 + 3];
-#ifdef TF_72BIT    
-    print_dez72(factor,string);
-#endif    
 #if defined(TF_96BIT) || defined(TF_BARRETT)
     print_dez96(factor,string);
 #endif

@@ -1,6 +1,6 @@
 /*
 This file is part of mfaktc.
-Copyright (C) 2009, 2010, 2011, 2012  Oliver Weihe (o.weihe@t-online.de)
+Copyright (C) 2009, 2010, 2011, 2012, 2015  Oliver Weihe (o.weihe@t-online.de)
 
 mfaktc is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -21,9 +21,8 @@ along with mfaktc.  If not, see <http://www.gnu.org/licenses/>.
 extern "C" {
 #endif
 void print_help(char *string);
+void logprintf(mystuff_t* mystuff, const char* fmt, ...);
 
-void print_dez72(int72 a, char *buf);
-void print_dez144(int144 a, char *buf);
 void print_dez96(int96 a, char *buf);
 void print_dez192(int192 a, char *buf);
 

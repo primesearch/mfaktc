@@ -1,6 +1,6 @@
 /*
 This file is part of mfaktc.
-Copyright (C) 2009, 2010  Oliver Weihe (o.weihe@t-online.de)
+Copyright (C) 2015  Oliver Weihe (o.weihe@t-online.de)
 
 mfaktc is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -16,6 +16,12 @@ You should have received a copy of the GNU General Public License
 along with mfaktc.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-int read_config(mystuff_t *mystuff);
-int my_read_int(char* inifile, char* name, int* value);
-int my_read_string(char* inifile, char* name, char* string, unsigned int len);
+#ifdef _MSC_VER
+extern "C" {
+	int check_subcc_bug(mystuff_t *mystuff);
+	void get_CUDA_arch(mystuff_t *mystuff);
+};
+#else
+extern int check_subcc_bug(mystuff_t *mystuff);
+void get_CUDA_arch(mystuff_t *mystuff);
+#endif

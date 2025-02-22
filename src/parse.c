@@ -40,15 +40,15 @@ mfaktc 0.07-0.14 to see Luigis code.
 
 /************************************************************************************************************
  * Input/output file function library                                                                       *
- *                                                   							    *
- *   return codes:											    *
- *     0 - OK												    *
- *     1 - get_next_assignment : cannot open file							    *
- *     2 - get_next_assignment : no valid assignment found						    *
- *     3 - clear_assignment    : cannot open file <filename>						    *
- *     4 - clear_assignment    : cannot open file "__worktodo__.tmp"					    *
- *     5 - clear_assignment    : assignment not found							    *
- *     6 - clear_assignment    : cannot rename temporary workfile to regular workfile			    *
+ *                                                                                                          *
+ *   return codes:                                                                                          *
+ *     0 - OK                                                                                               *
+ *     1 - get_next_assignment : cannot open file                                                           *
+ *     2 - get_next_assignment : no valid assignment found                                                  *
+ *     3 - clear_assignment    : cannot open file <filename>                                                *
+ *     4 - clear_assignment    : cannot open file "__worktodo__.tmp"                                        *
+ *     5 - clear_assignment    : assignment not found                                                       *
+ *     6 - clear_assignment    : cannot rename temporary workfile to regular workfile                       *
  ************************************************************************************************************/
 
 #include <stdio.h>
@@ -60,8 +60,8 @@ mfaktc 0.07-0.14 to see Luigis code.
 #include <errno.h>
 
 #include "compatibility.h"
-#include "parse.h"
 #include "params.h"
+#include "parse.h"
 
 int isprime(unsigned int n)
 /*
@@ -251,17 +251,17 @@ output
 
 /************************************************************************************************************
  * Function name : get_next_assignment                                                                      *
- *   													    *
- *     INPUT  :	char *filename										    *
- *		unsigned int *exponent									    *
- *		int *bit_min										    *
- *		int *bit_max										    *
- *		char *assignment_key[100];
- *     OUTPUT :                                        							    *
  *                                                                                                          *
- *     0 - OK												    *
- *     1 - get_next_assignment : cannot open file							    *
- *     2 - get_next_assignment : no valid assignment found						    *
+ *     INPUT  : char *filename                                                                              *
+ *      unsigned int *exponent                                                                              *
+ *      int *bit_min                                                                                        *
+ *      int *bit_max                                                                                        *
+ *      char *assignment_key[100];                                                                          *
+ *     OUTPUT :                                                                                             *
+ *                                                                                                          *
+ *     0 - OK                                                                                               *
+ *     1 - get_next_assignment : cannot open file                                                           *
+ *     2 - get_next_assignment : no valid assignment found                                                  *
  ************************************************************************************************************/
 enum ASSIGNMENT_ERRORS get_next_assignment(char *filename, unsigned int *exponent, int *bit_min, int *bit_max, LINE_BUFFER *key, int verbosity)
 {
@@ -313,6 +313,7 @@ enum ASSIGNMENT_ERRORS get_next_assignment(char *filename, unsigned int *exponen
   while (TRUE);
   
   fclose(f_in);
+  f_in = NULL;
   if (NO_WARNING == value)
   {
     *exponent = assignment.exponent;
@@ -330,19 +331,19 @@ enum ASSIGNMENT_ERRORS get_next_assignment(char *filename, unsigned int *exponen
 
 /************************************************************************************************************
  * Function name : clear_assignment                                                                         *
- *   													    *
- *     INPUT  :	char *filename										    *
- *		unsigned int exponent									    *
- *		int bit_min		- from old assignment file			    *
- *		int bit_max										    *
- *		int bit_min_new	- new bit_min,what was factored to--if 0,reached bit_max	    *
- *     OUTPUT :                                        							    *
  *                                                                                                          *
- *     0 - OK												    *
- *     3 - clear_assignment    : cannot open file <filename>						    *
- *     4 - clear_assignment    : cannot open file "__worktodo__.tmp"					    *
- *     5 - clear_assignment    : assignment not found							    *
- *     6 - clear_assignment    : cannot rename temporary workfile to regular workfile			    *
+ *     INPUT  : char *filename                                                                              *
+ *      unsigned int exponent                                                                               *
+ *      int bit_min     - from old assignment file                                                          *
+ *      int bit_max                                                                                         *
+ *      int bit_min_new - new bit_min,what was factored to--if 0,reached bit_max                            *
+ *     OUTPUT :                                                                                             *
+ *                                                                                                          *
+ *     0 - OK                                                                                               *
+ *     3 - clear_assignment    : cannot open file <filename>                                                *
+ *     4 - clear_assignment    : cannot open file "__worktodo__.tmp"                                        *
+ *     5 - clear_assignment    : assignment not found                                                       *
+ *     6 - clear_assignment    : cannot rename temporary workfile to regular workfile                       *
  *                                                                                                          *
  * If bit_min_new is zero then the specified assignment will be cleared. If bit_min_new is greater than     *
  * zero the specified assignment will be modified                                                           *
@@ -366,6 +367,7 @@ enum ASSIGNMENT_ERRORS clear_assignment(char *filename, unsigned int exponent, i
   if (NULL == f_out)
   {
     fclose(f_in);
+    f_in = NULL;
     return CANT_OPEN_TEMPFILE;
   }
   
@@ -399,10 +401,12 @@ enum ASSIGNMENT_ERRORS clear_assignment(char *filename, unsigned int exponent, i
   if (fseek(f_in,0L,SEEK_SET))
   {
     fclose(f_in);
+    f_in = NULL;
     f_in = fopen(filename, "r");
     if (NULL == f_in)
     {
       fclose(f_out);
+      f_out = NULL;
       return CANT_OPEN_WORKFILE;
     }
   }
@@ -439,7 +443,9 @@ enum ASSIGNMENT_ERRORS clear_assignment(char *filename, unsigned int exponent, i
     }
   }	// while.....
   fclose(f_in);
+  f_in = NULL;
   fclose(f_out);
+  f_out = NULL;
   if (!found)
     return ASSIGNMENT_NOT_FOUND;
   if(remove(filename) != 0)
@@ -479,6 +485,7 @@ int process_add_file(char *workfilename, char *addfilename, int *addfilesstatus,
       if(workfile == NULL)
       {
         fclose(addfile);
+        addfile = NULL;
         printf("WARNING: process_add_file() could not open \"%s\"", workfilename);
         printf("         Disabled worktodo.add feature until restart of mfaktc!\n");
         return CANT_OPEN_WORKFILE;
@@ -490,7 +497,9 @@ int process_add_file(char *workfilename, char *addfilename, int *addfilesstatus,
           if(fwrite(buffer, 1, n, workfile) != n)
           {
             fclose(workfile);
+            workfile = NULL;
             fclose(addfile);
+            addfile = NULL;
             printf("WARNING: process_add_file() could not write to \"%s\"", workfilename);
             printf("         Disabled worktodo.add feature until restart of mfaktc!\n");
             return CANT_WRITE;
@@ -499,12 +508,15 @@ int process_add_file(char *workfilename, char *addfilename, int *addfilesstatus,
         if(!feof(addfile))
         {
           fclose(workfile);
+          workfile = NULL;
           fclose(addfile);
+          addfile = NULL;
           printf("WARNING: process_add_file() could not read from \"%s\"", addfilename);
           printf("         Disabled worktodo.add feature until restart of mfaktc!\n");
           return CANT_READ;
         }
         fclose(workfile);
+        workfile = NULL;
       }
     }
     else // (*addfilesstatus) < 2
@@ -512,6 +524,7 @@ int process_add_file(char *workfilename, char *addfilename, int *addfilesstatus,
       if(verbosity >= 2)printf("  -> will wait until next check of \"%s\"\n", addfilename);
     }
     fclose(addfile);
+    addfile = NULL;
     if((*addfilesstatus) == 0) /* status was 2 before and is 0 now, try to delete addfile! */
     {
       if(remove(addfilename) != 0)

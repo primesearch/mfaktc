@@ -1,7 +1,7 @@
 /*
 This file is part of mfaktc.
-Copyright (C) 2009, 2010, 2011, 2012, 2013, 2014  Oliver Weihe (o.weihe@t-online.de)
-                                                  Bertram Franz (bertramf@gmx.net)
+Copyright (C) 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2018, 2019, 2024  Oliver Weihe (o.weihe@t-online.de)
+                                                                          Bertram Franz (bertramf@gmx.net)
 
 mfaktc is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -19,6 +19,9 @@ along with mfaktc.  If not, see <http://www.gnu.org/licenses/>.
 
 
 #include <stdio.h>
+#include <stdarg.h>
+#include <stdbool.h>
+#include <string.h>
 #include <math.h>
 #include <cuda_runtime.h>
 #include <time.h>
@@ -27,11 +30,12 @@ along with mfaktc.  If not, see <http://www.gnu.org/licenses/>.
 #include "my_types.h"
 #include "output.h"
 #include "compatibility.h"
+#include "crc.h"
 
 
 void print_help(char *string)
 {
-  printf("mfaktc v%s Copyright (C) 2009, 2010, 2011, 2012, 2013, 2014, 2015  Oliver Weihe (o.weihe@t-online.de)\n", MFAKTC_VERSION);
+  printf("mfaktc v%s Copyright (C) 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2018, 2019, 2024 Oliver Weihe (o.weihe@t-online.de)\n", MFAKTC_VERSION);
   printf("This program comes with ABSOLUTELY NO WARRANTY; for details see COPYING.\n");
   printf("This is free software, and you are welcome to redistribute it\n");
   printf("under certain conditions; see COPYING for details.\n\n\n");
@@ -51,46 +55,31 @@ void print_help(char *string)
 }
 
 
+
+void logprintf(mystuff_t* mystuff, const char* fmt, ...)
+{
+    va_list args;
+
+    va_start(args, fmt);
+    vfprintf(stdout, fmt, args);
+    va_end(args);
+
+    if (mystuff->logging == 1 && mystuff->logfileptr != NULL) {
+        va_start(args, fmt);
+        vfprintf(mystuff->logfileptr, fmt, args);
+        va_end(args);
+    }
+}
+
+
 /*
 print_dezXXX(intXXX a, char *buf) writes "a" into "buf" in decimal
 "buf" must be preallocated with enough space.
 Enough space is
-  23 bytes for print_dez72()  (2^72 -1  has 22 decimal digits)
   30 bytes for print_dez96()  (2^96 -1  has 29 decimal digits)
-  45 bytes for print_dez144() (2^144 -1 has 44 decimal digits)
   59 bytes for print_dez192() (2^192 -1 has 58 decimal digits)
 
 */
-
-void print_dez72(int72 a, char *buf)
-{
-  int192 tmp;
-
-  tmp.d5 = 0;
-  tmp.d4 = 0;
-  tmp.d3 = 0;
-  tmp.d2 =                 a.d2 >> 16;
-  tmp.d1 = (a.d2 << 16) + (a.d1 >>  8);
-  tmp.d0 = (a.d1 << 24) +  a.d0;
-  
-  print_dez192(tmp, buf);
-}
-
-
-void print_dez144(int144 a, char *buf)
-{
-  int192 tmp;
-
-  tmp.d5 = 0;
-  tmp.d4 =                 a.d5 >>  8;
-  tmp.d3 = (a.d5 << 24) +  a.d4;
-  tmp.d2 = (a.d3 <<  8) + (a.d2 >> 16);
-  tmp.d1 = (a.d2 << 16) + (a.d1 >>  8);
-  tmp.d0 = (a.d1 << 24) +  a.d0;
-  
-  print_dez192(tmp, buf);
-}
-
 
 void print_dez96(int96 a, char *buf)
 {
@@ -137,19 +126,18 @@ void print_dez192(int192 a, char *buf)
 
 void print_timestamp(FILE *outfile)
 {
-  time_t now;
-  char *ptr;
+  char* ptr;
+  const time_t now = time(NULL);
 
-  now = time(NULL);
-  ptr = ctime(&now);
+  ptr = asctime(gmtime(&now));
   ptr[24] = '\0'; // cut off the newline
   fprintf(outfile, "[%s]\n", ptr);
 }
 
-
 void print_status_line(mystuff_t *mystuff)
 {
   unsigned long long int eta;
+  unsigned long long int elapsed;
   int i = 0, max_class_number;
   char buffer[256];
   int index = 0;
@@ -170,7 +158,7 @@ void print_status_line(mystuff_t *mystuff)
 
   if(mystuff->stats.output_counter == 0)
   {
-    printf("%s\n", mystuff->stats.progressheader);
+    logprintf(mystuff, "%s\n", mystuff->stats.progressheader);
     mystuff->stats.output_counter = 20;
   }
   if(mystuff->printmode == 0)mystuff->stats.output_counter--;
@@ -199,7 +187,7 @@ void print_status_line(mystuff_t *mystuff)
       else if(mystuff->stats.progressformat[i+1] == 'g')
       {
         if(mystuff->mode == MODE_NORMAL)
-          index += sprintf(buffer + index, "%7.2f", mystuff->stats.ghzdays * 86400000.0f / ((double)mystuff->stats.class_time * (double)max_class_number));
+          index += sprintf(buffer + index, "%8.2f", mystuff->stats.ghzdays * 86400000.0f / ((double)mystuff->stats.class_time * (double)max_class_number));
         else
           index += sprintf(buffer + index, "   n.a.");
       }
@@ -209,6 +197,17 @@ void print_status_line(mystuff_t *mystuff)
         else if(mystuff->stats.class_time < 1000000ULL )index += sprintf(buffer + index, "%6.2f", (double)mystuff->stats.class_time/1000.0);
         else if(mystuff->stats.class_time < 10000000ULL)index += sprintf(buffer + index, "%6.1f", (double)mystuff->stats.class_time/1000.0);
         else                                            index += sprintf(buffer + index, "%6.0f", (double)mystuff->stats.class_time/1000.0);
+      }
+      else if (mystuff->stats.progressformat[i + 1] == 'E')
+      {
+          if (mystuff->mode == MODE_NORMAL)
+          {
+              elapsed = mystuff->stats.bit_level_time / 1000;
+                   if (elapsed < 3600) index += sprintf(buffer + index, "%2" PRIu64 "m%02" PRIu64 "s", elapsed / 60, elapsed % 60);
+              else if (elapsed < 86400)index += sprintf(buffer + index, "%2" PRIu64 "h%02" PRIu64 "m", elapsed / 3600, (elapsed / 60) % 60);
+              else                     index += sprintf(buffer + index, "%2" PRIu64 "d%02" PRIu64 "h", elapsed / 86400, (elapsed / 3600) % 24);
+          }
+          else if (mystuff->mode == MODE_SELFTEST_FULL)index += sprintf(buffer + index, "  n.a.");
       }
       else if(mystuff->stats.progressformat[i+1] == 'e')
       {
@@ -320,7 +319,7 @@ void print_status_line(mystuff_t *mystuff)
     if(index > 200) /* buffer has 256 bytes, single format strings are limited to 50 bytes */
     {
       buffer[index] = 0;
-      printf("%s", buffer);
+      logprintf(mystuff, "%s", buffer);
       index = 0;
     }
   }
@@ -337,7 +336,41 @@ void print_status_line(mystuff_t *mystuff)
   }
 
   buffer[index] = 0;
-  printf("%s", buffer);
+  logprintf(mystuff, "%s", buffer);
+}
+
+void get_utc_timestamp(char* timestamp)
+{
+    time_t now;
+    struct tm* utc_time;
+
+    time(&now);
+    utc_time = gmtime(&now);
+    strftime(timestamp, sizeof(char[50]), "%Y-%m-%d %H:%M:%S", utc_time);
+}
+
+const char* getArchitectureJSON() {
+#if defined(__x86_64__) || defined(_M_X64)
+    return ", \"architecture\": \"x86_64\"";
+#elif defined(i386) || defined(__i386__) || defined(__i386) || defined(_M_IX86)
+    return ", \"architecture\": \"x86_32\"";
+#elif defined(__aarch64__) || defined(_M_ARM64)
+    return ", \"architecture\": \"ARM64\"";
+#else
+    return "";
+#endif
+}
+
+void getOSJSON(char* string) {
+#if defined(_WIN32) || defined(_WIN64)
+    sprintf(string, ", \"os\":{\"os\": \"Windows\"%s}", getArchitectureJSON());
+#elif defined(__APPLE__)
+    sprintf(string, ", \"os\":{\"os\": \"Darwin\"%s}", getArchitectureJSON());
+#elif defined(__linux__)
+    sprintf(string, ", \"os\":{\"os\": \"Linux\"%s}", getArchitectureJSON());
+#elif defined(__unix__)
+    sprintf(string, ", \"os\":{\"os\": \"Unix\"%s}", getArchitectureJSON());
+#endif
 }
 
 
@@ -345,49 +378,96 @@ void print_result_line(mystuff_t *mystuff, int factorsfound)
 /* printf the final result line (STDOUT and resultfile) */
 {
   char UID[110]; /* 50 (V5UserID) + 50 (ComputerID) + 8 + spare */
-  char string[200];
+  int string_length = 0, checksum;
+  char aidjson[MAX_LINE_LENGTH+11];
+  char userjson[61]; /* 50 (V5UserID) + 11 spare */
+  char computerjson[65];  /* 50 (ComputerID) + 15 spare */
+  char factorjson[513];
+  char osjson[200];
+  char txtstring[200];
+  char timestamp[50];
   
-  FILE *resultfile=NULL;
+  FILE *txtresultfile=NULL;
+
+#ifndef WAGSTAFF
+  char jsonstring[1100];
+  FILE *jsonresultfile=NULL;
+#endif
    
   
   if(mystuff->V5UserID[0] && mystuff->ComputerID[0])
     sprintf(UID, "UID: %s/%s, ", mystuff->V5UserID, mystuff->ComputerID);
   else
     UID[0]=0;
+
+  if (mystuff->assignment_key[0] && strspn(mystuff->assignment_key, "0123456789abcdefABCDEF") == 32 && strlen(mystuff->assignment_key) == 32)
+      sprintf(aidjson, ", \"aid\":\"%s\"", mystuff->assignment_key);
+  else
+      aidjson[0] = 0;
+
+  if (mystuff->V5UserID[0])
+      sprintf(userjson, ", \"user\":\"%s\"", mystuff->V5UserID);
+  else
+      userjson[0] = 0;
+
+  if (mystuff->ComputerID[0])
+      sprintf(computerjson, ", \"computer\":\"%s\"", mystuff->ComputerID);
+  else
+      computerjson[0] = 0;
+
+  if (mystuff->factors_string[0])
+      sprintf(factorjson, ", \"factors\":[%s]", mystuff->factors_string);
+  else
+      factorjson[0] = 0;
+
+  getOSJSON(osjson);
+  get_utc_timestamp(timestamp);
     
   if(mystuff->mode == MODE_NORMAL)
   {
-    resultfile = fopen(mystuff->resultfile, "a");
-    if(mystuff->print_timestamp == 1)print_timestamp(resultfile);
-  }
-  if(factorsfound)
-  {
-#ifndef MORE_CLASSES
-    if((mystuff->mode == MODE_NORMAL) && (mystuff->stats.class_counter < 96))
-#else
-    if((mystuff->mode == MODE_NORMAL) && (mystuff->stats.class_counter < 960))
+    txtresultfile = fopen(mystuff->resultfile, "a");
+#ifndef WAGSTAFF
+    jsonresultfile = fopen(mystuff->jsonresultfile, "a");
 #endif
-    {
-      sprintf(string, "found %d factor%s for %s%u from 2^%2d to 2^%2d (partially tested) [mfaktc %s %s]", factorsfound, (factorsfound > 1) ? "s" : "", NAME_NUMBERS, mystuff->exponent, mystuff->bit_min, mystuff->bit_max_stage, MFAKTC_VERSION, mystuff->stats.kernelname);
-    }
-    else
-    {
-      sprintf(string, "found %d factor%s for %s%u from 2^%2d to 2^%2d [mfaktc %s %s]", factorsfound, (factorsfound > 1) ? "s" : "", NAME_NUMBERS, mystuff->exponent, mystuff->bit_min, mystuff->bit_max_stage, MFAKTC_VERSION, mystuff->stats.kernelname);
-    }
+    if(mystuff->print_timestamp == 1)print_timestamp(txtresultfile);
+  }
+#ifndef MORE_CLASSES
+  bool partialresult = (mystuff->mode == MODE_NORMAL) && (mystuff->stats.class_counter < 96);
+#else
+  bool partialresult = (mystuff->mode == MODE_NORMAL) && (mystuff->stats.class_counter < 960);
+#endif
+  if (factorsfound)
+  {
+    string_length = sprintf(txtstring, "found %d factor%s for %s%u from 2^%2d to 2^%2d %s", 
+        factorsfound, (factorsfound > 1) ? "s" : "", NAME_NUMBERS, mystuff->exponent, mystuff->bit_min, mystuff->bit_max_stage, partialresult ? "(partially tested) " : "");
   }
   else
   {
-    sprintf(string, "no factor for %s%u from 2^%d to 2^%d [mfaktc %s %s]", NAME_NUMBERS, mystuff->exponent, mystuff->bit_min, mystuff->bit_max_stage, MFAKTC_VERSION, mystuff->stats.kernelname);
+    string_length = sprintf(txtstring, "no factor for %s%u from 2^%d to 2^%d", NAME_NUMBERS, mystuff->exponent, mystuff->bit_min, mystuff->bit_max_stage);
   }
 
+  string_length += sprintf(txtstring + string_length, " [mfaktc %s %s CUDA %d.%d arch %d.%d]", MFAKTC_VERSION, mystuff->stats.kernelname, mystuff->cuda_toolkit / 1000, mystuff->cuda_toolkit % 100, mystuff->cuda_arch / 100, mystuff->cuda_arch % 100);
+
+  checksum = crc32_checksum(txtstring, string_length);
+  sprintf(txtstring + string_length, " %08X", checksum);
+#ifndef WAGSTAFF
+  sprintf(jsonstring, "{\"exponent\":%u, \"worktype\":\"TF\", \"status\":\"%s\", \"bitlo\":%2d, \"bithi\":%2d, \"rangecomplete\":%s%s, \"program\":{\"name\":\"mfaktc\", \"version\":\"%s\", \"subversion\":\"%s\"}, \"timestamp\":\"%s\"%s%s%s%s}",
+      mystuff->exponent, factorsfound > 0 ? "F" : "NF", mystuff->bit_min, mystuff->bit_max_stage, partialresult ? "false" : "true", factorjson, MFAKTC_VERSION, mystuff->stats.kernelname, timestamp, userjson, computerjson, aidjson, osjson);
+#endif
   if(mystuff->mode != MODE_SELFTEST_SHORT)
   {
-    printf("%s\n", string);
+    printf("%s\n", txtstring);
   }
   if(mystuff->mode == MODE_NORMAL)
   {
-    fprintf(resultfile, "%s%s\n", UID, string);
-    fclose(resultfile);
+    fprintf(txtresultfile, "%s%s\n", UID, txtstring);
+    fclose(txtresultfile);
+    txtresultfile = NULL;
+#ifndef WAGSTAFF
+    fprintf(jsonresultfile, "%s\n", jsonstring);
+    fclose(jsonresultfile);
+    jsonresultfile = NULL;
+#endif
   }
 }
 
@@ -395,7 +475,15 @@ void print_result_line(mystuff_t *mystuff, int factorsfound)
 void print_factor(mystuff_t *mystuff, int factor_number, char *factor)
 {
   char UID[110]; /* 50 (V5UserID) + 50 (ComputerID) + 8 + spare */
+  char string[200];
+  int max_class_counter, string_length = 0, checksum;
   FILE *resultfile = NULL;
+
+#ifndef MORE_CLASSES
+  max_class_counter = 96;
+#else
+  max_class_counter = 960;
+#endif
 
   if(mystuff->V5UserID[0] && mystuff->ComputerID[0])
     sprintf(UID, "UID: %s/%s, ", mystuff->V5UserID, mystuff->ComputerID);
@@ -411,18 +499,21 @@ void print_factor(mystuff_t *mystuff, int factor_number, char *factor)
 
   if(factor_number < 10)
   {
+    string_length = sprintf(string, "%s%u has a factor: %s [TF:%d:%d%s:mfaktc %s %s CUDA %d.%d arch %d.%d]", NAME_NUMBERS, mystuff->exponent, factor, \
+                            mystuff->bit_min, mystuff->bit_max_stage, ((mystuff->stopafterfactor == 2) && (mystuff->stats.class_counter <  max_class_counter)) ? "*" : "" , \
+                            MFAKTC_VERSION, mystuff->stats.kernelname, mystuff->cuda_toolkit / 1000, mystuff->cuda_toolkit % 100, mystuff->cuda_arch / 100, mystuff->cuda_arch % 100);
+
+    checksum = crc32_checksum(string, string_length);
+    sprintf(string + string_length, " %08X", checksum);
+
     if(mystuff->mode != MODE_SELFTEST_SHORT)
     {
       if(mystuff->printmode == 1 && factor_number == 0)printf("\n");
-      printf("%s%u has a factor: %s\n", NAME_NUMBERS, mystuff->exponent, factor);
+      printf("%s\n", string);
     }
     if(mystuff->mode == MODE_NORMAL)
     {
-#ifndef MORE_CLASSES      
-      fprintf(resultfile, "%s%s%u has a factor: %s [TF:%d:%d%s:mfaktc %s %s]\n", UID, NAME_NUMBERS, mystuff->exponent, factor, mystuff->bit_min, mystuff->bit_max_stage, ((mystuff->stopafterfactor == 2) && (mystuff->stats.class_counter <  96)) ? "*" : "" , MFAKTC_VERSION, mystuff->stats.kernelname);
-#else      
-      fprintf(resultfile, "%s%s%u has a factor: %s [TF:%d:%d%s:mfaktc %s %s]\n", UID, NAME_NUMBERS, mystuff->exponent, factor, mystuff->bit_min, mystuff->bit_max_stage, ((mystuff->stopafterfactor == 2) && (mystuff->stats.class_counter < 960)) ? "*" : "" , MFAKTC_VERSION, mystuff->stats.kernelname);
-#endif
+      fprintf(resultfile, "%s%s\n", UID, string);
     }
   }
   else /* factor_number >= 10 */

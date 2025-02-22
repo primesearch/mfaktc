@@ -1,6 +1,6 @@
 /*
 This file is part of mfaktc.
-Copyright (C) 2009, 2010, 2011, 2012, 2014  Oliver Weihe (o.weihe@t-online.de)
+Copyright (C) 2009, 2010, 2011, 2012, 2014, 2015  Oliver Weihe (o.weihe@t-online.de)
 
 mfaktc is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -18,7 +18,7 @@ along with mfaktc.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <stdio.h>
 #include <cuda.h>
-#include <cuda_runtime.h>  
+#include <cuda_runtime.h>
 
 #include "params.h"
 #include "my_types.h"
@@ -290,7 +290,7 @@ Precalculated here since it is the same for all steps in the following loop */
     sub_96(&a,a,f);
   }
 
-#if defined DEBUG_GPU_MATH && defined USE_DEVICE_PRINTF && __CUDA_ARCH__ >= FERMI
+#if defined DEBUG_GPU_MATH
   if(cmp_ge_96(a,f))
   {
     printf("EEEEEK, final a is >= f\n");

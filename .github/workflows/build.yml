@@ -1,0 +1,113 @@
+name: Build mfaktc software
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    container: "nvcr.io/nvidia/cuda:${{ matrix.sys.cuda_version }}-devel-${{ matrix.sys.ct_os }}"
+
+    permissions:
+      contents: write
+
+    strategy:
+      # Set fail-fast to false to ensure that feedback is delivered for all matrix combinations. Consider changing this to true when your workflow is stable.
+      fail-fast: false
+
+      matrix:
+        sys:
+          - { cuda_version: '12.8.0', ct_os: 'ubuntu22.04' }
+          - { cuda_version: '12.6.3', ct_os: 'ubuntu22.04' }
+          - { cuda_version: '12.6.2', ct_os: 'ubuntu22.04' }
+          - { cuda_version: '12.6.1', ct_os: 'ubuntu22.04' }
+          - { cuda_version: '12.6.0', ct_os: 'ubuntu22.04' }
+          - { cuda_version: '12.5.1', ct_os: 'ubuntu22.04' }
+          - { cuda_version: '12.5.0', ct_os: 'ubuntu22.04' }
+          - { cuda_version: '12.4.1', ct_os: 'ubuntu22.04' }
+          - { cuda_version: '12.4.0', ct_os: 'ubuntu22.04' }
+          - { cuda_version: '12.3.2', ct_os: 'ubuntu22.04' }
+          - { cuda_version: '12.3.1', ct_os: 'ubuntu22.04' }
+          - { cuda_version: '12.3.0', ct_os: 'ubuntu22.04' }
+          - { cuda_version: '12.2.2', ct_os: 'ubuntu22.04' }
+          - { cuda_version: '12.2.0', ct_os: 'ubuntu22.04' }
+          - { cuda_version: '12.1.1', ct_os: 'ubuntu22.04' }
+          - { cuda_version: '12.1.0', ct_os: 'ubuntu22.04' }
+          - { cuda_version: '12.0.1', ct_os: 'ubuntu22.04' }
+          - { cuda_version: '12.0.0', ct_os: 'ubuntu22.04' }
+          - { cuda_version: '11.8.0', ct_os: 'ubuntu22.04' }
+          - { cuda_version: '11.7.1', ct_os: 'ubuntu22.04' }
+          - { cuda_version: '11.6.2', ct_os: 'ubuntu20.04' }
+          - { cuda_version: '11.6.1', ct_os: 'ubuntu20.04' }
+          - { cuda_version: '11.5.2', ct_os: 'ubuntu20.04' }
+          - { cuda_version: '11.4.3', ct_os: 'ubuntu20.04' }
+          - { cuda_version: '11.3.1', ct_os: 'ubuntu20.04' }
+          - { cuda_version: '11.2.2', ct_os: 'ubuntu20.04' }
+          - { cuda_version: '11.1.1', ct_os: 'ubuntu20.04' }
+          - { cuda_version: '11.0.3', ct_os: 'ubuntu20.04' }
+          - { cuda_version: '10.2', ct_os: 'ubuntu18.04' }
+          - { cuda_version: '9.2', ct_os: 'ubuntu18.04' }
+          - { cuda_version: '8.0', ct_os: 'ubuntu16.04' }
+
+    steps:
+
+    - name: Fix GPG keys for NVidia repo on Ubuntu 16.04
+      if: matrix.sys.ct_os == 'ubuntu16.04'
+      run: |
+        apt update || /bin/true
+        apt install -y wget
+        wget https://developer.download.nvidia.com/compute/cuda/repos/ubuntu1604/x86_64/3bf863cc.pub
+        apt-key add 3bf863cc.pub
+
+    - name: Update & install required packages inside the container
+      run: |
+        apt update
+        apt -y full-upgrade
+        apt install -y build-essential curl git make python3 sudo unzip wget zip
+
+    - name: Checkout repo
+      if: matrix.sys.ct_os == 'ubuntu22.04' || matrix.sys.ct_os == 'ubuntu20.04'
+      uses: actions/checkout@v3
+
+    - name: Checkout repo
+      if: matrix.sys.ct_os != 'ubuntu22.04' && matrix.sys.ct_os != 'ubuntu20.04'
+      uses: actions/checkout@v1
+
+    - name: Update Makefile
+      id: update_makefile
+      shell: bash
+      run: |
+        echo -n "Checking for nvcc maximum supported CC... "
+        export CCMAX=$(nvcc --help | grep -Eoe "compute_[0-9]{2}" | cut -d '_' -f2 | sort -un | tail -n1)
+        echo $CCMAX
+        echo "CCMAX=$CCMAX" >> $GITHUB_OUTPUT
+
+        echo "Removing unsupported CCs (> $CCMAX) from the Makefile"
+        for cc in $(grep -E '^NVCCFLAGS \+=.*?compute_[0-9]{2}' src/Makefile | grep -Eoe 'compute_[0-9]{2}' | tr -d '\r' | cut -d '_' -f2 | xargs); do
+          if [[ $cc -gt $CCMAX ]]; then
+            echo "Removing CC $cc"
+            sed -i -E "/^NVCCFLAGS \+=.*?compute_$cc/d" src/Makefile
+          fi
+        done
+
+        echo "Adding libraries to LDFLAGS to support static build on older Ubuntu versions..."
+        sed -i -E 's/^(LDFLAGS = .*? -lcudart_static) (.*)/\1 -ldl -lrt -lpthread \2/' src/Makefile
+
+    - name: Build from sources
+      run: cd src && make -j$(nproc)
+
+    - name: Prepare zip archive for release
+      if: startsWith(github.ref, 'refs/tags')
+      run: zip -9 -j mfaktc-${{ github.ref_name }}-linux64-cuda${{ matrix.sys.cuda_version }}.zip *
+
+    - name: Make and upload release
+      uses: softprops/action-gh-release@v2
+      if: startsWith(github.ref, 'refs/tags')
+      with:
+        fail_on_unmatched_files: false
+        generate_release_notes: true
+        files: mfaktc-${{ github.ref_name }}-linux64-cuda${{ matrix.sys.cuda_version }}.zip
+        append_body: true
+        body: " - mfaktc-${{ github.ref_name }}-linux64-cuda${{ matrix.sys.cuda_version }}.zip: max CC ${{ steps.update_makefile.outputs.CCMAX }}, build os ${{ matrix.sys.ct_os }}"

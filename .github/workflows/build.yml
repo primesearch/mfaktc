@@ -6,19 +6,19 @@ on:
   workflow_dispatch:
 
 jobs:
-# Begin job "build"
-  build:
+# Begin job "build-linux"
+  build-linux:
     runs-on: ubuntu-latest
 
     strategy:
       # Set fail-fast to false to ensure that feedback is delivered for all matrix combinations. Consider changing this to true when your workflow is stable.
-      fail-fast: false
+      fail-fast: true
 
       matrix:
         sys:
           # Specified version combination must exist as CUDA container image from NVidia: nvcr.io/nvidia/cuda:${{ matrix.sys.cuda_version }}-devel-${{ matrix.sys.ct_os }}
           # Available versions can be found here: https://catalog.ngc.nvidia.com/orgs/nvidia/containers/cuda/tags (note that only Ubuntus are supported by this action)
-          - { cuda_version: '12.8.0', ct_os: 'ubuntu22.04' }
+          - { cuda_version: '12.8.0', ct_os: 'ubuntu24.04' }
           - { cuda_version: '12.6.3', ct_os: 'ubuntu22.04' }
           - { cuda_version: '12.6.2', ct_os: 'ubuntu22.04' }
           - { cuda_version: '12.6.1', ct_os: 'ubuntu22.04' }
@@ -55,6 +55,7 @@ jobs:
       # As a workaround, Docker containers will be launched separately, running build related actions inside the container via 'docker exec', while generic actions will run on the
       # host runner VM itself.
       CONTAINER: "nvcr.io/nvidia/cuda:${{ matrix.sys.cuda_version }}-devel-${{ matrix.sys.ct_os }}"
+      base_name: mfaktc-${{ github.ref_name }}-linux64-cuda${{ matrix.sys.cuda_version }}
 
     steps:
 
@@ -72,6 +73,7 @@ jobs:
           docker exec build-container bash -c "$SCRIPT"
 
       - name: Update & install required packages inside the container
+        id: packages
         env:
           SCRIPT: |
             apt update
@@ -82,31 +84,16 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@v4
 
-      - name: Update Makefile
-        id: update_makefile
+      - name: Prepare sources and gather info
+        id: prepare
         shell: bash
         env:
           SCRIPT: |
             cd /workspace
-            echo -n "Checking for nvcc maximum supported CC... "
-            export CCMAX=$(nvcc --help | grep -Eoe "compute_[0-9]{2}" | cut -d '_' -f2 | sort -un | tail -n1)
-            echo $CCMAX
-            echo "CCMAX=$CCMAX" >> GITHUB_OUTPUT
-
-            echo "Removing unsupported CCs (> $CCMAX) from the Makefile"
-            for cc in $(grep -E '^NVCCFLAGS \+=.*?compute_[0-9]{2}' src/Makefile | grep -Eoe 'compute_[0-9]{2}' | tr -d '\r' | cut -d '_' -f2 | xargs); do
-              if [[ $cc -gt $CCMAX ]]; then
-                echo "Removing CC $cc"
-                sed -i -E "/^NVCCFLAGS \+=.*?compute_$cc/d" src/Makefile
-              fi
-            done
-
-            echo "Adding libraries to LDFLAGS to support static build on older Ubuntu versions..."
-            sed -i -E 's/^(LDFLAGS = .*? -lcudart_static) (.*)/\1 -ldl -lrt -lpthread \2/' src/Makefile
+            bash .github/workflows/scripts/build_helper.sh ${{ matrix.sys.cuda_version }}
         run: |
           docker exec build-container bash -c "$SCRIPT"
-          cat GITHUB_OUTPUT > $GITHUB_OUTPUT
-          rm -f GITHUB_OUTPUT
+          cat .github/workflows/scripts/build_helper.sh.out >> $GITHUB_OUTPUT
 
       - name: Build from sources
         env:
@@ -117,23 +104,111 @@ jobs:
         env:
           SCRIPT: |
             cd /workspace
-            export BASE_NAME="mfaktc-${{ github.ref_name }}-linux64-cuda${{ matrix.sys.cuda_version }}"
-            zip -9 -j ${BASE_NAME}.zip *
-            echo "[${BASE_NAME}.zip](https://github.com/${{ github.repository }}/releases/download/${{ github.ref_name }}/${BASE_NAME}.zip) | \
-            ${{ steps.update_makefile.outputs.CCMAX }} | ${{ matrix.sys.ct_os }} | $(gcc --version | head -n1) | $(nvcc --version | tail -n1)" > ${BASE_NAME}.txt
+            zip -9 -j ${{ env.base_name }}.zip *
+            echo "[${{ env.base_name }}.zip](https://github.com/${{ github.repository }}/releases/download/${{ github.ref_name }}/${{ env.base_name }}.zip) | \
+            ${{ matrix.sys.os.cuda_version }} | ${{ steps.prepare.outputs.CC_MIN }}-${{ steps.prepare.outputs.CC_MAX }} | ${{ steps.prepare.outputs.OS_VER }} | \
+            ${{ steps.prepare.outputs.COMPILER_VER }} | ${{ steps.prepare.outputs.NVCC_VER }}" > ${{ env.base_name }}.txt
         run: docker exec build-container bash -c "$SCRIPT"
 
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: mfaktc-${{ github.ref_name }}-linux64-cuda${{ matrix.sys.cuda_version }}
-          path: mfaktc-${{ github.ref_name }}-linux64-cuda${{ matrix.sys.cuda_version }}.*
-# End job "build"
+          name: ${{ env.base_name }}
+          path: ${{ env.base_name }}.*
+# End job "build-linux"
 
-# Begin job "upload_release"
-  upload_release:
+# Begin job "build-win"
+  build-win:
+    runs-on: ${{ matrix.sys.os }}
+
+    strategy:
+      # Set fail-fast to false to ensure that feedback is delivered for all matrix combinations. Consider changing this to true when your workflow is stable.
+      fail-fast: true
+
+      matrix:
+        # Available version can be viewed at the Jimver/cuda-toolkit action sources:
+        # https://github.com/Jimver/cuda-toolkit/blob/v0.2.21/src/links/windows-links.ts
+        sys:
+          - { cuda_version: '12.8.0', os: 'windows-2022' }
+          - { cuda_version: '12.6.3', os: 'windows-2022' }
+          - { cuda_version: '12.5.1', os: 'windows-2022' }
+          - { cuda_version: '12.4.1', os: 'windows-2022' }
+          - { cuda_version: '12.3.2', os: 'windows-2022' }
+          - { cuda_version: '12.2.2', os: 'windows-2022' }
+          - { cuda_version: '12.1.1', os: 'windows-2022' }
+          - { cuda_version: '12.0.1', os: 'windows-2022' }
+          - { cuda_version: '11.8.0', os: 'windows-2022' }
+          - { cuda_version: '11.7.0', os: 'windows-2022' }
+          - { cuda_version: '11.6.2', os: 'windows-2022' }
+          - { cuda_version: '11.5.2', os: 'windows-2022' }
+          - { cuda_version: '11.4.4', os: 'windows-2022' }
+          - { cuda_version: '11.3.1', os: 'windows-2022' }
+          - { cuda_version: '11.2.2', os: 'windows-2019' }
+          - { cuda_version: '11.1.1', os: 'windows-2019' }
+          - { cuda_version: '11.0.1', os: 'windows-2019' }
+#          - { cuda_version: '10.0.130', os: 'windows-2019' }
+#          - { cuda_version: '9.2.148', os: 'windows-2019' }
+#          - { cuda_version: '8.0.61', os: 'windows-2019' }
+
+    env:
+      base_name: mfaktc-${{ github.ref_name }}-win64-cuda${{ matrix.sys.cuda_version }}
+
+    steps:
+      - name: Installing CUDA Toolkit
+        id: cuda-toolkit
+        uses: Jimver/cuda-toolkit@v0.2.21
+        with:
+          cuda: ${{ matrix.sys.cuda_version }}
+#          sub-packages: '[ "nvcc", "visual_studio_integration", "cudart" ]'
+
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Prepare sources and gather info
+        id: prepare
+        shell: bash
+        run: |
+          bash .github/workflows/scripts/build_helper.sh ${{ matrix.sys.cuda_version }}
+          cat .github/workflows/scripts/build_helper.sh.out >> $GITHUB_OUTPUT
+
+      # MSVC 2022 installed on Windows 2022 Github Runner has PowerShell script for a Dev Shell.
+      - name: Build from sources (PowerShell with MSVC 2022)
+        if: ${{ matrix.sys.os == 'windows-2022' }}
+        shell: powershell
+        run: |
+          & 'C:\Program Files\Microsoft Visual Studio\2022\Enterprise\Common7\Tools\Launch-VsDevShell.ps1' -Arch amd64 -HostArch amd64
+          cd "${{ github.workspace }}\src"
+          make SHELL="powershell.exe" -f Makefile.win
+
+      # MSVC 2019 on Windows 2019 has similar script, but it doesn't allows setting arch & host_arch and defaults to x86 (32 bit) env.
+      # So we have to run bat file for the env, but Make uses PowerShell afterward because it's much better at handling long paths &
+      # quotes when invoked from Make.
+      - name: Build from sources (cmd.exe with MSVC 2019)
+        if: ${{ matrix.sys.os == 'windows-2019' }}
+        shell: cmd
+        run: |
+          "C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\VC\Auxiliary\Build\vcvars64.bat" & cd src & make SHELL="powershell.exe" -f Makefile.win
+
+      - name: Prepare build archive with description
+        shell: bash
+        run: |
+          choco install -y --no-progress zip
+          zip -9 -j "${{ env.base_name }}.zip" *
+          echo "[${{ env.base_name }}.zip](https://github.com/${{ github.repository }}/releases/download/${{ github.ref_name }}/${{ env.base_name }}.zip) | \
+          ${{ matrix.sys.os.cuda_version }} | ${{ steps.prepare.outputs.CC_MIN }}-${{ steps.prepare.outputs.CC_MAX }} | ${{ steps.prepare.outputs.OS_VER }} | \
+          ${{ steps.prepare.outputs.COMPILER_VER }} | ${{ steps.prepare.outputs.NVCC_VER }}" > ${{ env.base_name }}.txt
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.base_name }}
+          path: ${{ env.base_name }}.*
+# End job "build-win"
+
+# Begin job "upload-release"
+  upload-release:
     if: startsWith(github.ref, 'refs/tags/')
-    needs: build
+    needs: [ build-linux, build-win ]
     runs-on: ubuntu-latest
 
     permissions:
@@ -147,12 +222,15 @@ jobs:
       - name: Prepare list of release files & release notes
         id: makeinfo
         run: |
-          echo -e "Binary releases (automated builds) below. Max CC in the table means maximum supported compute capability version without dot (i.e. 90 reads as 9.0).\n" > RELEASE_NOTES.txt
-          echo "Filename | Max CC | Build OS | GCC version | NVCC version" >> RELEASE_NOTES.txt
-          echo "--- | --- | --- | --- | ---" >> RELEASE_NOTES.txt
-          cat mfaktc-${{ github.ref_name }}-linux64-cuda*/mfaktc-${{ github.ref_name }}-linux64-cuda*.txt | sort -Vr >> RELEASE_NOTES.txt
+          echo "Binary releases (automated builds) below." > RELEASE_NOTES.txt
+          echo "Compute Capability (CC) in the table means minimum and maximum versions supported." >> RELEASE_NOTES.txt
+          echo "CC versions are listed without the dot (i.e. 90 means 9.0 compute capability)." >> RELEASE_NOTES.txt
+          echo >> RELEASE_NOTES.txt
+          echo "File | Compute Capability | CUDA version | Build OS | Compiler version | NVCC version" >> RELEASE_NOTES.txt
+          echo "--- | --- | --- | --- | --- | ---" >> RELEASE_NOTES.txt
+          cat mfaktc-${{ github.ref_name }}-*-cuda*/mfaktc-${{ github.ref_name }}-*-cuda*.txt | sort -Vr >> RELEASE_NOTES.txt
           echo 'RELEASE_FILES<<EOF' > $GITHUB_OUTPUT
-          ls -1 mfaktc-${{ github.ref_name }}-linux64-cuda*/mfaktc-${{ github.ref_name }}-linux64-cuda*.zip | sort -Vr >> $GITHUB_OUTPUT
+          ls -1 mfaktc-${{ github.ref_name }}-*-cuda*/mfaktc-${{ github.ref_name }}-*-cuda*.zip | sort -Vr >> $GITHUB_OUTPUT
           echo 'EOF' >> $GITHUB_OUTPUT
 
       - name: Make and upload release
@@ -165,3 +243,5 @@ jobs:
           generate_release_notes: true
           body_path: RELEASE_NOTES.txt
           make_latest: true
+# End job "upload-release"
+# SPDX-License-Identifier: GPL-3.0-or-later

@@ -161,7 +161,7 @@ other return value
   unsigned int f_hi, f_med, f_low;
   struct timeval timer, timer_last_checkpoint;
   static struct timeval timer_last_addfilecheck;
-  int factorsfound = 0, numfactors = 0, restart = 0;
+  int factorsfound = 0, numfactors = 0, restart = 0, factorindex = 0;
 
   int retval = 0;
   
@@ -271,13 +271,31 @@ see benchmarks in src/kernel_benchmarks.txt */
 
   if(mystuff->mode == MODE_NORMAL)
   {
-    if((mystuff->checkpoints == 1) && (checkpoint_read(mystuff->exponent, mystuff->bit_min, mystuff->bit_max_stage, &cur_class, &factorsfound, mystuff->factors_string, &(mystuff->stats.bit_level_time)) == 1))
+    if((mystuff->checkpoints == 1) && (checkpoint_read(mystuff->exponent, mystuff->bit_min, mystuff->bit_max_stage, &cur_class, &factorsfound, mystuff->factors, &(mystuff->stats.bit_level_time)) == 1))
     {
       logprintf(mystuff, "\nfound a valid checkpoint file!\n");
-      if(mystuff->verbosity >= 1)logprintf(mystuff, "  last finished class was: %d\n", cur_class);
-      if(mystuff->verbosity >= 1)logprintf(mystuff, "  found %d factor(s) already%s%s\n", factorsfound, factorsfound > 0 ? ": " : "", mystuff->factors_string);
-      if(mystuff->verbosity >= 1)logprintf(mystuff, "  previous work took %llu ms\n\n", mystuff->stats.bit_level_time);
-      else                       logprintf(mystuff, "\n");
+      if (mystuff->verbosity >= 1)
+      {
+        logprintf(mystuff, "  last finished class was: %d\n", cur_class);
+        if (factorsfound > 0)
+        {
+          logprintf(mystuff, "  found %d factor(s) already: ", factorsfound);
+          for (i = 0; i < 10; i++)
+          {
+            if (mystuff->factors[i][0])
+            {
+              logprintf(mystuff, "%s ", mystuff->factors[i]);
+            }
+          }  
+          logprintf(mystuff, "\n");
+        }
+        else
+        {
+            logprintf(mystuff, "  found no factors yet.\n");
+        }
+        logprintf(mystuff, "  previous work took %llu ms\n\n", mystuff->stats.bit_level_time);
+      }
+      else logprintf(mystuff, "\n");
       cur_class++; // the checkpoint contains the last complete processed class!
 
 /* calculate the number of classes which are allready processed. This value is needed to estimate ETA */
@@ -363,7 +381,6 @@ see benchmarks in src/kernel_benchmarks.txt */
         {
           if (numfactors > 0)
           {
-            char temp_factors_string[500];
             char factorstring[50];
             int96 factor;
             for (i = 0; (i < numfactors) && (i < 10); i++)
@@ -372,8 +389,7 @@ see benchmarks in src/kernel_benchmarks.txt */
               factor.d1 = mystuff->h_RES[i * 3 + 2];
               factor.d0 = mystuff->h_RES[i * 3 + 3];
               print_dez96(factor, factorstring);
-              sprintf(temp_factors_string, mystuff->factors_string[0] ? "%s,\"%s\"" : "%s\"%s\"", mystuff->factors_string, factorstring);
-              sprintf(mystuff->factors_string, temp_factors_string);
+              sprintf(mystuff->factors[factorindex++], factorstring);
             }
           }
           if(mystuff->checkpoints == 1)
@@ -381,7 +397,7 @@ see benchmarks in src/kernel_benchmarks.txt */
             if (numfactors > 0 || timer_diff(&timer_last_checkpoint) / 1000000 >= (unsigned long long int)mystuff->checkpointdelay || mystuff->quit)
             {
                 timer_init(&timer_last_checkpoint);
-                checkpoint_write(mystuff->exponent, mystuff->bit_min, mystuff->bit_max_stage, cur_class, factorsfound, mystuff->factors_string, mystuff->stats.bit_level_time);
+                checkpoint_write(mystuff->exponent, mystuff->bit_min, mystuff->bit_max_stage, cur_class, factorsfound, mystuff->factors, mystuff->stats.bit_level_time);
             }
           }
           if((mystuff->addfiledelay > 0) && timer_diff(&timer_last_addfilecheck) / 1000000 >= (unsigned long long int)mystuff->addfiledelay)
@@ -1117,7 +1133,10 @@ int main(int argc, char **argv)
         mystuff.bit_max_assignment = bit_max;
         mystuff.assignment_key[0] = 0;
       }
-      mystuff.factors_string[0] = 0;
+      for (i = 0; i < 10; i++)
+      {
+          mystuff.factors[i][0] = 0;
+      }
       if(parse_ret == OK)
       {
         if(mystuff.verbosity >= 1)logprintf(&mystuff, "got assignment: exp=%u bit_min=%d bit_max=%d (%.2f GHz-days)\n", mystuff.exponent, mystuff.bit_min, mystuff.bit_max_assignment, primenet_ghzdays(mystuff.exponent, mystuff.bit_min, mystuff.bit_max_assignment));

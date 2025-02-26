@@ -42,7 +42,7 @@ INSTALL = install
 ##############################################################################
 
 CSRC  = sieve.c timer.c parse.c read_config.c mfaktc.c checkpoint.c \
-	signal_handler.c output.c crc.c
+	signal_handler.c output.c crc.c md5.c
 CUSRC = tf_96bit.cu tf_barrett96.cu tf_barrett96_gs.cu gpusieve.cu \
         cuda_basic_stuff.cu
 

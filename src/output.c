@@ -32,6 +32,7 @@ along with mfaktc.  If not, see <http://www.gnu.org/licenses/>.
 #include "output.h"
 #include "compatibility.h"
 #include "crc.h"
+#include "md5.h"
 
 
 void print_help(char *string)
@@ -365,43 +366,61 @@ void get_utc_timestamp(char* timestamp)
     strftime(timestamp, sizeof(char[50]), "%Y-%m-%d %H:%M:%S", utc_time);
 }
 
-const char* getArchitectureJSON() {
+const char* getArchitecture() {
 #if defined(__x86_64__) || defined(_M_X64)
-    return ", \"architecture\": \"x86_64\"";
+    return "x86_64";
 #elif defined(i386) || defined(__i386__) || defined(__i386) || defined(_M_IX86)
-    return ", \"architecture\": \"x86_32\"";
+    return "x86_32";
 #elif defined(__aarch64__) || defined(_M_ARM64)
-    return ", \"architecture\": \"ARM64\"";
+    return "ARM64";
 #else
     return "";
 #endif
 }
 
-void getOSJSON(char* string) {
+const char* getOS() {
 #if defined(_WIN32) || defined(_WIN64)
-    sprintf(string, ", \"os\":{\"os\": \"Windows\"%s}", getArchitectureJSON());
+    return "Windows";
 #elif defined(__APPLE__)
-    sprintf(string, ", \"os\":{\"os\": \"Darwin\"%s}", getArchitectureJSON());
+    return "Darwin";
 #elif defined(__linux__)
-    sprintf(string, ", \"os\":{\"os\": \"Linux\"%s}", getArchitectureJSON());
+    return "Linux";
 #elif defined(__unix__)
-    sprintf(string, ", \"os\":{\"os\": \"Unix\"%s}", getArchitectureJSON());
+    return "Unix";
 #endif
 }
 
+void getOSJSON(char* string) {
+    sprintf(string, ", \"os\":{\"os\": \"%s\", \"architecture\": \"%s\"}", getOS(), getArchitecture());
+}
+
+int pstrcmp(const void* a, const void* b)
+{
+    int cmplen = strlen((const char*) a) - strlen((const char*) b);
+    if (cmplen > 0)
+        return 1;
+    if (cmplen < 0)
+        return -1;
+    return strcmp((const char*)a, (const char*)b);
+}
 
 void print_result_line(mystuff_t *mystuff, int factorsfound)
 /* printf the final result line (STDOUT and resultfile) */
 {
   char UID[110]; /* 50 (V5UserID) + 50 (ComputerID) + 8 + spare */
-  int string_length = 0, checksum;
+  int string_length = 0, factors_list_length = 0, factors_quote_list_length = 0, checksum;
   char aidjson[MAX_LINE_LENGTH+11];
   char userjson[61]; /* 50 (V5UserID) + 11 spare */
   char computerjson[65];  /* 50 (ComputerID) + 15 spare */
   char factorjson[513];
+  char factors_list[500];
+  char factors_quote_list[500];
   char osjson[200];
+  char details[50];
   char txtstring[200];
+  char json_checksum_string[200];
   char timestamp[50];
+  char json_checksum[33];
   
   FILE *txtresultfile=NULL;
 
@@ -431,8 +450,35 @@ void print_result_line(mystuff_t *mystuff, int factorsfound)
   else
       computerjson[0] = 0;
 
-  if (mystuff->factors_string[0])
-      sprintf(factorjson, ", \"factors\":[%s]", mystuff->factors_string);
+  if (factorsfound)
+  {
+      int i = 0;
+      qsort(mystuff->factors, sizeof(mystuff->factors)/sizeof(mystuff->factors[0]), sizeof(mystuff->factors[0]), pstrcmp);
+      // skip past the empty strings
+      while (i < 10 && mystuff->factors[i][0] == 0)
+      {
+          i++;
+      }
+      factors_list_length = sprintf(factors_list, mystuff->factors[i]);
+      factors_quote_list_length = sprintf(factors_quote_list, "\"%s\"", mystuff->factors[i++]);
+      for (; i < 10; i++)
+      {
+          if (mystuff->factors[i][0] == 0)
+          {
+              continue;
+          }
+          factors_list_length += sprintf(factors_list + factors_list_length, ",%s", mystuff->factors[i]);
+          factors_quote_list_length += sprintf(factors_quote_list + factors_quote_list_length, ",\"%s\"", mystuff->factors[i]);
+      }
+  }
+  else
+  {
+      factors_list[0] = 0;
+      factors_quote_list[0] = 0;
+  }
+
+  if (factors_quote_list[0])
+      sprintf(factorjson, ", \"factors\":[%s]", factors_quote_list);
   else
       factorjson[0] = 0;
 
@@ -462,13 +508,18 @@ void print_result_line(mystuff_t *mystuff, int factorsfound)
     string_length = sprintf(txtstring, "no factor for %s%u from 2^%d to 2^%d", NAME_NUMBERS, mystuff->exponent, mystuff->bit_min, mystuff->bit_max_stage);
   }
 
-  string_length += sprintf(txtstring + string_length, " [mfaktc %s %s CUDA %d.%d arch %d.%d]", MFAKTC_VERSION, mystuff->stats.kernelname, mystuff->cuda_toolkit / 1000, mystuff->cuda_toolkit % 100, mystuff->cuda_arch / 100, mystuff->cuda_arch % 100);
+  sprintf(details, "CUDA %d.%d arch %d.%d", mystuff->cuda_toolkit / 1000, mystuff->cuda_toolkit % 100, mystuff->cuda_arch / 100, mystuff->cuda_arch % 100);
+
+  string_length += sprintf(txtstring + string_length, " [mfaktc %s %s %s]", MFAKTC_VERSION, mystuff->stats.kernelname, details);
 
   checksum = crc32_checksum(txtstring, string_length);
   sprintf(txtstring + string_length, " %08X", checksum);
 #ifndef WAGSTAFF
-  sprintf(jsonstring, "{\"exponent\":%u, \"worktype\":\"TF\", \"status\":\"%s\", \"bitlo\":%2d, \"bithi\":%2d, \"rangecomplete\":%s%s, \"program\":{\"name\":\"mfaktc\", \"version\":\"%s\", \"subversion\":\"%s\"}, \"timestamp\":\"%s\"%s%s%s%s}",
-      mystuff->exponent, factorsfound > 0 ? "F" : "NF", mystuff->bit_min, mystuff->bit_max_stage, partialresult ? "false" : "true", factorjson, MFAKTC_VERSION, mystuff->stats.kernelname, timestamp, userjson, computerjson, aidjson, osjson);
+  sprintf(json_checksum_string, "%u;TF;%s;;%2d;%2d;%u;;;mfaktc;%s;%s;%s;%s;%s;%s",
+      mystuff->exponent, factors_list, mystuff->bit_min, mystuff->bit_max_stage, !partialresult, MFAKTC_VERSION, mystuff->stats.kernelname, details, getOS(), getArchitecture(), timestamp);
+  md5Stringsprintf(json_checksum_string, json_checksum);
+  sprintf(jsonstring, "{\"exponent\":%u, \"worktype\":\"TF\", \"status\":\"%s\", \"bitlo\":%2d, \"bithi\":%2d, \"rangecomplete\":%s%s, \"program\":{\"name\":\"mfaktc\", \"version\":\"%s\", \"subversion\":\"%s\", \"details\":\"%s\"}, \"timestamp\":\"%s\"%s%s%s%s, \"checksum\":{\"version\":1, \"checksum\":\"%s\", \"checksum input\":\"%s\"}}",
+      mystuff->exponent, factorsfound > 0 ? "F" : "NF", mystuff->bit_min, mystuff->bit_max_stage, partialresult ? "false" : "true", factorjson, MFAKTC_VERSION, mystuff->stats.kernelname, details, timestamp, userjson, computerjson, aidjson, osjson, json_checksum, json_checksum_string);
 #endif
   if(mystuff->mode != MODE_SELFTEST_SHORT)
   {

@@ -45,6 +45,10 @@ checkpoint_write() writes the checkpoint file.
           }
       }
   }
+  else
+  {
+      sprintf(factors_buffer, "0");
+  }
   
   f=fopen(filename, "w");
   if(f==NULL)

@@ -168,7 +168,7 @@ other return value
   cudaError_t cudaError;
   
   unsigned long long int time_run, time_est;
-  
+
   mystuff->stats.output_counter = 0; /* reset output counter, needed for status headline */
   mystuff->stats.ghzdays = primenet_ghzdays(mystuff->exponent, mystuff->bit_min, mystuff->bit_max_stage);
 
@@ -734,7 +734,7 @@ int main(int argc, char **argv)
   int i, tmp = 0;
   char *ptr;
   int use_worktodo = 1;
-    
+
   i = 1;
   memset(&mystuff, 0, sizeof(mystuff));
   mystuff.mode = MODE_NORMAL;

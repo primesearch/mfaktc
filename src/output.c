@@ -32,7 +32,6 @@ along with mfaktc.  If not, see <http://www.gnu.org/licenses/>.
 #include "output.h"
 #include "compatibility.h"
 #include "crc.h"
-#include "md5.h"
 
 
 void print_help(char *string)
@@ -408,7 +407,7 @@ void print_result_line(mystuff_t *mystuff, int factorsfound)
 /* printf the final result line (STDOUT and resultfile) */
 {
   char UID[110]; /* 50 (V5UserID) + 50 (ComputerID) + 8 + spare */
-  int string_length = 0, factors_list_length = 0, factors_quote_list_length = 0, checksum;
+  int string_length = 0, factors_list_length = 0, factors_quote_list_length = 0, checksum, json_checksum;
   char aidjson[MAX_LINE_LENGTH+11];
   char userjson[61]; /* 50 (V5UserID) + 11 spare */
   char computerjson[65];  /* 50 (ComputerID) + 15 spare */
@@ -420,7 +419,6 @@ void print_result_line(mystuff_t *mystuff, int factorsfound)
   char txtstring[200];
   char json_checksum_string[200];
   char timestamp[50];
-  char json_checksum[33];
   
   FILE *txtresultfile=NULL;
 
@@ -517,8 +515,8 @@ void print_result_line(mystuff_t *mystuff, int factorsfound)
 #ifndef WAGSTAFF
   sprintf(json_checksum_string, "%u;TF;%s;;%2d;%2d;%u;;;mfaktc;%s;%s;%s;%s;%s;%s",
       mystuff->exponent, factors_list, mystuff->bit_min, mystuff->bit_max_stage, !partialresult, MFAKTC_VERSION, mystuff->stats.kernelname, details, getOS(), getArchitecture(), timestamp);
-  md5Stringsprintf(json_checksum_string, json_checksum);
-  sprintf(jsonstring, "{\"exponent\":%u, \"worktype\":\"TF\", \"status\":\"%s\", \"bitlo\":%2d, \"bithi\":%2d, \"rangecomplete\":%s%s, \"program\":{\"name\":\"mfaktc\", \"version\":\"%s\", \"subversion\":\"%s\", \"details\":\"%s\"}, \"timestamp\":\"%s\"%s%s%s%s, \"checksum\":{\"version\":1, \"checksum\":\"%s\"}}",
+  json_checksum = crc32_checksum(json_checksum_string, strlen(json_checksum_string));
+  sprintf(jsonstring, "{\"exponent\":%u, \"worktype\":\"TF\", \"status\":\"%s\", \"bitlo\":%2d, \"bithi\":%2d, \"rangecomplete\":%s%s, \"program\":{\"name\":\"mfaktc\", \"version\":\"%s\", \"subversion\":\"%s\", \"details\":\"%s\"}, \"timestamp\":\"%s\"%s%s%s%s, \"checksum\":{\"version\":1, \"checksum\":\"%08X\"}}",
       mystuff->exponent, factorsfound > 0 ? "F" : "NF", mystuff->bit_min, mystuff->bit_max_stage, partialresult ? "false" : "true", factorjson, MFAKTC_VERSION, mystuff->stats.kernelname, details, timestamp, userjson, computerjson, aidjson, osjson, json_checksum);
 #endif
   if(mystuff->mode != MODE_SELFTEST_SHORT)

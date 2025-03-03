@@ -32,8 +32,8 @@ if [[ -z "$1" ]]; then
   exit 1
 fi
 
-# Windows may have it's sort first on PATH, so set this var to the full path 
-# to GNU sort to avoid having writing full path every time.
+# Windows may have it's sort first on PATH, this is the shortcut
+# to call GNU sort by the full path
 export GSORT='/usr/bin/sort'
 
 declare -a CUDA_VERSION
@@ -43,8 +43,10 @@ if [[ -z "${CUDA_VERSION[*]}" ]]; then
   exit 2
 fi
 
-eval $(echo -e "CUDA_VER_MAJOR=${CUDA_VERSION[0]}\nCUDA_VER_MINOR=${CUDA_VERSION[1]}" | tee $0.out)
+CUDA_VER_MAJOR=${CUDA_VERSION[0]}
+CUDA_VER_MINOR=${CUDA_VERSION[1]}
 CUDA_VER="${CUDA_VER_MAJOR}${CUDA_VER_MINOR}"
+echo -e "CUDA_VER_MAJOR=${CUDA_VER_MAJOR}\nCUDA_VER_MINOR=${CUDA_VER_MINOR}" > "$0.out"
 
 # Starting from 11.0.0 CUDA has --list-gpu-arch flag.
 # For older versions we have to grep out supported CC versions from help.
@@ -63,7 +65,7 @@ elif [ ${#CC_LIST[*]} -lt 3 ]; then
 fi
 
 echo "All supported CCs: ${CC_LIST[*]}, CC_MIN=${CC_LIST[0]}, CC_MAX=${CC_LIST[-1]}"
-echo -e "CC_LIST=\"${CC_LIST[*]}\"\nCC_MIN=${CC_LIST[0]}\nCC_MAX=${CC_LIST[-1]}" >> $0.out
+echo -e "CC_LIST=\"${CC_LIST[*]}\"\nCC_MIN=${CC_LIST[0]}\nCC_MAX=${CC_LIST[-1]}" >> "$0.out"
 
 echo 'Removing NVCCFLAGS strings with CC arch entries from the Makefile & Makefile.win and populating with discovered supported values.'
 sed -i '/^NVCCFLAGS += --generate-code arch=compute.*/d' src/Makefile.win src/Makefile
@@ -81,22 +83,23 @@ if [ $CUDA_VER -lt 120 ]; then
 fi
 
 echo 'Gathering version info on generic compiler and nvcc...'
-if [[ -x "$(which vswhere.exe)" ]]; then
+if [[ -x "$(command -v vswhere.exe)" ]]; then
   CC_VSPROD="$(vswhere -latest -products '*' -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property displayName)"
   COMPILER_VER="${CC_VSPROD}, $(vswhere -latest -products '*' -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationVersion)"
-elif [[ -x "$(which powershell.exe)" ]]; then
+elif [[ -x "$(command -v powershell.exe)" ]]; then
   CC_VSINFO="$(powershell -Command Get-VSSetupInstance)"
-  CC_VSPROD="$(echo $CC_VSINFO | grep DisplayName | cut -d':' -f2 | xargs)"
-  COMPILER_VER="${CC_VSPROD}, $(echo $CC_VSINFO | grep InstallationVersion | cut -d':' -f2 | xargs)"
+  CC_VSPROD="$(echo "$CC_VSINFO" | grep DisplayName | cut -d':' -f2 | xargs)"
+  COMPILER_VER="${CC_VSPROD}, $(echo "$CC_VSINFO" | grep InstallationVersion | cut -d':' -f2 | xargs)"
 else
   COMPILER_VER="$(gcc --version | head -n1)"
-  OS_VER="$(grep PRETTY_NAME /etc/os-release | cut -d'=' -f2- | tr -d '"')"
+  source /etc/os-release
+  OS_VER="${PRETTY_NAME}"
 fi
 
-NVCC_VER="$(nvcc --version | tail -n1)"
-
-if [[ -x "$(which powershell.exe)" ]]; then
+if [[ -x "$(command -v powershell.exe)" ]]; then
   OS_VER="$(powershell -Command "[System.Environment]::OSVersion.VersionString")"
 fi
+
+NVCC_VER="$(nvcc --version | tail -n1 | sed -E 's/^Build //')"
 
 echo -e "COMPILER_VER=$COMPILER_VER\nNVCC_VER=$NVCC_VER\nOS_VER=${OS_VER}" | tee -a $0.out

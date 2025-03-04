@@ -1,16 +1,8 @@
 #!/bin/bash
 #
-# build_helper.sh
-# This script are used by the CI/CD builds with Github Actions workflow.
-# It gathers some info on software versions and saves it to file 
-# build_helper.sh.out which are later used by the actions workflow.
-# It also patches Makefiles to support building under Github Action
-# runners environment and compile kernels for every compute capability
-# device supported by the NVCC.
-#
-# Copyright (c) 2025 NStorm (https://github.com/N-Storm/)
 # This file is part of mfaktc.
-# Copyright (C) 2009, 2010, 2011  Oliver Weihe (o.weihe@t-online.de)
+# Copyright (c) 2025        NStorm (https://github.com/N-Storm)
+# Copyright (c) 2009-2011   Oliver Weihe (o.weihe@t-online.de)
 #
 # mfaktc is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -26,6 +18,14 @@
 # along with mfaktc.  If not, see <http://www.gnu.org/licenses/>.
 #
 # SPDX-License-Identifier: GPL-3.0-or-later
+#
+# build_helper.sh
+# This script are used by the CI/CD builds with Github Actions workflow.
+# It gathers some info on software versions and saves it to file
+# build_helper.sh.out which are later used by the actions workflow.
+# It also patches Makefiles to support building under Github Action
+# runners environment and compile kernels for every compute capability
+# device supported by the NVCC.
 
 if [[ -z "$1" ]]; then
   echo "Usage: $0 <CUDA version>" >&2

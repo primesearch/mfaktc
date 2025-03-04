@@ -2,7 +2,20 @@ name: Build mfaktc software
 
 on:
   push:
+    paths-ignore:
+      - '**/*.txt'
+      - 'COPYING'
+      - '.gitignore'
   pull_request:
+    paths-ignore:
+      - '**/*.txt'
+      - 'COPYING'
+      - '.gitignore'
+    types:
+      - 'opened'
+      - 'reopened'
+      - 'synchronize'
+      - 'ready_for_review'
   workflow_dispatch:
 
 jobs:

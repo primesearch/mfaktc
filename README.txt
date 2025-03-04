@@ -130,7 +130,8 @@ You can add C:\Program Files (x86)\GnuWin32\bin to the Path system variable so
 that make is always available.
 
 Before attempting to compile mfaktc, be sure the system variable CUDA_PATH
-points to your CUDA installation.
+points to your CUDA installation. In most cases, the CUDA installer should
+automatically set this variable.
 
 
 Steps:

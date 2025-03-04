@@ -20,20 +20,19 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 #
 # build_helper.sh
-# This script are used by the CI/CD builds with Github Actions workflow.
-# It gathers some info on software versions and saves it to file
-# build_helper.sh.out which are later used by the actions workflow.
-# It also patches Makefiles to support building under Github Action
-# runners environment and compile kernels for every compute capability
-# device supported by the NVCC.
+# This script is used for continuous integration in GitHub Actions. It gathers
+# information on software versions and saves it to the file build_helper.sh.out
+# for later use by GitHub Actions workflows. It also patches makefiles to
+# support building under GitHub Actions runner environments and compiling
+# kernels for all devices with NVCC-supported compute capabilities.
 
 if [[ -z "$1" ]]; then
   echo "Usage: $0 <CUDA version>" >&2
   exit 1
 fi
 
-# Windows may have it's sort first on PATH, this is the shortcut
-# to call GNU sort by the full path
+# Windows may default to its own 'sort' in the PATH variable, use the full path
+# to GNU sort
 export GSORT='/usr/bin/sort'
 
 declare -a CUDA_VERSION
@@ -48,33 +47,35 @@ CUDA_VER_MINOR=${CUDA_VERSION[1]}
 CUDA_VER="${CUDA_VER_MAJOR}${CUDA_VER_MINOR}"
 echo -e "CUDA_VER_MAJOR=${CUDA_VER_MAJOR}\nCUDA_VER_MINOR=${CUDA_VER_MINOR}" > "$0.out"
 
-# Starting from 11.0.0 CUDA has --list-gpu-arch flag.
-# For older versions we have to grep out supported CC versions from help.
+# CUDA supports the --list-gpu-arch flag from 11.0.0 onwards.
+# For older CUDA versions, use grep to parse the supported architectures from
+# the output of --help
 [ $CUDA_VER -gt 110 ] && NVCC_OPTS='--list-gpu-arch' || NVCC_OPTS='--help'
 NVCC_REGEX='compute_[1-9][0-9]{1,2}'
-# Special case with CUDA 11.0.x. It's help lists compute_32 and higher, but only CCs from 35 are supported.
+# CUDA 11.0.x is a special case. Its --help output lists compute_32 and higher,
+# but only compute capability 3.5 and later are supported.
 [ $CUDA_VER -eq 110 ] && NVCC_REGEX='compute_(3[5-9]|[4-9][0-9])'
 
 declare -a CC_LIST
 CC_LIST=( $(nvcc $NVCC_OPTS | grep -Eoe "$NVCC_REGEX" | cut -d '_' -f2 | $GSORT -un | xargs) )
 if [ ${#CC_LIST[*]} -eq 0 ]; then
-  echo "ERROR! Unable to parse a list of CCs" >&2
+  echo "Error: could not parse list of supported compute capabilities" >&2
   exit 3
 elif [ ${#CC_LIST[*]} -lt 3 ]; then
-  echo "WARN Number of supported CC versions less than 3" >&2
+  echo "Warning: less than three (3) supported compute capabilities" >&2
 fi
 
 echo "All supported CCs: ${CC_LIST[*]}, CC_MIN=${CC_LIST[0]}, CC_MAX=${CC_LIST[-1]}"
 echo -e "CC_LIST=\"${CC_LIST[*]}\"\nCC_MIN=${CC_LIST[0]}\nCC_MAX=${CC_LIST[-1]}" >> "$0.out"
 
-echo 'Removing NVCCFLAGS strings with CC arch entries from the Makefile & Makefile.win and populating with discovered supported values.'
+echo 'Removing NVCCFLAGS strings with "arch=..." entries from makefiles and populating them with discovered supported values.'
 sed -i '/^NVCCFLAGS += --generate-code arch=compute.*/d' src/Makefile.win src/Makefile
 for CC in "${CC_LIST[@]}"; do
   sed -i "/^NVCCFLAGS = .*\$/a NVCCFLAGS += --generate-code arch=compute_${CC},code=sm_${CC}" src/Makefile src/Makefile.win
 done
 
 if [ $CUDA_VER -ge 110 ]; then
-  echo 'Adding NVCCFLAGS to allow unsupported MSVC compiler versions...'
+  echo 'Adding NVCCFLAGS to allow unsupported MSVC versions...'
   sed -i '/^NVCCFLAGS = .*/a NVCCFLAGS += -allow-unsupported-compiler -D_ALLOW_COMPILER_AND_STL_VERSION_MISMATCH' src/Makefile.win
 fi
 if [ $CUDA_VER -lt 120 ]; then
@@ -82,7 +83,7 @@ if [ $CUDA_VER -lt 120 ]; then
   sed -i -E 's/^(LDFLAGS = .*? -lcudart_static) (.*)/\1 -ldl -lrt -lpthread \2/' src/Makefile
 fi
 
-echo 'Gathering version info on generic compiler and nvcc...'
+echo 'Gathering version info on generic compiler and NVCC...'
 if [[ -x "$(command -v vswhere.exe)" ]]; then
   CC_VSPROD="$(vswhere -latest -products '*' -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property displayName)"
   COMPILER_VER="${CC_VSPROD}, $(vswhere -latest -products '*' -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationVersion)"

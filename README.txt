@@ -353,7 +353,7 @@ A: Yes. In most cases, this is required to make full use of a GPU when sieving
 
 Q: Are checkpoint files compatible between different mfaktc versions?
 A: Save files are compatible between 32-bit and 64-bit executables. However,
-   mfaktc 0.23 introduces a new format that is not compatible with previous
+   mfaktc 0.23 introduces a new format that is incompatible with previous
    versions. Complete any active assignments before you upgrade.
 
 Q: What do the version numbers mean?
@@ -380,17 +380,8 @@ A: Stable releases are usually named 0.x where "x" is incremented for each
 - rework debug code
 - fast (GPU-sieve enabled) kernel for factors < 2^64?
 
-0.??
-- automatic primenet interaction (Eric Christenson is working on this)         <- specification draft exists; on hold, Eric doesn't want to continue his efforts. :(
-  - this will greatly increase usability of mfaktc
-  - George Woltman agreed to include the so called "security module" in
-    mfaktc for a closed source version of mfaktc. I have to check license
-    options, GPL v3 does not allow to have parts of the program to be
-    closed source. Solution: I'll re-release under another license. This is
-    NOT the end of the GPL v3 version! I'll release future versions of
-    mfaktc under GPL v3! I want mfaktc being open source! The only
-    differences of the closed version will be the security module and the
-    license information.
+0.24
+- CRC32 checksums to reduce invalid results
 
 not planned for a specific release yet, no particular order!
 - performance improvements whenever I find them ;)

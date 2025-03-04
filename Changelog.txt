@@ -1,28 +1,35 @@
+version 0.23.2
+- build: continuous integration via GitHub Actions
+
 version 0.23.1
-- fix issue on some linux distros where multiple factors per assignment weren't reported in the json correctly
+- fix issue on some Linux distributions where multiple factors per assignment
+  weren't reported in the JSON output correctly
 - fix line ending bug
 
 version 0.23.0
 - contributors
-  - GP2 (AID saving code) tybusby (rest)
-- added results.json.txt to comply with primenet results reporting, with the following new fields
-	- aid (assignment id)
-	- os (operating system info)
-	- timestamp (completion timestamp)
-	- and more!
+  - GP2 (AID saving code)
+  - tybusby (other changes)
+- added results.json.txt to comply with PrimeNet results reporting standards,
+  with the following new fields
+  - aid (assignment id)
+  - os (operating system info)
+  - timestamp (completion timestamp)
+  - and more!
 - added option for logging to mfaktc.log (off by default)
 - store found factors in .ckp file
 - store time spent in .ckp file, for accurate progress reporting
-- change all timestamps to UTC to comply with gimps reporting
+- change all timestamps to UTC to comply with GIMPS results reporting
 
-version 0.22 (??-??-??)
-- currently unreleased
-- definitely still exist on a harddrive somewhere
-- possibly included CRC32 checksum of results
+version 0.22
+- unreleased
+  - code was privately shared with Tyler Busby
+  - changes will be merged into mfaktc 0.24
+- CRC32 checksums for results
 
 version 0.21 (2015-02-17)
 - contributors
-  - Jerry Hallett (Windows compability, binaries and lots of testing)
+  - Jerry Hallett (Windows compatibility, binaries and lots of testing)
 
 - added support for Wagstaff numbers: (2^p + 1)/3
 - added support for "worktodo.add"
@@ -308,7 +315,7 @@ version 0.10 (2010-07-26)
   from this functions is very similar in both cases, only a few differences
   controlled by some #ifdef's now.
 
-version 0.09 (2010-07-09)
+version 0.9 (2010-07-09)
 - added a (basic) test for the timer resolution (commandline "-tt")
 - the selftest with "known factors" is a commandline option now: "-st"
 - the selftest doesn't write the factors to results.txt anymore
@@ -323,7 +330,7 @@ version 0.09 (2010-07-09)
 - declared most GPU functions as static. This was needed because the CUDA
   toolkit 3.1 builds the GPU functions as global by default now...
 
-version 0.08 (2010-06-09)
+version 0.8 (2010-06-09)
 - added new GPU kernel for factors up to 2^95
   - this give also a new GPU kernel for factors up to 2^75
 - renamed the function tf_class() to tf_class_71() and mfakt() to mfakt_71()
@@ -335,7 +342,7 @@ version 0.08 (2010-06-09)
 - added a makefile for Linux
 - added more "known factors" above 2^71 to the selftest
 
-version 0.07 (2010-05-27)
+version 0.7 (2010-05-27)
 - contributors
   - Luigi (ET_ on www.mersenneforum.org)
   - Kevin (kjaget on www.mersenneforum.org)
@@ -352,7 +359,7 @@ version 0.07 (2010-05-27)
 - additional changes in siever code, again faster on Core i7
 - mfaktc should compile on Windows now. Thank you Kevin!
 
-version 0.06 (2010-04-28)
+version 0.6 (2010-04-28)
 - split the code into several smaller files
 - some parameters can be changes without recompiling (mfaktc.ini)
 - 2 CUDA-streams are used now (was only 1 before). This allows memory
@@ -363,7 +370,7 @@ version 0.06 (2010-04-28)
 - marked some compiletime parameters as "should not be changed unless you
   really know what you do"
 
-version 0.05 (2010-02-22)
+version 0.5 (2010-02-22)
 - inline assembly (inline PTX) replaced the "ptx-hack compile script"
   - easy access to add/sub with carry
 - some fine tuning for offsets of steps in mod_basecase.cu
@@ -378,7 +385,7 @@ version 0.05 (2010-02-22)
   - some additional checks, e.g. THREADS_PER_GRID should be a multiple of
     THREADS_PER_BLOCK * <number of multiprocessors available on the device>
 
-version 0.04 (2010-01-28)
+version 0.4 (2010-01-28)
 - Bugfix: in function mfakt(): ff was to big an overestimates the part of
   the quotient sometimes.
 - some cleanups (remove unused code)
@@ -390,7 +397,7 @@ version 0.04 (2010-01-28)
   - modified shiftleft (variable nn)
   - modified subtraction (q = q - nn)
 
-version 0.03 (2010-01-20)
+version 0.3 (2010-01-20)
 - allow exponents up to 2^32 -1
   (tested with some exponents around M3321xxxxxx)
 - siever: improved the loop which creates the candidate list (again)
@@ -401,7 +408,7 @@ version 0.03 (2010-01-20)
 - added another timer which helps to adjust SIEVE_PRIMES (needs to be
   enabled with VERBOSE_TIMING)
 
-version 0.02 (2010-01-13)
+version 0.2 (2010-01-13)
 - fixed some printf's
 - allocate and free arrays only ONCE (was per class before)
 - added check of return values of most *alloc()

@@ -359,10 +359,9 @@ A: Save files are compatible between 32-bit and 64-bit executables. However,
 Q: What do the version numbers mean?
 A: Stable releases are usually named 0.x where "x" is incremented for each
    release. Some versions include a patch such as a bug fix or other small
-   change. For example, mfaktc 0.13p1 is separate from 0.13 and 0.14 as it only
-   contains a fix for a single issue. Such patch releases are intended for
-   general use. Please note that patch releases after 0.16p1 use the
-   major.minor.patch naming scheme.
+   change. You can see in the change log that mfaktc 0.13p1 is one such
+   example. Such releases are intended for general use. Please note that patch
+   releases after 0.16p1 use the major.minor.patch naming scheme.
 
    You may come across pre-release versions that are not publicly available.
    Such versions usually *not* intended for productive usage; sometimes they

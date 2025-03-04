@@ -1,0 +1,266 @@
+name: Build mfaktc software
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+# Begin job "build-linux"
+  build-linux:
+    runs-on: ubuntu-latest
+
+    strategy:
+      # When fail-fast set to true, if one job fails, all others within the same
+      # matrix (i.e. Linux or Windows builds) will be aborted at the same time.
+      fail-fast: false
+
+      matrix:
+        sys:
+          # Specified version combination must exist as CUDA container image from NVidia: nvcr.io/nvidia/cuda:${{ matrix.sys.cuda_version }}-devel-${{ matrix.sys.ct_os }}
+          # Available versions can be found here: https://catalog.ngc.nvidia.com/orgs/nvidia/containers/cuda/tags (note that only Ubuntus are supported by this action)
+          - { cuda_version: '12.8.0', ct_os: 'ubuntu24.04' }
+          - { cuda_version: '12.6.3', ct_os: 'ubuntu22.04' }
+          # - { cuda_version: '12.6.2', ct_os: 'ubuntu22.04' }
+          # - { cuda_version: '12.6.1', ct_os: 'ubuntu22.04' }
+          # - { cuda_version: '12.6.0', ct_os: 'ubuntu22.04' }
+          - { cuda_version: '12.5.1', ct_os: 'ubuntu22.04' }
+          # - { cuda_version: '12.5.0', ct_os: 'ubuntu22.04' }
+          - { cuda_version: '12.4.1', ct_os: 'ubuntu22.04' }
+          # - { cuda_version: '12.4.0', ct_os: 'ubuntu22.04' }
+          - { cuda_version: '12.3.2', ct_os: 'ubuntu22.04' }
+          # - { cuda_version: '12.3.1', ct_os: 'ubuntu22.04' }
+          # - { cuda_version: '12.3.0', ct_os: 'ubuntu22.04' }
+          - { cuda_version: '12.2.2', ct_os: 'ubuntu22.04' }
+          # - { cuda_version: '12.2.0', ct_os: 'ubuntu22.04' }
+          - { cuda_version: '12.1.1', ct_os: 'ubuntu22.04' }
+          # - { cuda_version: '12.1.0', ct_os: 'ubuntu22.04' }
+          - { cuda_version: '12.0.1', ct_os: 'ubuntu22.04' }
+          # - { cuda_version: '12.0.0', ct_os: 'ubuntu22.04' }
+          - { cuda_version: '11.8.0', ct_os: 'ubuntu22.04' }
+          - { cuda_version: '11.7.1', ct_os: 'ubuntu22.04' }
+          # - { cuda_version: '11.7.0', ct_os: 'ubuntu22.04' }
+          - { cuda_version: '11.6.2', ct_os: 'ubuntu20.04' }
+          # - { cuda_version: '11.6.1', ct_os: 'ubuntu20.04' }
+          # - { cuda_version: '11.6.0', ct_os: 'ubuntu20.04' }
+          - { cuda_version: '11.5.2', ct_os: 'ubuntu20.04' }
+          # - { cuda_version: '11.5.1', ct_os: 'ubuntu20.04' }
+          # - { cuda_version: '11.5.0', ct_os: 'ubuntu20.04' }
+          - { cuda_version: '11.4.3', ct_os: 'ubuntu20.04' }
+          - { cuda_version: '11.3.1', ct_os: 'ubuntu20.04' }
+          - { cuda_version: '11.2.2', ct_os: 'ubuntu20.04' }
+          - { cuda_version: '11.1.1', ct_os: 'ubuntu20.04' }
+          - { cuda_version: '11.0.3', ct_os: 'ubuntu20.04' }
+          - { cuda_version: '10.2', ct_os: 'ubuntu18.04' }
+          - { cuda_version: '9.2', ct_os: 'ubuntu18.04' }
+          - { cuda_version: '8.0', ct_os: 'ubuntu16.04' }
+
+    env:
+      # We can't use GitHub direct container support on old Ubuntu versions, because actions will fail running from these due to old glibc version.
+      # As a workaround, Docker containers will be launched separately, running build related actions inside the container via 'docker exec', while generic actions will run on the
+      # host runner VM itself.
+      CONTAINER: "nvcr.io/nvidia/cuda:${{ matrix.sys.cuda_version }}-devel-${{ matrix.sys.ct_os }}"
+      base_name: mfaktc-${{ github.ref_name }}-linux64-cuda${{ matrix.sys.cuda_version }}
+
+    steps:
+
+      - name: Start Docker Container
+        run: |
+          docker pull $CONTAINER
+          docker run --name build-container -d -v ${{ github.workspace }}:/workspace $CONTAINER tail -f /dev/null
+
+      - name: Fix GPG keys for NVidia repo on Ubuntu 16.04
+        if: matrix.sys.ct_os == 'ubuntu16.04'
+        env:
+          SCRIPT: apt-key add /workspace/3bf863cc.pub
+        run: |
+          wget https://developer.download.nvidia.com/compute/cuda/repos/ubuntu1604/x86_64/3bf863cc.pub
+          docker exec build-container bash -c "$SCRIPT"
+
+      - name: Update & install required packages inside the container
+        id: packages
+        env:
+          SCRIPT: |
+            apt-get update
+            apt-get -y full-upgrade
+            apt-get install -y build-essential curl git make python3 sudo unzip wget zip
+        run: docker exec build-container bash -c "$SCRIPT"
+
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Prepare sources and gather info
+        id: prepare
+        env:
+          SCRIPT: |
+            cd /workspace
+            bash .github/workflows/scripts/build_helper.sh ${{ matrix.sys.cuda_version }}
+        run: |
+          docker exec build-container bash -c "$SCRIPT"
+          cat .github/workflows/scripts/build_helper.sh.out >> $GITHUB_OUTPUT
+
+      - name: Build from sources
+        env:
+          SCRIPT: cd /workspace/src && make -j$(nproc)
+        run: docker exec build-container bash -c "$SCRIPT"
+
+      - name: Prepare zip archive with the description
+        env:
+          SCRIPT: |
+            cd /workspace
+            zip -9 -j ${{ env.base_name }}.zip *
+            echo "[${{ env.base_name }}.zip](https://github.com/${{ github.repository }}/releases/download/${{ github.ref_name }}/${{ env.base_name }}.zip) | \
+            ${{ matrix.sys.cuda_version }} | ${{ steps.prepare.outputs.CC_MIN }}-${{ steps.prepare.outputs.CC_MAX }} | ${{ steps.prepare.outputs.OS_VER }} | \
+            ${{ steps.prepare.outputs.COMPILER_VER }} | ${{ steps.prepare.outputs.NVCC_VER }}" > ${{ env.base_name }}.txt
+        run: docker exec build-container bash -c "$SCRIPT"
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.base_name }}
+          path: ${{ env.base_name }}.*
+# End job "build-linux"
+
+# Begin job "build-win"
+  build-win:
+    runs-on: ${{ matrix.sys.os }}
+
+    strategy:
+      # When fail-fast set to true, if one job fails, all others within the same
+      # matrix (i.e. Linux or Windows builds) will be aborted at the same time.
+      fail-fast: false
+
+      matrix:
+        # Available version can be viewed at the Jimver/cuda-toolkit action sources:
+        # https://github.com/Jimver/cuda-toolkit/blob/v0.2.21/src/links/windows-links.ts
+        sys:
+          - { cuda_version: '12.8.0', os: 'windows-2022' }
+          - { cuda_version: '12.6.3', os: 'windows-2022' }
+          - { cuda_version: '12.5.1', os: 'windows-2022' }
+          - { cuda_version: '12.4.1', os: 'windows-2022' }
+          - { cuda_version: '12.3.2', os: 'windows-2022' }
+          - { cuda_version: '12.2.2', os: 'windows-2022' }
+          - { cuda_version: '12.1.1', os: 'windows-2022' }
+          - { cuda_version: '12.0.1', os: 'windows-2022' }
+          - { cuda_version: '11.8.0', os: 'windows-2022' }
+          - { cuda_version: '11.7.1', os: 'windows-2022' }
+          - { cuda_version: '11.6.2', os: 'windows-2022' }
+          - { cuda_version: '11.5.2', os: 'windows-2022' }
+          - { cuda_version: '11.4.4', os: 'windows-2022' }
+          - { cuda_version: '11.3.1', os: 'windows-2022' }
+          - { cuda_version: '11.2.2', os: 'windows-2019' }
+          - { cuda_version: '11.1.1', os: 'windows-2019' }
+          - { cuda_version: '11.0.1', os: 'windows-2019' }
+          - { cuda_version: '10.0.130', os: 'windows-2019' }
+          - { cuda_version: '9.2.148', os: 'windows-2019' }
+          - { cuda_version: '8.0.61', os: 'windows-2019' }
+
+    env:
+      base_name: mfaktc-${{ github.ref_name }}-win64-cuda${{ matrix.sys.cuda_version }}
+
+    steps:
+
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Installing CUDA Toolkit
+        id: cuda-toolkit
+        uses: Jimver/cuda-toolkit@v0.2.21
+        with:
+          cuda: ${{ matrix.sys.cuda_version }}
+          sub-packages: ${{ startsWith(matrix.sys.cuda_version, '8.') && '[]' || '[ "nvcc", "cudart" ]' }}
+
+      - name: Add CUDA bin dir to PATH
+        shell: powershell
+        run: |
+          [System.Environment]::SetEnvironmentVariable('PATH', "$env:CUDA_PATH\bin;$env:PATH", 'User')
+
+      - name: Prepare sources and gather info
+        id: prepare
+        shell: bash
+        run: |
+          bash .github/workflows/scripts/build_helper.sh ${{ matrix.sys.cuda_version }}
+          cat .github/workflows/scripts/build_helper.sh.out >> $GITHUB_OUTPUT
+
+      # MSVC 2022 installed on Windows 2022 Github Runner has PowerShell script for a Dev Shell.
+      - name: Build from sources (PowerShell with MSVC 2022)
+        if: ${{ matrix.sys.os == 'windows-2022' }}
+        shell: powershell
+        run: |
+          & 'C:\Program Files\Microsoft Visual Studio\2022\Enterprise\Common7\Tools\Launch-VsDevShell.ps1' -Arch amd64 -HostArch amd64
+          cd "${{ github.workspace }}\src"
+          Copy-Item mfaktc.ini ..
+          make SHELL="powershell.exe" -f Makefile.win
+
+      # MSVC 2019 on Windows 2019 has similar script, but it doesn't allows setting arch & host_arch and defaults to x86 (32 bit) env.
+      # So we have to run bat file for the env, but Make uses PowerShell afterward because it's much better at handling long paths &
+      # quotes when invoked from Make.
+      # -vcvars_ver=14.0 switch enables MSVC 14.0 (2015) build environment. It's a component of MSVC 2019, not a complete MSVC instance.
+      - name: Build from sources (cmd.exe with MSVC 2019)
+        if: ${{ matrix.sys.os == 'windows-2019' }}
+        shell: cmd
+        run: |
+          "C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\VC\Auxiliary\Build\vcvars64.bat" x64 ${{ env.VCVARS_VER }} & cd src & copy mfaktc.ini .. & make SHELL="powershell.exe" -f Makefile.win
+        env:
+          VCVARS_VER: ${{ steps.prepare.outputs.CUDA_VER_MAJOR <= 10 && '-vcvars_ver=14.0' || '' }}
+
+      - name: Prepare build archive with description
+        shell: bash
+        run: |
+          choco install -y --no-progress zip
+          zip -9 -j "${{ env.base_name }}.zip" *
+          echo "[${{ env.base_name }}.zip](https://github.com/${{ github.repository }}/releases/download/${{ github.ref_name }}/${{ env.base_name }}.zip) | \
+          ${{ matrix.sys.cuda_version }} | ${{ steps.prepare.outputs.CC_MIN }}-${{ steps.prepare.outputs.CC_MAX }} | ${{ steps.prepare.outputs.OS_VER }} | \
+          ${{ steps.prepare.outputs.COMPILER_VER }} | ${{ steps.prepare.outputs.NVCC_VER }}" > ${{ env.base_name }}.txt
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.base_name }}
+          path: ${{ env.base_name }}.*
+# End job "build-win"
+
+# Begin job "upload-release"
+  upload-release:
+    if: startsWith(github.ref, 'refs/tags/')
+    needs: [ build-linux, build-win ]
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: write
+
+    steps:
+
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+
+      - name: Prepare list of release files & release notes
+        id: makeinfo
+        run: |
+          {
+            echo "Binary releases (automated builds) below."
+            echo "Compute Capability (CC) in the table means minimum and maximum versions supported."
+            echo "CC versions are listed without the dot (i.e. 90 means 9.0 compute capability)."
+            echo
+            echo "File | CUDA version | Compute Capability | Build OS | Compiler version | NVCC version"
+            echo "--- | --- | --- | --- | --- | ---"
+            sort -Vr mfaktc-${{ github.ref_name }}-*-cuda*/mfaktc-${{ github.ref_name }}-*-cuda*.txt
+          } > RELEASE_NOTES.txt
+          {
+            echo 'RELEASE_FILES<<EOF'
+            printf '%s\n' mfaktc-${{ github.ref_name }}-*-cuda*/mfaktc-${{ github.ref_name }}-*-cuda*.zip | sort -Vr
+            echo 'EOF'
+          } > $GITHUB_OUTPUT
+
+      - name: Make and upload release
+        uses: softprops/action-gh-release@v2.2.1
+        with:
+          fail_on_unmatched_files: false
+          files: |
+            ${{ steps.makeinfo.outputs.RELEASE_FILES }}
+          preserve_order: true
+          generate_release_notes: true
+          body_path: RELEASE_NOTES.txt
+          make_latest: true
+# End job "upload-release"
+# SPDX-License-Identifier: GPL-3.0-or-later

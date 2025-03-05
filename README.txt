@@ -374,14 +374,13 @@ A: Stable releases are usually named 0.x where "x" is incremented for each
 # 8 .plan #
 ###########
 
-0.22
-- merge "worktodo.add" from mfakto <-- done in 0.21
-- check/validate mfaktc for lower exponents <-- done in 0.21
-- rework debug code
-- fast (GPU-sieve enabled) kernel for factors < 2^64?
-
 0.24
-- CRC32 checksums to reduce invalid results
+- merge in changes from the unreleased version 0.22
+  - drop support for compute capability 1.x and 32-bit builds
+  - CRC32 checksums to reduce invalid results
+  - improved performance on Pascal devices
+  - metadata in checkpoint file names
+  - replace deprecated cudaThreadSynchronize() calls
 
 not planned for a specific release yet, no particular order!
 - performance improvements whenever I find them ;)

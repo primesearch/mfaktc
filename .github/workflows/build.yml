@@ -1,3 +1,22 @@
+# This file is part of mfaktc.
+# Copyright (c) 2025 NStorm (https://github.com/N-Storm/)
+# Copyright (C) 2009, 2010, 2011  Oliver Weihe (o.weihe@t-online.de)
+#
+# mfaktc is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# mfaktc is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with mfaktc.  If not, see <http://www.gnu.org/licenses/>.
+#
+# SPDX-License-Identifier: GPL-3.0-or-later
+
 name: Build mfaktc software
 
 on:
@@ -60,7 +79,6 @@ jobs:
       # As a workaround, Docker containers will be launched separately, running build related actions inside the container via 'docker exec', while generic actions will run on the
       # host runner VM itself.
       CONTAINER: "nvcr.io/nvidia/cuda:${{ matrix.sys.cuda_version }}-devel-${{ matrix.sys.ct_os }}"
-      base_name: mfaktc-${{ github.ref_name }}-linux64-cuda${{ matrix.sys.cuda_version }}
 
     steps:
 
@@ -88,12 +106,16 @@ jobs:
 
       - name: Checkout repo
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          fetch-tags: true
 
       - name: Prepare sources and gather info
         id: prepare
         env:
           SCRIPT: |
             cd /workspace
+            git config --global --add safe.directory /workspace
             bash .github/workflows/scripts/build_helper.sh ${{ matrix.sys.cuda_version }}
         run: |
           docker exec build-container bash -c "$SCRIPT"
@@ -108,17 +130,17 @@ jobs:
         env:
           SCRIPT: |
             cd /workspace
-            zip -9 -j ${{ env.base_name }}.zip *
-            echo "[${{ env.base_name }}.zip](https://github.com/${{ github.repository }}/releases/download/${{ github.ref_name }}/${{ env.base_name }}.zip) | \
+            zip -9 -j ${{ steps.prepare.outputs.BASE_NAME }}.zip *
+            echo "[${{ steps.prepare.outputs.BASE_NAME }}.zip](https://github.com/${{ github.repository }}/releases/download/${{ github.ref_name }}/${{ steps.prepare.outputs.BASE_NAME }}.zip) | \
             ${{ matrix.sys.cuda_version }} | ${{ steps.prepare.outputs.CC_MIN }}-${{ steps.prepare.outputs.CC_MAX }} | ${{ steps.prepare.outputs.OS_VER }} | \
-            ${{ steps.prepare.outputs.COMPILER_VER }} | ${{ steps.prepare.outputs.NVCC_VER }}" > ${{ env.base_name }}.txt
+            ${{ steps.prepare.outputs.COMPILER_VER }} | ${{ steps.prepare.outputs.NVCC_VER }}" > ${{ steps.prepare.outputs.BASE_NAME }}.txt
         run: docker exec build-container bash -c "$SCRIPT"
 
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ env.base_name }}
-          path: ${{ env.base_name }}.*
+          name: ${{ steps.prepare.outputs.BASE_NAME }}
+          path: ${{ steps.prepare.outputs.BASE_NAME }}.*
 # End job "build-linux"
 
 # Begin job "build-win"
@@ -155,13 +177,13 @@ jobs:
           - { cuda_version: '9.2.148', os: 'windows-2019' }
           - { cuda_version: '8.0.61', os: 'windows-2019' }
 
-    env:
-      base_name: mfaktc-${{ github.ref_name }}-win64-cuda${{ matrix.sys.cuda_version }}
-
     steps:
 
       - name: Checkout repo
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          fetch-tags: true
 
       - name: Installing CUDA Toolkit
         id: cuda-toolkit
@@ -169,6 +191,7 @@ jobs:
         with:
           cuda: ${{ matrix.sys.cuda_version }}
           sub-packages: ${{ startsWith(matrix.sys.cuda_version, '8.') && '[]' || '[ "nvcc", "cudart" ]' }}
+          use-local-cache: false
 
       - name: Add CUDA bin dir to PATH
         shell: powershell
@@ -208,26 +231,32 @@ jobs:
         shell: bash
         run: |
           choco install -y --no-progress zip
-          zip -9 -j "${{ env.base_name }}.zip" *
-          echo "[${{ env.base_name }}.zip](https://github.com/${{ github.repository }}/releases/download/${{ github.ref_name }}/${{ env.base_name }}.zip) | \
+          zip -9 -j "${{ steps.prepare.outputs.BASE_NAME }}.zip" *
+          echo "[${{ steps.prepare.outputs.BASE_NAME }}.zip](https://github.com/${{ github.repository }}/releases/download/${{ github.ref_name }}/${{ steps.prepare.outputs.BASE_NAME }}.zip) | \
           ${{ matrix.sys.cuda_version }} | ${{ steps.prepare.outputs.CC_MIN }}-${{ steps.prepare.outputs.CC_MAX }} | ${{ steps.prepare.outputs.OS_VER }} | \
-          ${{ steps.prepare.outputs.COMPILER_VER }} | ${{ steps.prepare.outputs.NVCC_VER }}" > ${{ env.base_name }}.txt
+          ${{ steps.prepare.outputs.COMPILER_VER }} | ${{ steps.prepare.outputs.NVCC_VER }}" > ${{ steps.prepare.outputs.BASE_NAME }}.txt
 
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ env.base_name }}
-          path: ${{ env.base_name }}.*
+          name: ${{ steps.prepare.outputs.BASE_NAME }}
+          path: ${{ steps.prepare.outputs.BASE_NAME }}.*
 # End job "build-win"
 
 # Begin job "upload-release"
+# This job expects git tag to start with the version specified by MFAKTC_VERSION in params.h
+# If it's not the case, job will fail, because this means git/params.h version conflict that
+# should be resolved.
   upload-release:
-    if: startsWith(github.ref, 'refs/tags/')
+    if: github.ref_type == 'tag' && startsWith(github.ref, 'refs/tags/')
     needs: [ build-linux, build-win ]
     runs-on: ubuntu-latest
 
     permissions:
       contents: write
+
+    env:
+      base_name: mfaktc-${{ github.ref_name }}*-cuda*/mfaktc-${{ github.ref_name }}*-cuda*
 
     steps:
 
@@ -237,6 +266,11 @@ jobs:
       - name: Prepare list of release files & release notes
         id: makeinfo
         run: |
+          if ! compgen -G "${{ env.base_name }}.txt" > /dev/null 2>&1; then
+            echo "::error ::Can't find release notes with mask ${{ env.base_name }}.txt"
+            echo "::error ::Make sure that git tag begins with the MFAKTC_VERSION from src/params.h"
+            exit 1
+          fi
           {
             echo "Binary releases (automated builds) below."
             echo "Compute Capability (CC) in the table means minimum and maximum versions supported."
@@ -244,11 +278,11 @@ jobs:
             echo
             echo "File | CUDA version | Compute Capability | Build OS | Compiler version | NVCC version"
             echo "--- | --- | --- | --- | --- | ---"
-            sort -Vr mfaktc-${{ github.ref_name }}-*-cuda*/mfaktc-${{ github.ref_name }}-*-cuda*.txt
+            sort -Vr ${{ env.base_name }}.txt
           } > RELEASE_NOTES.txt
           {
             echo 'RELEASE_FILES<<EOF'
-            printf '%s\n' mfaktc-${{ github.ref_name }}-*-cuda*/mfaktc-${{ github.ref_name }}-*-cuda*.zip | sort -Vr
+            printf '%s\n' ${{ env.base_name }}.zip | sort -Vr
             echo 'EOF'
           } > $GITHUB_OUTPUT
 
@@ -263,4 +297,3 @@ jobs:
           body_path: RELEASE_NOTES.txt
           make_latest: true
 # End job "upload-release"
-# SPDX-License-Identifier: GPL-3.0-or-later

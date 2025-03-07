@@ -264,10 +264,11 @@ jobs:
 # End job "build-win"
 
 # Begin job "upload-release"
-# This job expects git tag to start with the version specified by MFAKTC_VERSION in params.h
-# If it's not the case, job will fail, because this means git/params.h version conflict that
-# should be resolved.
   upload-release:
+    # This job expects the tag name on GitHub to begin with the version
+    # specified by MFAKTC_VERSION in params.h
+    # Otherwise, the job will fail because there is a version conflict between Git
+    # and params.h that must be resolved.
     if: github.ref_type == 'tag' && startsWith(github.ref, 'refs/tags/')
     needs: [ build-linux, build-win ]
     runs-on: ubuntu-latest
@@ -287,8 +288,8 @@ jobs:
         id: makeinfo
         run: |
           if ! compgen -G "${{ env.base_name }}.txt" > /dev/null 2>&1; then
-            echo "::error ::Can't find release notes with mask ${{ env.base_name }}.txt"
-            echo "::error ::Make sure that git tag begins with the MFAKTC_VERSION from src/params.h"
+            echo "::error ::Could not find release notes with mask ${{ env.base_name }}.txt"
+            echo "::error ::Ensure the tag name on GitHub begins with the MFAKTC_VERSION in src/params.h"
             exit 1
           fi
           {

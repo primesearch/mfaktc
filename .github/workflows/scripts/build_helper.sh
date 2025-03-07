@@ -112,15 +112,18 @@ MFAKTC_VER="$(grep -Eo '#define MFAKTC_VERSION "([0-9]\.[0-9]+\.[-0-9a-z]+)"' sr
 # Git-formatted version
 GIT_TAG_VER="$(git describe --tags)"
 
-# Compare MFAKTC_VER with GIT_TAG_VER up to a length of MFAKTC_VER.
-# If they don't match, warn and use MFAKTC_VER and short commit hash for BASE_NAME.
-# Otherwise, GIT_TAG_VER will be used, which should include version, short hash and a number of commits
-# since last tag when git HEAD isn't directly referenced by a tag. Or just a tag when current commit has tag
-# reference. This gives shorter BASE_NAME without commit hash for releases.
+# Compare MFAKTC_VER with the version extracted from GIT_TAG_VER using tags.
+# If they don't match, throw a warning and use MFAKTC_VER and the short commit
+# hash for BASE_NAME.
+# Otherwise, use GIT_TAG_VER as it should include the version number, short
+# hash and any commits since the last tag when git HEAD isn't directly
+# referenced by a tag name, or just a tag when the current commit has a tag
+# reference. This gives a shorter BASE_NAME without the commit hash for
+# releases.
 if [[ "$MFAKTC_VER" != "${GIT_TAG_VER:0:${#MFAKTC_VER}}" ]]; then
   SHA_SHORT="$(git rev-parse --short HEAD)"
   BASE_NAME="mfaktc-${MFAKTC_VER}-${SHA_SHORT}-${OS_TYPE}-cuda${CUDA_VERSION_FULL}"
-  echo "Warning: version from git describe (${GIT_TAG_VER}) doesn't begins with MFAKTC_VER (${MFAKTC_VER}) from params.h"
+  echo "Warning: version from 'git describe' (${GIT_TAG_VER}) doesn't begin with MFAKTC_VER (${MFAKTC_VER}) from params.h"
   echo "Using version from params.h and short commit hash (${SHA_SHORT}) for BASE_NAME"
 else
   BASE_NAME="mfaktc-${GIT_TAG_VER}-${OS_TYPE}-cuda${CUDA_VERSION_FULL}"

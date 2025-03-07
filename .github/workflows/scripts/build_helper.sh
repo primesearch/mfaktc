@@ -35,8 +35,9 @@ fi
 # to GNU sort
 export GSORT='/usr/bin/sort'
 
+CUDA_VERSION_FULL="$(echo "$1" | head -n1 | grep -Eom1 -e '^[1-9]([0-9])?\.[0-9]{1,2}(\.[0-9]{1,3})?$')"
 declare -a CUDA_VERSION
-CUDA_VERSION=( $(echo "$1" | head -n1 | grep -Eom1 -e '^[1-9]([0-9])?\.[0-9]{1,2}(\.[0-9]{1,3})?$' | tr '.' ' ') )
+CUDA_VERSION=( $(echo "$CUDA_VERSION_FULL" | tr '.' ' ') )
 if [[ -z "${CUDA_VERSION[*]}" ]]; then
   echo "ERROR! Can't parse CUDA version $1" >&2
   exit 2
@@ -95,12 +96,34 @@ else
   COMPILER_VER="$(gcc --version | head -n1)"
   source /etc/os-release
   OS_VER="${PRETTY_NAME}"
+  OS_TYPE="linux64"
 fi
 
 if [[ -x "$(command -v powershell.exe)" ]]; then
   OS_VER="$(powershell -Command "[System.Environment]::OSVersion.VersionString")"
+  OS_TYPE="win64"
 fi
 
 NVCC_VER="$(nvcc --version | tail -n1 | sed -E 's/^Build //')"
 
-echo -e "COMPILER_VER=$COMPILER_VER\nNVCC_VER=$NVCC_VER\nOS_VER=${OS_VER}" | tee -a $0.out
+# Version from src/params.h
+MFAKTC_VER="$(grep -Eo '#define MFAKTC_VERSION "([0-9]\.[0-9]+\.[-0-9a-z]+)"' src/params.h | cut -d '"' -f 2)"
+
+# Git-formatted version
+GIT_TAG_VER="$(git describe --tags)"
+
+# Compare MFAKTC_VER with GIT_TAG_VER up to a length of MFAKTC_VER.
+# If they don't match, warn and use MFAKTC_VER and short commit hash for BASE_NAME.
+# Otherwise, GIT_TAG_VER will be used, which should include version, short hash and a number of commits
+# since last tag when git HEAD isn't directly referenced by a tag. Or just a tag when current commit has tag
+# reference. This gives shorter BASE_NAME without commit hash for releases.
+if [[ "$MFAKTC_VER" != "${GIT_TAG_VER:0:${#MFAKTC_VER}}" ]]; then
+  SHA_SHORT="$(git rev-parse --short HEAD)"
+  BASE_NAME="mfaktc-${MFAKTC_VER}-${SHA_SHORT}-${OS_TYPE}-cuda${CUDA_VERSION_FULL}"
+  echo "Warning: version from git describe (${GIT_TAG_VER}) doesn't begins with MFAKTC_VER (${MFAKTC_VER}) from params.h"
+  echo "Using version from params.h and short commit hash (${SHA_SHORT}) for BASE_NAME"
+else
+  BASE_NAME="mfaktc-${GIT_TAG_VER}-${OS_TYPE}-cuda${CUDA_VERSION_FULL}"
+fi
+
+echo -e "COMPILER_VER=${COMPILER_VER}\nNVCC_VER=${NVCC_VER}\nOS_VER=${OS_VER}\nBASE_NAME=${BASE_NAME}" | tee -a "$0.out"

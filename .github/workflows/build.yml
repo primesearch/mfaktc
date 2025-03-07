@@ -265,8 +265,8 @@ jobs:
 
 # Begin job "upload-release"
   upload-release:
-    # This job expects the tag name on GitHub to begin with the version
-    # specified by MFAKTC_VERSION in params.h
+    # This job expects the Git tag name to begin with the version specified by
+    # MFAKTC_VERSION in params.h
     # Otherwise, the job will fail because there is a version conflict between Git
     # and params.h that must be resolved.
     if: github.ref_type == 'tag' && startsWith(github.ref, 'refs/tags/')
@@ -289,13 +289,13 @@ jobs:
         run: |
           if ! compgen -G "${{ env.base_name }}.txt" > /dev/null 2>&1; then
             echo "::error ::Could not find release notes with mask ${{ env.base_name }}.txt"
-            echo "::error ::Ensure the tag name on GitHub begins with the MFAKTC_VERSION in src/params.h"
+            echo "::error ::Ensure the Git tag name begins with the version specified by MFAKTC_VERSION in src/params.h"
             exit 1
           fi
           {
             echo "Binary releases (automated builds) as follows."
             echo "Compute Capability (CC) in the table means minimum and maximum versions supported."
-            echo "CC versions are listed without the separator. For example, "90" means devices with compute capability 9.0 can run that build."
+            echo "CC versions are listed without the separator. For example, '90' means devices with compute capability 9.0 can run that build."
             echo
             echo "File | CUDA version | Compute Capability | Build OS | Compiler version | NVCC version"
             echo "--- | --- | --- | --- | --- | ---"

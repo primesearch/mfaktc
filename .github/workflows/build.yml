@@ -1,6 +1,6 @@
 # This file is part of mfaktc.
-# Copyright (c) 2025 NStorm (https://github.com/N-Storm/)
-# Copyright (C) 2009, 2010, 2011  Oliver Weihe (o.weihe@t-online.de)
+# Copyright (c) 2025        NStorm (https://github.com/N-Storm)
+# Copyright (c) 2009-2011   Oliver Weihe (o.weihe@t-online.de)
 #
 # mfaktc is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -17,11 +17,24 @@
 #
 # SPDX-License-Identifier: GPL-3.0-or-later
 
-name: Build mfaktc software
+name: mfaktc CI
 
 on:
   push:
+    paths-ignore:
+      - '**/*.txt'
+      - 'COPYING'
+      - '.gitignore'
   pull_request:
+    paths-ignore:
+      - '**/*.txt'
+      - 'COPYING'
+      - '.gitignore'
+    types:
+      - 'opened'
+      - 'reopened'
+      - 'synchronize'
+      - 'ready_for_review'
   workflow_dispatch:
 
 jobs:
@@ -30,14 +43,14 @@ jobs:
     runs-on: ubuntu-latest
 
     strategy:
-      # When fail-fast set to true, if one job fails, all others within the same
-      # matrix (i.e. Linux or Windows builds) will be aborted at the same time.
+      # If set to true, all jobs within the same matrix (such as Linux or
+      # Windows builds) will be aborted at the same time if any one job fails.
       fail-fast: false
 
       matrix:
         sys:
-          # Specified version combination must exist as CUDA container image from NVidia: nvcr.io/nvidia/cuda:${{ matrix.sys.cuda_version }}-devel-${{ matrix.sys.ct_os }}
-          # Available versions can be found here: https://catalog.ngc.nvidia.com/orgs/nvidia/containers/cuda/tags (note that only Ubuntus are supported by this action)
+          # Specified version combination must exist as CUDA container image from Nvidia: nvcr.io/nvidia/cuda:${{ matrix.sys.cuda_version }}-devel-${{ matrix.sys.ct_os }}
+          # Available versions can be found here: https://catalog.ngc.nvidia.com/orgs/nvidia/containers/cuda/tags (note that only Ubuntu distros are supported by this action)
           - { cuda_version: '12.8.0', ct_os: 'ubuntu24.04' }
           - { cuda_version: '12.6.3', ct_os: 'ubuntu22.04' }
           # - { cuda_version: '12.6.2', ct_os: 'ubuntu22.04' }
@@ -75,19 +88,21 @@ jobs:
           - { cuda_version: '8.0', ct_os: 'ubuntu16.04' }
 
     env:
-      # We can't use GitHub direct container support on old Ubuntu versions, because actions will fail running from these due to old glibc version.
-      # As a workaround, Docker containers will be launched separately, running build related actions inside the container via 'docker exec', while generic actions will run on the
-      # host runner VM itself.
+      # We can't use GitHub direct container support on old Ubuntu versions,
+      # because actions will fail due to an old glibc version.
+      # A workaround is to use 'docker exec' to run build-related actions in
+      # a separately launched Docker container, while generic actions will run
+      # on the host runner.
       CONTAINER: "nvcr.io/nvidia/cuda:${{ matrix.sys.cuda_version }}-devel-${{ matrix.sys.ct_os }}"
 
     steps:
 
-      - name: Start Docker Container
+      - name: Start Docker container
         run: |
           docker pull $CONTAINER
           docker run --name build-container -d -v ${{ github.workspace }}:/workspace $CONTAINER tail -f /dev/null
 
-      - name: Fix GPG keys for NVidia repo on Ubuntu 16.04
+      - name: Update GPG keys for CUDA repo on Ubuntu 16.04
         if: matrix.sys.ct_os == 'ubuntu16.04'
         env:
           SCRIPT: apt-key add /workspace/3bf863cc.pub
@@ -95,7 +110,7 @@ jobs:
           wget https://developer.download.nvidia.com/compute/cuda/repos/ubuntu1604/x86_64/3bf863cc.pub
           docker exec build-container bash -c "$SCRIPT"
 
-      - name: Update & install required packages inside the container
+      - name: Update and install dependencies inside container
         id: packages
         env:
           SCRIPT: |
@@ -126,7 +141,7 @@ jobs:
           SCRIPT: cd /workspace/src && make -j$(nproc)
         run: docker exec build-container bash -c "$SCRIPT"
 
-      - name: Prepare zip archive with the description
+      - name: Prepare ZIP archive with description
         env:
           SCRIPT: |
             cd /workspace
@@ -148,12 +163,12 @@ jobs:
     runs-on: ${{ matrix.sys.os }}
 
     strategy:
-      # When fail-fast set to true, if one job fails, all others within the same
-      # matrix (i.e. Linux or Windows builds) will be aborted at the same time.
+      # If set to true, all jobs within the same matrix (such as Linux or
+      # Windows builds) will be aborted at the same time if any one job fails.
       fail-fast: false
 
       matrix:
-        # Available version can be viewed at the Jimver/cuda-toolkit action sources:
+        # Available versions can be viewed at the Jimver/cuda-toolkit action sources:
         # https://github.com/Jimver/cuda-toolkit/blob/v0.2.21/src/links/windows-links.ts
         sys:
           - { cuda_version: '12.8.0', os: 'windows-2022' }
@@ -185,7 +200,7 @@ jobs:
           fetch-depth: 0
           fetch-tags: true
 
-      - name: Installing CUDA Toolkit
+      - name: Install CUDA Toolkit
         id: cuda-toolkit
         uses: Jimver/cuda-toolkit@v0.2.21
         with:
@@ -193,7 +208,7 @@ jobs:
           sub-packages: ${{ startsWith(matrix.sys.cuda_version, '8.') && '[]' || '[ "nvcc", "cudart" ]' }}
           use-local-cache: false
 
-      - name: Add CUDA bin dir to PATH
+      - name: Configure path to CUDA
         shell: powershell
         run: |
           [System.Environment]::SetEnvironmentVariable('PATH', "$env:CUDA_PATH\bin;$env:PATH", 'User')
@@ -205,26 +220,31 @@ jobs:
           bash .github/workflows/scripts/build_helper.sh ${{ matrix.sys.cuda_version }}
           cat .github/workflows/scripts/build_helper.sh.out >> $GITHUB_OUTPUT
 
-      # MSVC 2022 installed on Windows 2022 Github Runner has PowerShell script for a Dev Shell.
-      - name: Build from sources (PowerShell with MSVC 2022)
+      - name: Build from sources with MSVC 2022 using PowerShell
         if: ${{ matrix.sys.os == 'windows-2022' }}
         shell: powershell
+        # MSVC 2022 on the Windows 2022 Server runner has a PowerShell script to
+        # launch a development shell.
         run: |
           & 'C:\Program Files\Microsoft Visual Studio\2022\Enterprise\Common7\Tools\Launch-VsDevShell.ps1' -Arch amd64 -HostArch amd64
           cd "${{ github.workspace }}\src"
           Copy-Item mfaktc.ini ..
           make SHELL="powershell.exe" -f Makefile.win
 
-      # MSVC 2019 on Windows 2019 has similar script, but it doesn't allows setting arch & host_arch and defaults to x86 (32 bit) env.
-      # So we have to run bat file for the env, but Make uses PowerShell afterward because it's much better at handling long paths &
-      # quotes when invoked from Make.
-      # -vcvars_ver=14.0 switch enables MSVC 14.0 (2015) build environment. It's a component of MSVC 2019, not a complete MSVC instance.
-      - name: Build from sources (cmd.exe with MSVC 2019)
+      - name: Build from sources with MSVC 2019 using cmd.exe
         if: ${{ matrix.sys.os == 'windows-2019' }}
         shell: cmd
+        # MSVC 2019 has a similar script on the Windows 2019 Server runner, but
+        # that only supports a 32-bit (x86) environment and doesn't allow
+        # setting the architecture.
+        # So we have to run a batch file to configure a 64-bit environment and
+        # then launch PowerShell from make afterwards. PowerShell is much better
+        # at handling long paths and quotes when invoked from make.
         run: |
           "C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\VC\Auxiliary\Build\vcvars64.bat" x64 ${{ env.VCVARS_VER }} & cd src & copy mfaktc.ini .. & make SHELL="powershell.exe" -f Makefile.win
         env:
+          # -vcvars_ver=14.0 enables the MSVC 14.0 (2015) build environment -
+          # this is an MSVC 2019 component and not a complete MSVC instance.
           VCVARS_VER: ${{ steps.prepare.outputs.CUDA_VER_MAJOR <= 10 && '-vcvars_ver=14.0' || '' }}
 
       - name: Prepare build archive with description
@@ -244,10 +264,11 @@ jobs:
 # End job "build-win"
 
 # Begin job "upload-release"
-# This job expects git tag to start with the version specified by MFAKTC_VERSION in params.h
-# If it's not the case, job will fail, because this means git/params.h version conflict that
-# should be resolved.
   upload-release:
+    # This job expects the Git tag name to begin with the version specified by
+    # MFAKTC_VERSION in params.h
+    # Otherwise, the job will fail because there is a version conflict between Git
+    # and params.h that must be resolved.
     if: github.ref_type == 'tag' && startsWith(github.ref, 'refs/tags/')
     needs: [ build-linux, build-win ]
     runs-on: ubuntu-latest
@@ -263,18 +284,18 @@ jobs:
       - name: Download artifacts
         uses: actions/download-artifact@v4
 
-      - name: Prepare list of release files & release notes
+      - name: Prepare asset list and release notes
         id: makeinfo
         run: |
           if ! compgen -G "${{ env.base_name }}.txt" > /dev/null 2>&1; then
-            echo "::error ::Can't find release notes with mask ${{ env.base_name }}.txt"
-            echo "::error ::Make sure that git tag begins with the MFAKTC_VERSION from src/params.h"
+            echo "::error ::Could not find release notes with mask ${{ env.base_name }}.txt"
+            echo "::error ::Ensure the Git tag name begins with the version specified by MFAKTC_VERSION in src/params.h"
             exit 1
           fi
           {
-            echo "Binary releases (automated builds) below."
+            echo "Binary releases (automated builds) as follows."
             echo "Compute Capability (CC) in the table means minimum and maximum versions supported."
-            echo "CC versions are listed without the dot (i.e. 90 means 9.0 compute capability)."
+            echo "CC versions are listed without the separator. For example, '90' means devices with compute capability 9.0 can run that build."
             echo
             echo "File | CUDA version | Compute Capability | Build OS | Compiler version | NVCC version"
             echo "--- | --- | --- | --- | --- | ---"
@@ -286,7 +307,7 @@ jobs:
             echo 'EOF'
           } > $GITHUB_OUTPUT
 
-      - name: Make and upload release
+      - name: Create and upload release package
         uses: softprops/action-gh-release@v2.2.1
         with:
           fail_on_unmatched_files: false

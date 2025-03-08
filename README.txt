@@ -14,7 +14,7 @@ Content
 3.2 Windows
 4   Getting work and reporting results
 5   Known issues
-5.1 Stuff that looks like an issue but actually isn't an issue
+5.1 Non-issues
 6   Tuning
 7   FAQ
 8   .plan
@@ -130,7 +130,8 @@ You can add C:\Program Files (x86)\GnuWin32\bin to the Path system variable so
 that make is always available.
 
 Before attempting to compile mfaktc, be sure the system variable CUDA_PATH
-points to your CUDA installation.
+points to your CUDA installation. In most cases, the CUDA installer should
+automatically set this variable.
 
 
 Steps:
@@ -306,87 +307,80 @@ Submitting results:
   factor candidates out of the specified range.
 
 
-##################################################################
-# 5.1 Stuff that looks like an issue but actually isn't an issue #
-##################################################################
+##################
+# 5.1 Non-issues #
+##################
 
 - mfaktc runs slower on small ranges. Usually it doesn't make much sense to
-  run mfaktc with an upper limit smaller than 2^64. It is designed for trial
-  factoring above 2^64 up to 2^95 (factor sizes). ==> mfaktc needs
-  "long runs"!
+  run mfaktc with an upper limit below 64 bits. mfaktc is designed to find
+  factors between 64 and 92 bits, and is best suited for long-running jobs.
+
 - mfaktc can find factors outside the given range.
-  E.g. './mfaktc -tf 66362159 40 41' has a high change to report
-  124246422648815633 as a factor. Actually this is a factor of M66362159 but
-  its size is between 2^56 and 2^57! Of course
-  './mfaktc -tf 66362159 56 57' will find this factor, too. The reason
-  for this behaviour is that mfaktc works on huge factor blocks. This is
-  controlled by GridSize in mfaktc.ini. The default value is 3 which means
-  that mfaktc runs up to 1048576 factor candidates at once (per class). So
-  the last block of each class is filled up with factor candidates above to
-  upper limit. While this is a huge overhead for small ranges it's safe to
-  ignore it on bigger ranges. If a class contains 100 blocks the overhead is
-  on average 0.5%. When a class needs 1000 blocks the overhead is 0.05%...
+  For example, './mfaktc -tf 66362159 40 41' has a high chance to report
+  124246422648815633 as a factor. It is actually between 56 and 57 bits, so
+  './mfaktc -tf 66362159 56 57' will find also this factor as usual.
+
+  The reason for this behaviour is mfaktc works on huge factor blocks,
+  controlled by GridSize in the INI file. The default value of GridSize=3 means
+  mfaktc runs up to 1048576 factor candidates at once, per class. So the last
+  block of each class is filled up with factor candidates to above the upper
+  bit level. This is a huge overhead for small ranges but can be safely ignored
+  for larger ranges. For example, the average overhead is 0.5% for a class with
+  100 blocks but only 0.05% for one with 1000 blocks.
 
 
 ############
 # 6 Tuning #
 ############
 
-Read mfaktc.ini and read before editing. ;)
+You can find additional settings in the mfakto.ini file. Read it carefully
+before making changes. ;-)
 
 
 #########
 # 7 FAQ #
 #########
 
-Q Does mfaktc support multiple GPUs?
-A Yes, with the exception that a single instance of mfaktc can only use one
-  GPU. For each GPU you want to run mfaktc on you need (at least) one
-  instance of mfaktc. For each instance of mfaktc you can use the
-  commandline option "-d <GPU number>" to specify which GPU to use for each
-  specific mfaktc instance. Please read the next question, too.
+Q: Does mfaktc support multiple GPUs?
+A: Currently no, but you can use the -d option to start an instance on a
+   specific device. Please also see the next question.
 
-Q Can I run multiple instances of mfaktc on the same computer?
-A Yes! You need a separate directory for each instance of mfaktc.
+Q: Can I run multiple mfaktc instances on the same computer?
+A: Yes. In most cases, this is required to make full use of a GPU when sieving
+   on the CPU. Otherwise, one instance should fully utilize a single GPU.
 
-Q Can I continue (load a checkpoint) from a 32bit version of mfaktc with a
-  64bit version of mfaktc (and vice versa)?
-A Yes!
+   You will need a separate directory for each mfaktc instance.
 
-Q Version numbers
-A release versions are usually 0.XX where XX increases by one for each new
-  release. Sometimes there are version which include a single (quick) patch.
-  If you look into the Changelog.txt you can see the mfaktc 0.13 was
-  followed by mfaktc 0.13p1 followed by mfaktc 0.14. These 0.XXpY versions
-  are intended for daily work by regular users!
-  Additionally there are lots of 0.XX-preY versions which are usually not
-  public available. They are usually *NOT* intended for productive usage,
-  sometimes they don't even compile or have the computational part disabled.
-  If you somehow receive one of those -pre versions please don't use them
-  for productive work. They had usually minimal to zero QA.
+Q: Are checkpoint files compatible between different mfaktc versions?
+A: Save files are compatible between 32-bit and 64-bit executables. However,
+   mfaktc 0.23 introduces a new format that is incompatible with previous
+   versions. Complete any active assignments before you upgrade.
+
+Q: What do the version numbers mean?
+A: Stable releases are usually named 0.x where "x" is incremented for each
+   release. Some versions include a patch such as a bug fix or other small
+   change. You can see in the change log that mfaktc 0.13p1 is one such
+   example. Such releases are intended for general use. Please note that patch
+   releases after 0.16p1 use the major.minor.patch naming scheme.
+
+   You may come across pre-release versions that are not publicly available.
+   Such versions usually *not* intended for productive usage; sometimes they
+   have the computational code disabled or don't even compile. Please don't use
+   them for production work as they have usually had minimal to zero QA and may
+   contain critical issues.
 
 
 ###########
 # 8 .plan #
 ###########
 
-0.22
-- merge "worktodo.add" from mfakto <-- done in 0.21
-- check/validate mfaktc for lower exponents <-- done in 0.21
-- rework debug code
-- fast (GPU-sieve enabled) kernel for factors < 2^64?
-
-0.??
-- automatic primenet interaction (Eric Christenson is working on this)         <- specification draft exists; on hold, Eric doesn't want to continue his efforts. :(
-  - this will greatly increase usability of mfaktc
-  - George Woltman agreed to include the so called "security module" in
-    mfaktc for a closed source version of mfaktc. I have to check license
-    options, GPL v3 does not allow to have parts of the program to be
-    closed source. Solution: I'll re-release under another license. This is
-    NOT the end of the GPL v3 version! I'll release future versions of
-    mfaktc under GPL v3! I want mfaktc being open source! The only
-    differences of the closed version will be the security module and the
-    license information.
+0.24
+- merge in changes from the unreleased version 0.22
+  - drop support for compute capability 1.x and 32-bit builds
+  - CRC32 checksums to reduce invalid results
+  - improved performance on Pascal devices
+  - metadata in checkpoint file names
+  - replace deprecated cudaThreadSynchronize() calls
 
 not planned for a specific release yet, no particular order!
 - performance improvements whenever I find them ;)

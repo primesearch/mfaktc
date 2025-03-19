@@ -11,7 +11,7 @@ mfaktc is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
-                                
+
 You should have received a copy of the GNU General Public License
 along with mfaktc.  If not, see <http://www.gnu.org/licenses/>.
 */
@@ -86,13 +86,13 @@ code path */
 *******************************************************************************
 ******************************************************************************/
 
-#define MFAKTC_VERSION "0.23.2" /* DO NOT CHANGE! */
+#define MFAKTC_VERSION "0.23.3" /* DO NOT CHANGE! */
 
 
 
 /*
 THREADS_PER_BLOCK has a hardware limit, 512 on GPUs with compute capability
-1.x and 1024 on GPUs with compute capability 2.0. 
+1.x and 1024 on GPUs with compute capability 2.0.
 256 should be OK for most cases. Anyway there is usually no need to increase
 THREADS_PER_BLOCK above 256 because if enough resources are available
 (e.g. registers, shared memory) multiple blocks are launched at the same

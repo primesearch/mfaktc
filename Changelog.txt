@@ -1,3 +1,7 @@
+version 0.23.3
+- bug fix: self-tests could fail on Blackwell devices due to a "random offset"
+  error (thanks to Dmitry Bolshakov)
+
 version 0.23.2
 - fixed log file corruption issue
 - build: continuous integration via GitHub Actions

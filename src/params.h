@@ -29,7 +29,6 @@ on some other factors asweel, but you don't have to worry about.
 #define SIEVE_SIZE_LIMIT 32
 
 
-
 /*
 If MORE_CLASSES is defined than the while TF process is split into 4620
 (4 * 3*5*7*11) classes. Otherwise it will be split into 420 (4 * 3*5*7)
@@ -47,7 +46,6 @@ This starts to become usefull on my system for e.g. TF M66xxxxxx from 2^66 to
 Mersenne numbers */
 
 //#define WAGSTAFF
-
 
 
 /******************
@@ -74,20 +72,15 @@ code path */
 //#define RAW_GPU_BENCH
 
 
+/*******************************************************************************
+********************************************************************************
+*** DO NOT EDIT DEFINES BELOW THIS LINE UNLESS YOU REALLY KNOW WHAT THEY DO! ***
+*** DO NOT EDIT DEFINES BELOW THIS LINE UNLESS YOU REALLY KNOW WHAT THEY DO! ***
+*** DO NOT EDIT DEFINES BELOW THIS LINE UNLESS YOU REALLY KNOW WHAT THEY DO! ***
+********************************************************************************
+*******************************************************************************/
 
-
-
-
-/******************************************************************************
-*******************************************************************************
-*** DO NOT EDIT DEFINES BELOW THIS LINE UNLESS YOU REALLY KNOW WHAT YOU DO! ***
-*** DO NOT EDIT DEFINES BELOW THIS LINE UNLESS YOU REALLY KNOW WHAT YOU DO! ***
-*** DO NOT EDIT DEFINES BELOW THIS LINE UNLESS YOU REALLY KNOW WHAT YOU DO! ***
-*******************************************************************************
-******************************************************************************/
-
-#define MFAKTC_VERSION "0.23.3" /* DO NOT CHANGE! */
-
+#define MFAKTC_VERSION "0.23.3" /* Do not change without consensus! */
 
 
 /*
@@ -101,7 +94,6 @@ time. When it is increased too much you might run out of register space
 */
 
 #define THREADS_PER_BLOCK 256 /* DO NOT CHANGE! */
-
 
 
 /*
@@ -118,12 +110,10 @@ The following lines define the min, default and max value.
 #define SIEVE_PRIMES_MAX    200000 /* DO NOT CHANGE! */
 
 
-
 /* the first SIEVE_SPLIT primes have a special code in sieve.c. This defines
 when the siever switches between those two code variants. */
 
 #define SIEVE_SPLIT 250 /* DO NOT CHANGE! */
-
 
 
 /*
@@ -142,7 +132,6 @@ The following lines define the min, default and max value.
 #define CPU_STREAMS_MAX     5 /* DO NOT CHANGE! */
 
 
-
 /* set NUM_CLASSES and SIEVE_SIZE depending on MORE_CLASSES and SIEVE_SIZE_LIMIT */
 #ifndef MORE_CLASSES
   #define NUM_CLASSES 420 /* 2 * 2 * 3 * 5 * 7 */  /* DO NOT CHANGE! */
@@ -151,7 +140,6 @@ The following lines define the min, default and max value.
   #define NUM_CLASSES 4620 /* 2 * 2 * 3 * 5 * 7 * 11 */ /* DO NOT CHANGE! */
   #define SIEVE_SIZE ((SIEVE_SIZE_LIMIT<<13) - (SIEVE_SIZE_LIMIT<<13) % (13*17*19*23)) /* DO NOT CHANGE! */
 #endif
-
 
 
 /*
@@ -180,7 +168,6 @@ The following lines define the min, default and max value.
 #define GPU_SIEVE_PROCESS_SIZE_MIN           8 /* Processing 8K bits in each block is minimum (256 threads * 1 word of 32 bits) */
 #define GPU_SIEVE_PROCESS_SIZE_DEFAULT      16 /* Default is processing 8K bits */
 #define GPU_SIEVE_PROCESS_SIZE_MAX          32 /* Upper limit is 64K, since we store k values as "short". */
-
 
 
 #ifdef WAGSTAFF

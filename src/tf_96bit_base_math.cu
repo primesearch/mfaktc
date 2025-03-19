@@ -67,7 +67,7 @@ __device__ static void mul_96(int96 *res, int96 a, int96 b)
 /* res = a * b (only lower 96 bits of the result) */
 {
 #if (__CUDA_ARCH__ >= FERMI) && (CUDART_VERSION >= 4010) /* multiply-add with carry is not available on CC 1.x devices and before CUDA 4.1 */
-  asm("{\n\t"
+  asm volatile("{\n\t"
       "mul.lo.u32    %0, %3, %6;\n\t"       /* (a.d0 * b.d0).lo */
 
       "mul.hi.u32    %1, %3, %6;\n\t"       /* (a.d0 * b.d0).hi */
@@ -143,7 +143,7 @@ of mul_96_192().
  */
 {
 #if (__CUDA_ARCH__ >= FERMI) && (CUDART_VERSION >= 4010) /* multiply-add with carry is not available on CC 1.x devices and before CUDA 4.1 */
-  asm("{\n\t"
+  asm volatile("{\n\t"
       "mul.lo.u32      %0, %6, %7;\n\t"       /* (a.d2 * b.d0).lo */
       "mul.hi.u32      %1, %6, %7;\n\t"       /* (a.d2 * b.d0).hi */
 
@@ -205,7 +205,7 @@ than of mul_96_192().
  */
 {
 #if (__CUDA_ARCH__ >= FERMI) && (CUDART_VERSION >= 4010) /* multiply-add with carry is not available on CC 1.x devices and before CUDA 4.1 */
-  asm("{\n\t"
+  asm volatile("{\n\t"
       "mul.hi.u32      %0, %5, %6;\n\t"       /* (a.d2 * b.d0).hi */
       "mad.lo.cc.u32   %0, %5, %7, %0;\n\t"   /* (a.d2 * b.d1).lo */
       "addc.u32        %1,  0,  0;\n\t"
@@ -257,7 +257,7 @@ than of mul_96_192().
 */
 {
 #if (__CUDA_ARCH__ >= FERMI) && (CUDART_VERSION >= 4010) /* multiply-add with carry is not available on CC 1.x devices and before CUDA 4.1 */
-  asm("{\n\t"
+  asm volatile("{\n\t"
       ".reg .u32 d2;\n\t"
 
       "mul.lo.u32      d2, %5, %6;\n\t"       /* (a.d2 * b.d0).lo */
@@ -309,7 +309,7 @@ __device__ static void square_96_192(int192 *res, int96 a)
 assuming that a is < 2^95 (a.d2 < 2^31)! */
 {
 #if (__CUDA_ARCH__ >= FERMI) && (CUDART_VERSION >= 4010) /* multiply-add with carry is not available on CC 1.x devices and before CUDA 4.1 */
-  asm("{\n\t"
+  asm volatile("{\n\t"
       ".reg .u32 a2;\n\t"
 
       "mul.lo.u32      %0, %6, %6;\n\t"       /* (a.d0 * a.d0).lo */
@@ -341,7 +341,7 @@ We'll use this knowledge later to avoid some two carry steps to %5 */
       : "=r" (res->d0), "=r" (res->d1), "=r" (res->d2), "=r" (res->d3), "=r" (res->d4), "=r" (res->d5)
       : "r" (a.d0), "r" (a.d1), "r" (a.d2));
 #else
-  asm("{\n\t"
+  asm volatile("{\n\t"
       ".reg .u32 a2, t1;\n\t"
 
       "mul.lo.u32      %0, %6, %6;\n\t"       /* (a.d0 * a.d0).lo */
@@ -391,7 +391,7 @@ and is a little bit faster.
 For correct results a must be less than 2^80 (a.d2 less than 2^16) */
 {
 #if (__CUDA_ARCH__ >= FERMI) && (CUDART_VERSION >= 4010) /* multiply-add with carry is not available on CC 1.x devices and before CUDA 4.1 */
-  asm("{\n\t"
+  asm volatile("{\n\t"
       ".reg .u32 a2;\n\t"
 
       "mul.lo.u32     %0, %5, %5;\n\t"     /* (a.d0 * a.d0).lo */
@@ -417,7 +417,7 @@ For correct results a must be less than 2^80 (a.d2 less than 2^16) */
       : "=r"(res->d0), "=r"(res->d1), "=r"(res->d2), "=r"(res->d3), "=r"(res->d4)
       : "r"(a.d0), "r"(a.d1), "r"(a.d2));
 #else
-  asm("{\n\t"
+  asm volatile("{\n\t"
       ".reg .u32 a2, t1;\n\t"
 
       "mul.lo.u32     %0, %5, %5;\n\t"     /* (a.d0 * a.d0).lo */

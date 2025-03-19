@@ -19,7 +19,7 @@ along with mfaktc.  If not, see <http://www.gnu.org/licenses/>.
 __device__ static unsigned int __umul24hi(unsigned int a, unsigned int b)
 {
   unsigned int r;
-  asm("mul24.hi.u32 %0, %1, %2;" : "=r" (r) : "r" (a) , "r" (b));
+  asm volatile("mul24.hi.u32 %0, %1, %2;" : "=r" (r) : "r" (a) , "r" (b));
   return r;
 }
 
@@ -27,7 +27,7 @@ __device__ static unsigned int __umul24hi(unsigned int a, unsigned int b)
 __device__ static unsigned int __umul32(unsigned int a, unsigned int b)
 {
   unsigned int r;
-  asm("mul.lo.u32 %0, %1, %2;" : "=r" (r) : "r" (a) , "r" (b));
+  asm volatile("mul.lo.u32 %0, %1, %2;" : "=r" (r) : "r" (a) , "r" (b));
   return r;
 }
 
@@ -35,7 +35,7 @@ __device__ static unsigned int __umul32(unsigned int a, unsigned int b)
 __device__ static unsigned int __umul32hi(unsigned int a, unsigned int b)
 {
 /*  unsigned int r;
-  asm("mul.hi.u32 %0, %1, %2;" : "=r" (r) : "r" (a) , "r" (b));
+  asm volatile("mul.hi.u32 %0, %1, %2;" : "=r" (r) : "r" (a) , "r" (b));
   return r;*/
   return __umulhi(a,b);
 }
@@ -44,7 +44,7 @@ __device__ static unsigned int __umul32hi(unsigned int a, unsigned int b)
 __device__ static unsigned int __add_cc(unsigned int a, unsigned int b)
 {
   unsigned int r;
-  asm("add.cc.u32 %0, %1, %2;" : "=r" (r) : "r" (a) , "r" (b));
+  asm volatile("add.cc.u32 %0, %1, %2;" : "=r" (r) : "r" (a) , "r" (b));
   return r;
 }
 
@@ -52,7 +52,7 @@ __device__ static unsigned int __add_cc(unsigned int a, unsigned int b)
 __device__ static unsigned int __addc_cc(unsigned int a, unsigned int b)
 {
   unsigned int r;
-  asm("addc.cc.u32 %0, %1, %2;" : "=r" (r) : "r" (a) , "r" (b));
+  asm volatile("addc.cc.u32 %0, %1, %2;" : "=r" (r) : "r" (a) , "r" (b));
   return r;
 }
 
@@ -60,7 +60,7 @@ __device__ static unsigned int __addc_cc(unsigned int a, unsigned int b)
 __device__ static unsigned int __addc(unsigned int a, unsigned int b)
 {
   unsigned int r;
-  asm("addc.u32 %0, %1, %2;" : "=r" (r) : "r" (a) , "r" (b));
+  asm volatile("addc.u32 %0, %1, %2;" : "=r" (r) : "r" (a) , "r" (b));
   return r;
 }
 
@@ -68,7 +68,7 @@ __device__ static unsigned int __addc(unsigned int a, unsigned int b)
 __device__ static unsigned int __sub_cc(unsigned int a, unsigned int b)
 {
   unsigned int r;
-  asm("sub.cc.u32 %0, %1, %2;" : "=r" (r) : "r" (a) , "r" (b));
+  asm volatile("sub.cc.u32 %0, %1, %2;" : "=r" (r) : "r" (a) , "r" (b));
   return r;
 }
 
@@ -76,7 +76,7 @@ __device__ static unsigned int __sub_cc(unsigned int a, unsigned int b)
 __device__ static unsigned int __subc_cc(unsigned int a, unsigned int b)
 {
   unsigned int r;
-  asm("subc.cc.u32 %0, %1, %2;" : "=r" (r) : "r" (a) , "r" (b));
+  asm volatile("subc.cc.u32 %0, %1, %2;" : "=r" (r) : "r" (a) , "r" (b));
   return r;
 }
 
@@ -84,7 +84,7 @@ __device__ static unsigned int __subc_cc(unsigned int a, unsigned int b)
 __device__ static unsigned int __subc(unsigned int a, unsigned int b)
 {
   unsigned int r;
-  asm("subc.u32 %0, %1, %2;" : "=r" (r) : "r" (a) , "r" (b));
+  asm volatile("subc.u32 %0, %1, %2;" : "=r" (r) : "r" (a) , "r" (b));
   return r;
 }
 
@@ -92,7 +92,7 @@ __device__ static unsigned int __subc(unsigned int a, unsigned int b)
 __device__ static unsigned int __umad32(unsigned int a, unsigned int b, unsigned int c)
 {
   unsigned int r;
-  asm("mad.lo.u32 %0, %1, %2, %3;" : "=r" (r) : "r" (a) , "r" (b), "r" (c));
+  asm volatile("mad.lo.u32 %0, %1, %2, %3;" : "=r" (r) : "r" (a) , "r" (b), "r" (c));
   return r;
 }
 
@@ -100,7 +100,7 @@ __device__ static unsigned int __umad32(unsigned int a, unsigned int b, unsigned
 __device__ static unsigned int __umad32_cc(unsigned int a, unsigned int b, unsigned int c)
 {
   unsigned int r;
-  asm("mad.lo.cc.u32 %0, %1, %2, %3;" : "=r" (r) : "r" (a) , "r" (b), "r" (c));
+  asm volatile("mad.lo.cc.u32 %0, %1, %2, %3;" : "=r" (r) : "r" (a) , "r" (b), "r" (c));
   return r;
 }
 
@@ -108,7 +108,7 @@ __device__ static unsigned int __umad32_cc(unsigned int a, unsigned int b, unsig
 __device__ static unsigned int __umad32c(unsigned int a, unsigned int b, unsigned int c)
 {
   unsigned int r;
-  asm("madc.lo.u32 %0, %1, %2, %3;" : "=r" (r) : "r" (a) , "r" (b), "r" (c));
+  asm volatile("madc.lo.u32 %0, %1, %2, %3;" : "=r" (r) : "r" (a) , "r" (b), "r" (c));
   return r;
 }
 
@@ -116,7 +116,7 @@ __device__ static unsigned int __umad32c(unsigned int a, unsigned int b, unsigne
 __device__ static unsigned int __umad32c_cc(unsigned int a, unsigned int b, unsigned int c)
 {
   unsigned int r;
-  asm("madc.lo.cc.u32 %0, %1, %2, %3;" : "=r" (r) : "r" (a) , "r" (b), "r" (c));
+  asm volatile("madc.lo.cc.u32 %0, %1, %2, %3;" : "=r" (r) : "r" (a) , "r" (b), "r" (c));
   return r;
 }
 
@@ -124,7 +124,7 @@ __device__ static unsigned int __umad32c_cc(unsigned int a, unsigned int b, unsi
 __device__ static unsigned int __umad32hi(unsigned int a, unsigned int b, unsigned int c)
 {
   unsigned int r;
-  asm("mad.hi.u32 %0, %1, %2, %3;" : "=r" (r) : "r" (a) , "r" (b), "r" (c));
+  asm volatile("mad.hi.u32 %0, %1, %2, %3;" : "=r" (r) : "r" (a) , "r" (b), "r" (c));
   return r;
 }
 
@@ -132,7 +132,7 @@ __device__ static unsigned int __umad32hi(unsigned int a, unsigned int b, unsign
 __device__ static unsigned int __umad32hi_cc(unsigned int a, unsigned int b, unsigned int c)
 {
   unsigned int r;
-  asm("mad.hi.cc.u32 %0, %1, %2, %3;" : "=r" (r) : "r" (a) , "r" (b), "r" (c));
+  asm volatile("mad.hi.cc.u32 %0, %1, %2, %3;" : "=r" (r) : "r" (a) , "r" (b), "r" (c));
   return r;
 }
 
@@ -140,7 +140,7 @@ __device__ static unsigned int __umad32hi_cc(unsigned int a, unsigned int b, uns
 __device__ static unsigned int __umad32hic(unsigned int a, unsigned int b, unsigned int c)
 {
   unsigned int r;
-  asm("madc.hi.u32 %0, %1, %2, %3;" : "=r" (r) : "r" (a) , "r" (b), "r" (c));
+  asm volatile("madc.hi.u32 %0, %1, %2, %3;" : "=r" (r) : "r" (a) , "r" (b), "r" (c));
   return r;
 }
 
@@ -148,7 +148,7 @@ __device__ static unsigned int __umad32hic(unsigned int a, unsigned int b, unsig
 __device__ static unsigned int __umad32hic_cc(unsigned int a, unsigned int b, unsigned int c)
 {
   unsigned int r;
-  asm("madc.hi.cc.u32 %0, %1, %2, %3;" : "=r" (r) : "r" (a) , "r" (b), "r" (c));
+  asm volatile("madc.hi.cc.u32 %0, %1, %2, %3;" : "=r" (r) : "r" (a) , "r" (b), "r" (c));
   return r;
 }
 

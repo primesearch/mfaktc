@@ -59,7 +59,7 @@ static inline void sieve_clear_bit(unsigned int *array,unsigned int bit)
   bit&=0x1F;
   array[chunk]&=mask0[bit];
 }
-//#define sieve_clear_bit(ARRAY,BIT) asm("btrl  %0, %1" : /* no output */ : "r" (BIT), "m" (*ARRAY) : "memory", "cc" )
+//#define sieve_clear_bit(ARRAY,BIT) asm volatile("btrl  %0, %1" : /* no output */ : "r" (BIT), "m" (*ARRAY) : "memory", "cc" )
 //#define sieve_clear_bit(ARRAY,BIT) ARRAY[BIT>>5]&=mask0[BIT&0x1F]
 
 unsigned int* sieve_malloc(unsigned int size)

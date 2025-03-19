@@ -29,6 +29,7 @@ NVCCFLAGS += --generate-code arch=compute_86,code=sm_86
 NVCCFLAGS += --generate-code arch=compute_87,code=sm_87
 NVCCFLAGS += --generate-code arch=compute_89,code=sm_89
 NVCCFLAGS += --generate-code arch=compute_90,code=sm_90
+NVCCFLAGS += --generate-code arch=compute_120,code=sm_120
 
 # pass some options to the C host compiler (e.g. gcc on Linux)
 NVCCFLAGS += --compiler-options=-Wall

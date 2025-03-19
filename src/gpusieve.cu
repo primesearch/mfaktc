@@ -131,13 +131,14 @@ __device__ __inline static int mod_p (int x, int p, int pinv)
 //	q = __mulhi (x, pinv);		// quotient = x * inverse_of_p
 //	a = x - q * p;			// x mod p (but may be too large by one p)
 //	b = a - p;			// x mod p (the alternative return value)
-//	asm("slct.s32.s32 %0, %1, %2, %3;" : "=r" (r) : "r" (b) , "r" (a) , "r" (b));
+//	asm volatile("slct.s32.s32 %0, %1, %2, %3;" : "=r" (r) : "r" (b) , "r" (a) , "r" (b));
 
 // CUDA compiler generated crappy PTX code for the statements above.  I replaced them with my own PTX code.
 // Even the code below generates a needless copying of x.
 
 	int	r;
-	asm ("mul.hi.s32 %0, %1, %2;\n\t"		//	r = __mulhi (x, pinv);
+	asm  volatile(
+	     "mul.hi.s32 %0, %1, %2;\n\t"		//	r = __mulhi (x, pinv);
 	     "mul.lo.s32 %0, %0, %3;\n\t"		//	r = r * p;
 	     "sub.s32 	%1, %1, %0;\n\t"		//	x = x - r;
 	     "sub.s32 	%0, %1, %3;\n\t"		//	r = x - p;
@@ -191,7 +192,7 @@ __device__ __inline static int bump_mod_p (int i, int inc, int p)
 {
 	int	x, j;
 	i = i + inc % p; j = i + p;
-	asm("slct.s32.s32 %0, %1, %2, %1;" : "=r" (x) : "r" (i), "r" (j));
+	asm volatile("slct.s32.s32 %0, %1, %2, %1;" : "=r" (x) : "r" (i), "r" (j));
 
 #ifdef GWDEBUG
 	if (x < 0 || x >= p)

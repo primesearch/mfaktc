@@ -54,6 +54,9 @@ Tesla variants.
 For AMD GPUs, there is an OpenCL port of mfaktc by Bertram Franz called mfakto:
 https://github.com/primesearch/mfakto
 
+Important note: mfaktc will no longer support compute capability 1.x devices
+in version 0.24 onwards.
+
 
 #################
 # 2 Compilation #
@@ -82,6 +85,9 @@ https://forums.developer.nvidia.com/t/whats-the-last-version-of-the-cuda-toolkit
 In any case, a 64-bit build is preferred except on some old low-end GPUs.
 Testing on an Intel Core i7 CPU has shown that the performance-critical CPU
 code runs about 33% faster compared to 32 bits.
+
+Important note: mfaktc will no longer officially support 32-bit builds in
+version 0.24 onwards.
 
 #############
 # 2.1 Linux #
@@ -375,7 +381,7 @@ A: Stable releases are usually named 0.x where "x" is incremented for each
 ###########
 
 0.24
-- merge in changes from the unreleased version 0.22
+- merge in changes from unreleased version 0.22
   - drop support for compute capability 1.x and 32-bit builds
   - CRC32 checksums to reduce invalid results
   - improved performance on Pascal devices

@@ -191,8 +191,9 @@ enhancements:
   - James Heinrich is working to support this on the server side; PrimeNet
     should give more accurate credit for "factor found" results once this is
     fully implemented
-- mfaktc can now load a checkpoint file from either a Linux or Windows version
-  on either OS as long as the version numbers match
+- mfaktc can now load a checkpoint from either a Linux or Windows version on
+  either OS as long as the executable and the checkpoint file have the same
+  version number
 - the barrett92_mul32 kernel is a little bit faster due to an improved squaring
   function
 - added a new code path to the barrett79_mul32 and barrett92_mul32 kernels

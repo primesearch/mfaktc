@@ -358,9 +358,10 @@ A: Yes. In most cases, this is required to make full use of a GPU when sieving
    You will need a separate directory for each mfaktc instance.
 
 Q: Are checkpoint files compatible between different mfaktc versions?
-A: Save files are compatible between 32-bit and 64-bit executables. However,
-   mfaktc 0.23 introduces a new format that is incompatible with previous
-   versions. Complete any active assignments before you upgrade.
+A: Save files are compatible between 32-bit and 64-bit executables. mfaktc can
+   also load a checkpoint from either a Linux or Windows version on either OS.
+   However, the executable and checkpoint file must have the same version
+   number. Complete any active assignments before you upgrade.
 
 Q: What do the version numbers mean?
 A: Stable releases are usually named 0.x where "x" is incremented for each

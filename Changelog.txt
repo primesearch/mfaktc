@@ -112,9 +112,9 @@ enhancements:
   - enabled by default but can be configured with SieveOnGPU in mfaktc.ini
   - must be manually disabled for devices with compute capability 1.x
 - new kernels, thanks to George:
-  - barrett77_mul32 (a variant of barrett79_mul32)
-  - barrett87_mul32 (a variant of barrett92_mul32)
-  - barrett88_mul32 (a variant of barrett92_mul32)
+  - barrett77_mul32 (derived from barrett79_mul32)
+  - barrett87_mul32 (derived from barrett92_mul32)
+  - barrett88_mul32 (derived from barrett92_mul32)
 - minor performance improvement in the barrett76 kernel
 
 other changes:
@@ -139,9 +139,9 @@ enhancements:
 - new barrett76_mul32 kernel thanks to an idea by George Woltman: up to 23%
   faster than the previous fastest kernel barrett79_mul32 - the new kernel
   is good for factor candidates in the range of 64 to 76 bits
-- improved squaring functions for the Barrett reduction and the 75-bit and
-  95-bit kernels; up to 3% faster for the Barrett kernels on GPUs with compute
-  capability 2.0 (George Woltman)
+- improved squaring functions in the Barrett reduction and the 75-bit and
+  95-bit kernels (George Woltman)
+  - the Barrett kernels are up to 3% faster on compute capability 2.0 GPUs
 
 other changes:
 - a lot of cleanup and refactoring of the code
@@ -280,7 +280,7 @@ other changes:
   - removed unused parameters
 - mfaktc now creates only one checkpoint file per exponent
   - new checkpoint files are named 'M<exponent>.ckp'
-- complete rewrite of worktodo.txt handling
+- complete rewrite of code to handle worktodo.txt files
 - added lots of cudaGetLastError() calls; this will hopefully generate more
   useful error messages if a CUDA function fails
 - moved the check for a valid assignment from mfaktc.c to parse.c
@@ -383,7 +383,7 @@ enhancements:
   emulation mode on the CPU
   - this led to the discovery of a computational bug - see below for details!
 - improved the sieving code. It is now about 20% faster on my Core i7
-- the 75-bit kernel is ~2% faster
+- the 75-bit kernel is about 2% faster
 
 bug fixes:
 - some minor fixes (such as printf() statements)
@@ -430,7 +430,7 @@ other changes:
 version 0.9 (2010-07-09)
 ==============================
 new features:
-- added a basic test for the timer resolution
+- added a basic test for timer resolution
   - can be launched with the command-line option '-tt'
 
 enhancements:
@@ -507,7 +507,7 @@ enhancements:
 - two CUDA streams are used now (as opposed to just one)
   - this allows memory transfers (offset tables in k_tab) and GPU computation
     at the same time on newer GPUs, resulting in a small "free" performance
-    increase as the GPU doesn't need to be idle during k_tab upload
+    increase as the GPU doesn't need to be idle during the k_tab upload
 - added some safety checks for compile-time and runtime parameters
 
 other changes:

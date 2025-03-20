@@ -134,7 +134,7 @@ new features:
 - user-configurable status line (merged from mfakto)
 
 enhancements:
-- few (although not huge) optimizations for Kepler "light" GPUs - only affects
+- few (although not huge) optimizations for low-end Kepler GPUs - only affects
   Barrett reduction kernels
 - new barrett76_mul32 kernel thanks to an idea by George Woltman: up to 23%
   faster than the previous fastest kernel barrett79_mul32 - the new kernel
@@ -146,8 +146,8 @@ enhancements:
 other changes:
 - a lot of cleanup and refactoring of the code
 - SievePrimesMin lowered to 2000 - not as useful but requested quite often
-- added the correct number of compute cores per multiprocessor in Kepler
-  "light" GPUs
+- added the correct number of compute cores per multiprocessor in low-end
+  Kepler GPUs
 - removed debug option VERBOSE_TIMING
 - micro-optimization of code that initializes the results array (suggested by
   Ethan)

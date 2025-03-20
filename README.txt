@@ -291,8 +291,8 @@ Submitting results:
 # 5 Known issues #
 ##################
 
-- The user interface isn't hardened against malformed input. There are some
-  checks but when you really try you should be able to screw it up.
+- The user interface isn't hardened against malformed inputs. There are some
+  checks, but when you try hard enough you should be able to screw it up.
 - The GUI of your OS might be very laggy while running mfaktc. (newer GPUs
   with compute capability 2.0 or higher can handle this _MUCH_ better)
   Comment from James Heinrich:
@@ -304,12 +304,12 @@ Submitting results:
     At least it did so for me. With NumStreams=3, I could only run mfaktc
     when I wasn't using the computer. Now I run it all the time (except when
     watching a movie or playing a game...)
-  Another thing worth trying is different settings of GridSize in
-  mfaktc.ini. Smaller grids should have higher responsibility with the cost
-  of a little performance penalty. Performancewise this is not recommended
-  on GPUs which can handle >= 100M/s candidates.
-- the debug options CHECKS_MODBASECASE (and USE_DEVICE_PRINTF) might report
-  too high qi values while using the barrett kernels. They are caused by
+  Another thing worth trying is using different GridSize values in the INI
+  file. Smaller grids should have higher responsiveness at the cost of slightly
+  lower speed. Performance-wise, this is not recommended on GPUs which can
+  handle more than 100 million candidates per second.
+- the debug options CHECKS_MODBASECASE and USE_DEVICE_PRINTF might report 'qi'
+  values that are too high while using the Barrett kernels. They are caused by
   factor candidates out of the specified range.
 
 

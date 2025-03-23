@@ -23,6 +23,9 @@ bug fixes:
   in the JSON output correctly
 - fixed line ending bug
 
+other changes:
+- lowered default GPUSieveSize value to 256 to prevent issues on older GPUs
+
 version 0.23.0
 ==============================
 contributors:

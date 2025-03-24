@@ -279,12 +279,15 @@ see benchmarks in src/kernel_benchmarks.txt */
         logprintf(mystuff, "  last finished class was: %d\n", cur_class);
         if (factorsfound > 0)
         {
+          factorindex = factorsfound;
           logprintf(mystuff, "  found %d factor(s) already: ", factorsfound);
-          for (i = 0; i < 10; i++)
+          for (i = 0; i < MAX_FACTORS_PER_JOB; i++)
           {
-            if (mystuff->factors[i][0])
+            if (mystuff->factors[i].d0 || mystuff->factors[i].d1 || mystuff->factors[i].d2)
             {
-              logprintf(mystuff, "%s ", mystuff->factors[i]);
+              char factor[MAX_DEZ_96_STRING_LENGTH];
+              print_dez96(mystuff->factors[i], factor);
+              logprintf(mystuff, "%s ", factor);
             }
           }  
           logprintf(mystuff, "\n");
@@ -374,22 +377,24 @@ see benchmarks in src/kernel_benchmarks.txt */
         if(cudaError != cudaSuccess)
         {
           logprintf(mystuff, "ERROR: cudaGetLastError() returned %d: %s\n", cudaError, cudaGetErrorString(cudaError));
-          return RET_CUDA_ERROR; /* bail out, we might have a serios problem (detected by cudaGetLastError())... */
+          return RET_CUDA_ERROR; /* bail out, we might have a serious problem (detected by cudaGetLastError())... */
         }
         factorsfound += numfactors;
         if(mystuff->mode == MODE_NORMAL)
         {
           if (numfactors > 0)
           {
-            char factorstring[50];
             int96 factor;
-            for (i = 0; (i < numfactors) && (i < 10); i++)
+            for (i = 0; (i < numfactors) && (i < 10); i++) /* 10 is the max factors per class allowed in every kernel */
             {
               factor.d2 = mystuff->h_RES[i * 3 + 1];
               factor.d1 = mystuff->h_RES[i * 3 + 2];
               factor.d0 = mystuff->h_RES[i * 3 + 3];
-              print_dez96(factor, factorstring);
-              sprintf(mystuff->factors[factorindex++], factorstring);
+              mystuff->factors[factorindex++] = factor;
+              if (factorindex >= MAX_FACTORS_PER_JOB) {
+                  logprintf(mystuff, "ERROR: Too many factors found for this job, (>%u), TF a smaller range", MAX_FACTORS_PER_JOB);
+                  return RET_QUIT;
+              }
             }
           }
           if(mystuff->checkpoints == 1)
@@ -1133,9 +1138,11 @@ int main(int argc, char **argv)
         mystuff.bit_max_assignment = bit_max;
         mystuff.assignment_key[0] = 0;
       }
-      for (i = 0; i < 10; i++)
+      for (i = 0; i < MAX_FACTORS_PER_JOB; i++)
       {
-          mystuff.factors[i][0] = 0;
+          mystuff.factors[i].d0 = 0;
+          mystuff.factors[i].d1 = 0;
+          mystuff.factors[i].d2 = 0;
       }
       if(parse_ret == OK)
       {

@@ -139,6 +139,34 @@ void print_dez192(int192 a, char *buf)
   }
 }
 
+int96 parse_dez96(char *str) {
+    int96 result = { 0, 0, 0 };
+    int len = strlen(str);
+    int i;
+    while (*str == '0' && *(str + 1) != '\0') {
+        str++;
+        len--;
+    }
+    if (len == 0 || (len == 1 && *str == '0')) {
+        return result;
+    }
+    for (i = 0; i < len; i++) {
+        if (str[i] < '0' || str[i] > '9') {
+            continue;
+        }
+        int digit = str[i] - '0';
+        unsigned long long int carry;
+        carry = (unsigned long long int)result.d0 * 10 + digit;
+        result.d0 = carry & 0xFFFFFFFF;
+        carry >>= 32;
+        carry += (unsigned long long int)result.d1 * 10;
+        result.d1 = carry & 0xFFFFFFFF;
+        carry >>= 32;
+        carry += (unsigned long long int)result.d2 * 10;
+        result.d2 = carry & 0xFFFFFFFF;
+    }
+    return result;
+}
 
 void print_timestamp(FILE *outfile)
 {
@@ -393,14 +421,18 @@ void getOSJSON(char* string) {
     sprintf(string, ", \"os\":{\"os\": \"%s\", \"architecture\": \"%s\"}", getOS(), getArchitecture());
 }
 
-int pstrcmp(const void* a, const void* b)
-{
-    int cmplen = strlen((const char*) a) - strlen((const char*) b);
-    if (cmplen > 0)
-        return 1;
-    if (cmplen < 0)
-        return -1;
-    return strcmp((const char*)a, (const char*)b);
+static int cmp_int96(const void* p1, const void* p2) {
+    int96* a = (int96*)p1, * b = (int96*)p2;
+
+    if (a->d2 > b->d2)      return 1;
+    else if (a->d2 < b->d2) return -1;
+    else
+        if (a->d1 > b->d1)      return 1;
+        else if (a->d1 < b->d1) return -1;
+        else
+            if (a->d0 > b->d0)      return 1;
+            else if (a->d0 < b->d0) return -1;
+            else                    return 0;
 }
 
 void print_result_line(mystuff_t *mystuff, int factorsfound)
@@ -451,22 +483,24 @@ void print_result_line(mystuff_t *mystuff, int factorsfound)
   if (factorsfound)
   {
       int i = 0;
-      qsort(mystuff->factors, sizeof(mystuff->factors)/sizeof(mystuff->factors[0]), sizeof(mystuff->factors[0]), pstrcmp);
-      // skip past the empty strings
-      while (i < 10 && mystuff->factors[i][0] == 0)
+      qsort(mystuff->factors, MAX_FACTORS_PER_JOB, sizeof(mystuff->factors[0]), cmp_int96);
+      while (i < MAX_FACTORS_PER_JOB && mystuff->factors[i].d0 == 0 && mystuff->factors[i].d1 == 0 && mystuff->factors[i].d2 == 0)
       {
           i++;
       }
-      factors_list_length = sprintf(factors_list, mystuff->factors[i]);
-      factors_quote_list_length = sprintf(factors_quote_list, "\"%s\"", mystuff->factors[i++]);
-      for (; i < 10; i++)
+      char factor[MAX_DEZ_96_STRING_LENGTH];
+      print_dez96(mystuff->factors[i++], factor);
+      factors_list_length = sprintf(factors_list, factor);
+      factors_quote_list_length = sprintf(factors_quote_list, "\"%s\"", factor);
+      for (; i < MAX_FACTORS_PER_JOB; i++)
       {
-          if (mystuff->factors[i][0] == 0)
+          if (mystuff->factors[i].d0 == 0 && mystuff->factors[i].d1 == 0 && mystuff->factors[i].d2 == 0)
           {
               continue;
           }
-          factors_list_length += sprintf(factors_list + factors_list_length, ",%s", mystuff->factors[i]);
-          factors_quote_list_length += sprintf(factors_quote_list + factors_quote_list_length, ",\"%s\"", mystuff->factors[i]);
+          print_dez96(mystuff->factors[i], factor);
+          factors_list_length += sprintf(factors_list + factors_list_length, ",%s", factor);
+          factors_quote_list_length += sprintf(factors_quote_list + factors_quote_list_length, ",\"%s\"", factor);
       }
   }
   else

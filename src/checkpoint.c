@@ -20,28 +20,38 @@ along with mfaktc.  If not, see <http://www.gnu.org/licenses/>.
 #include <string.h>
 #include <errno.h>
 
+#include <cuda_runtime.h>
+
 #include "params.h"
+#include "my_types.h"
+#include "output.h"
 #include "crc.h"
 
-void checkpoint_write(unsigned int exp, int bit_min, int bit_max, int cur_class, int num_factors, char factors[][50], unsigned long long int bit_level_time)
+void checkpoint_write(unsigned int exp, int bit_min, int bit_max, int cur_class, int num_factors, int96 factors[MAX_FACTORS_PER_JOB], unsigned long long int bit_level_time)
 /*
 checkpoint_write() writes the checkpoint file.
 */
 {
   FILE *f;
-  char buffer[600], filename[40], factors_buffer[500];
+  const int MAX_FACTOR_BUFFER_LENGTH = MAX_FACTORS_PER_JOB * MAX_DEZ_96_STRING_LENGTH;
+  const int MAX_BUFFER_LENGTH = MAX_FACTOR_BUFFER_LENGTH + 100;
+  const int MAX_CHECKPOINT_FILENAME_LENGTH = 40;
+  char buffer[MAX_BUFFER_LENGTH], filename[MAX_CHECKPOINT_FILENAME_LENGTH], factors_buffer[MAX_FACTOR_BUFFER_LENGTH];
   unsigned int i, factors_buffer_length, N;
   
-  sprintf(filename, "%s%u_%d-%d_%d.ckp", NAME_NUMBERS, exp, bit_min, bit_max, NUM_CLASSES);
-  if (factors[0][0])
+  snprintf(filename, MAX_CHECKPOINT_FILENAME_LENGTH, "%s%u_%d-%d_%d.ckp", NAME_NUMBERS, exp, bit_min, bit_max, NUM_CLASSES);
+  if (factors[0].d0 || factors[0].d1 || factors[0].d2)
   {
       i = 0;
-      factors_buffer_length = sprintf(factors_buffer, factors[i++]);
-      for (; i < 10; i++)
+      char factor[MAX_DEZ_96_STRING_LENGTH];
+      print_dez96(factors[i++], factor);
+      factors_buffer_length = sprintf(factors_buffer, factor);
+      for (; i < MAX_FACTORS_PER_JOB; i++)
       {
-          if (factors[i][0])
+          if (factors[i].d0 || factors[i].d1 || factors[i].d2)
           {
-              factors_buffer_length += sprintf(factors_buffer + factors_buffer_length, ",%s", factors[i]);
+              print_dez96(factors[i], factor);
+              factors_buffer_length += sprintf(factors_buffer + factors_buffer_length, ",%s", factor);
           }
       }
   }
@@ -66,7 +76,7 @@ checkpoint_write() writes the checkpoint file.
 }
 
 
-int checkpoint_read(unsigned int exp, int bit_min, int bit_max, int *cur_class, int *num_factors, char factors[][50], unsigned long long int* bit_level_time)
+int checkpoint_read(unsigned int exp, int bit_min, int bit_max, int *cur_class, int *num_factors, int96 factors[MAX_FACTORS_PER_JOB], unsigned long long int* bit_level_time)
 /*
 checkpoint_read() reads the checkpoint file and compares values for exp,
 bit_min, bit_max, NUM_CLASSES read from file with current values.
@@ -119,20 +129,27 @@ returns 0 otherwise
 
       if (factors_buffer[0] == '0')
       {
-        for (i = 0; i < 10; i++) factors[i][0] = 0;
+        for (i = 0; i < MAX_FACTORS_PER_JOB; i++)
+        {
+          factors[i].d0 = 0;
+          factors[i].d1 = 0;
+          factors[i].d2 = 0;
+        }
       }
       else
       {
         char* tok = strtok(factors_buffer, ",");
-        for (i = 1; i < 10; i++)
+        for (i = 0; i < MAX_FACTORS_PER_JOB; i++)
         {
           if (tok == NULL) {
-              factors[i][0] = 0;
+              factors[i].d0 = 0;
+              factors[i].d1 = 0;
+              factors[i].d2 = 0;
           }
           else
           {
-            strncpy(factors[i], tok, 50);
-            tok = strtok(NULL, ",");
+              factors[i] = parse_dez96(tok);
+              tok = strtok(NULL, ",");
           }
         }
       }

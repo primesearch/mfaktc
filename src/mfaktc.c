@@ -161,14 +161,14 @@ other return value
   unsigned int f_hi, f_med, f_low;
   struct timeval timer, timer_last_checkpoint;
   static struct timeval timer_last_addfilecheck;
-  int factorsfound = 0, numfactors = 0, restart = 0;
+  int factorsfound = 0, numfactors = 0, restart = 0, factorindex = 0;
 
   int retval = 0;
   
   cudaError_t cudaError;
   
   unsigned long long int time_run, time_est;
-  
+
   mystuff->stats.output_counter = 0; /* reset output counter, needed for status headline */
   mystuff->stats.ghzdays = primenet_ghzdays(mystuff->exponent, mystuff->bit_min, mystuff->bit_max_stage);
 
@@ -271,13 +271,34 @@ see benchmarks in src/kernel_benchmarks.txt */
 
   if(mystuff->mode == MODE_NORMAL)
   {
-    if((mystuff->checkpoints == 1) && (checkpoint_read(mystuff->exponent, mystuff->bit_min, mystuff->bit_max_stage, &cur_class, &factorsfound, mystuff->factors_string, &(mystuff->stats.bit_level_time)) == 1))
+    if((mystuff->checkpoints == 1) && (checkpoint_read(mystuff->exponent, mystuff->bit_min, mystuff->bit_max_stage, &cur_class, &factorsfound, mystuff->factors, &(mystuff->stats.bit_level_time)) == 1))
     {
       logprintf(mystuff, "\nfound a valid checkpoint file!\n");
-      if(mystuff->verbosity >= 1)logprintf(mystuff, "  last finished class was: %d\n", cur_class);
-      if(mystuff->verbosity >= 1)logprintf(mystuff, "  found %d factor(s) already%s%s\n", factorsfound, factorsfound > 0 ? ": " : "", mystuff->factors_string);
-      if(mystuff->verbosity >= 1)logprintf(mystuff, "  previous work took %llu ms\n\n", mystuff->stats.bit_level_time);
-      else                       logprintf(mystuff, "\n");
+      if (mystuff->verbosity >= 1)
+      {
+        logprintf(mystuff, "  last finished class was: %d\n", cur_class);
+        if (factorsfound > 0)
+        {
+          factorindex = factorsfound;
+          logprintf(mystuff, "  found %d factor(s) already: ", factorsfound);
+          for (i = 0; i < MAX_FACTORS_PER_JOB; i++)
+          {
+            if (mystuff->factors[i].d0 || mystuff->factors[i].d1 || mystuff->factors[i].d2)
+            {
+              char factor[MAX_DEZ_96_STRING_LENGTH];
+              print_dez96(mystuff->factors[i], factor);
+              logprintf(mystuff, "%s ", factor);
+            }
+          }  
+          logprintf(mystuff, "\n");
+        }
+        else
+        {
+            logprintf(mystuff, "  found no factors yet.\n");
+        }
+        logprintf(mystuff, "  previous work took %llu ms\n\n", mystuff->stats.bit_level_time);
+      }
+      else logprintf(mystuff, "\n");
       cur_class++; // the checkpoint contains the last complete processed class!
 
 /* calculate the number of classes which are allready processed. This value is needed to estimate ETA */
@@ -356,24 +377,24 @@ see benchmarks in src/kernel_benchmarks.txt */
         if(cudaError != cudaSuccess)
         {
           logprintf(mystuff, "ERROR: cudaGetLastError() returned %d: %s\n", cudaError, cudaGetErrorString(cudaError));
-          return RET_CUDA_ERROR; /* bail out, we might have a serios problem (detected by cudaGetLastError())... */
+          return RET_CUDA_ERROR; /* bail out, we might have a serious problem (detected by cudaGetLastError())... */
         }
         factorsfound += numfactors;
         if(mystuff->mode == MODE_NORMAL)
         {
           if (numfactors > 0)
           {
-            char temp_factors_string[500];
-            char factorstring[50];
             int96 factor;
-            for (i = 0; (i < numfactors) && (i < 10); i++)
+            for (i = 0; (i < numfactors) && (i < 10); i++) /* 10 is the max factors per class allowed in every kernel */
             {
               factor.d2 = mystuff->h_RES[i * 3 + 1];
               factor.d1 = mystuff->h_RES[i * 3 + 2];
               factor.d0 = mystuff->h_RES[i * 3 + 3];
-              print_dez96(factor, factorstring);
-              sprintf(temp_factors_string, mystuff->factors_string[0] ? "%s,\"%s\"" : "%s\"%s\"", mystuff->factors_string, factorstring);
-              sprintf(mystuff->factors_string, temp_factors_string);
+              mystuff->factors[factorindex++] = factor;
+              if (factorindex >= MAX_FACTORS_PER_JOB) {
+                  logprintf(mystuff, "ERROR: Too many factors found for this job, (>%u), TF a smaller range", MAX_FACTORS_PER_JOB);
+                  return RET_QUIT;
+              }
             }
           }
           if(mystuff->checkpoints == 1)
@@ -381,7 +402,7 @@ see benchmarks in src/kernel_benchmarks.txt */
             if (numfactors > 0 || timer_diff(&timer_last_checkpoint) / 1000000 >= (unsigned long long int)mystuff->checkpointdelay || mystuff->quit)
             {
                 timer_init(&timer_last_checkpoint);
-                checkpoint_write(mystuff->exponent, mystuff->bit_min, mystuff->bit_max_stage, cur_class, factorsfound, mystuff->factors_string, mystuff->stats.bit_level_time);
+                checkpoint_write(mystuff->exponent, mystuff->bit_min, mystuff->bit_max_stage, cur_class, factorsfound, mystuff->factors, mystuff->stats.bit_level_time);
             }
           }
           if((mystuff->addfiledelay > 0) && timer_diff(&timer_last_addfilecheck) / 1000000 >= (unsigned long long int)mystuff->addfiledelay)
@@ -718,7 +739,7 @@ int main(int argc, char **argv)
   int i, tmp = 0;
   char *ptr;
   int use_worktodo = 1;
-    
+
   i = 1;
   memset(&mystuff, 0, sizeof(mystuff));
   mystuff.mode = MODE_NORMAL;
@@ -1117,7 +1138,12 @@ int main(int argc, char **argv)
         mystuff.bit_max_assignment = bit_max;
         mystuff.assignment_key[0] = 0;
       }
-      mystuff.factors_string[0] = 0;
+      for (i = 0; i < MAX_FACTORS_PER_JOB; i++)
+      {
+          mystuff.factors[i].d0 = 0;
+          mystuff.factors[i].d1 = 0;
+          mystuff.factors[i].d2 = 0;
+      }
       if(parse_ret == OK)
       {
         if(mystuff.verbosity >= 1)logprintf(&mystuff, "got assignment: exp=%u bit_min=%d bit_max=%d (%.2f GHz-days)\n", mystuff.exponent, mystuff.bit_min, mystuff.bit_max_assignment, primenet_ghzdays(mystuff.exponent, mystuff.bit_min, mystuff.bit_max_assignment));

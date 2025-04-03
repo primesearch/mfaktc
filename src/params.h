@@ -91,8 +91,9 @@ DEBUG_GPU_MATH has to be enabled, too. */
 *******************************************************************************
 ******************************************************************************/
 
-#define MFAKTC_VERSION "0.24.0-alpha.1" /* DO NOT CHANGE! */
+#define MFAKTC_VERSION "0.24.0-alpha.3" /* DO NOT CHANGE! */
 #define MFAKTC_CHECKPOINT_VERSION "0.24" /* DO NOT CHANGE! */
+#define MFAKTC_CHECKSUM_VERSION 1 /* DO NOT CHANGE! */
 
 
 
@@ -198,3 +199,6 @@ The following lines define the min, default and max value.
 
 /* For worktodo.txt files */
 #define MAX_LINE_LENGTH 100
+
+#define MAX_FACTORS_PER_JOB 20
+#define MAX_DEZ_96_STRING_LENGTH 30

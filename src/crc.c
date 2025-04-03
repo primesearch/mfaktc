@@ -22,22 +22,19 @@ along with mfaktc.  If not, see <http://www.gnu.org/licenses/>.
 unsigned int crc32_checksum(char *string, int chars)
 /* generates a CRC-32 like checksum of the string */
 {
-  unsigned int chksum=0;
+  unsigned int c, m, chksum = 0xFFFFFFFF;
   int i,j;
   
   for(i=0;i<chars;i++)
   {
+    c = string[i];
+    chksum ^= c;
     for(j=7;j>=0;j--)
     {
-      if((chksum>>31) == (((unsigned int)(string[i]>>j))&1))
-      {
-        chksum<<=1;
-      }
-      else
-      {
-        chksum = (chksum<<1)^0x04C11DB7;
-      }
+      m = -(chksum & 1);
+      chksum = (chksum >> 1) ^ (0xEDB88320 & m);
     }
   }
+  chksum ^= 0xFFFFFFFF;
   return chksum;
 }

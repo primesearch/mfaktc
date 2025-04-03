@@ -54,6 +54,9 @@ Tesla variants.
 For AMD GPUs, there is an OpenCL port of mfaktc by Bertram Franz called mfakto:
 https://github.com/primesearch/mfakto
 
+Important note: mfaktc will no longer support compute capability 1.x devices
+in version 0.24 onwards.
+
 
 #################
 # 2 Compilation #
@@ -82,6 +85,9 @@ https://forums.developer.nvidia.com/t/whats-the-last-version-of-the-cuda-toolkit
 In any case, a 64-bit build is preferred except on some old low-end GPUs.
 Testing on an Intel Core i7 CPU has shown that the performance-critical CPU
 code runs about 33% faster compared to 32 bits.
+
+Important note: mfaktc will no longer officially support 32-bit builds in
+version 0.24 onwards.
 
 #############
 # 2.1 Linux #
@@ -285,8 +291,8 @@ Submitting results:
 # 5 Known issues #
 ##################
 
-- The user interface isn't hardened against malformed input. There are some
-  checks but when you really try you should be able to screw it up.
+- The user interface isn't hardened against malformed inputs. There are some
+  checks, but when you try hard enough you should be able to screw it up.
 - The GUI of your OS might be very laggy while running mfaktc. (newer GPUs
   with compute capability 2.0 or higher can handle this _MUCH_ better)
   Comment from James Heinrich:
@@ -298,12 +304,12 @@ Submitting results:
     At least it did so for me. With NumStreams=3, I could only run mfaktc
     when I wasn't using the computer. Now I run it all the time (except when
     watching a movie or playing a game...)
-  Another thing worth trying is different settings of GridSize in
-  mfaktc.ini. Smaller grids should have higher responsibility with the cost
-  of a little performance penalty. Performancewise this is not recommended
-  on GPUs which can handle >= 100M/s candidates.
-- the debug options CHECKS_MODBASECASE (and USE_DEVICE_PRINTF) might report
-  too high qi values while using the barrett kernels. They are caused by
+  Another thing worth trying is using different GridSize values in the INI
+  file. Smaller grids should have higher responsiveness at the cost of slightly
+  lower speed. Performance-wise, this is not recommended on GPUs which can
+  handle more than 100 million candidates per second.
+- the debug options CHECKS_MODBASECASE and USE_DEVICE_PRINTF might report 'qi'
+  values that are too high while using the Barrett kernels. They are caused by
   factor candidates out of the specified range.
 
 
@@ -352,9 +358,10 @@ A: Yes. In most cases, this is required to make full use of a GPU when sieving
    You will need a separate directory for each mfaktc instance.
 
 Q: Are checkpoint files compatible between different mfaktc versions?
-A: Save files are compatible between 32-bit and 64-bit executables. However,
-   mfaktc 0.23 introduces a new format that is incompatible with previous
-   versions. Complete any active assignments before you upgrade.
+A: Save files are compatible between 32-bit and 64-bit executables. mfaktc can
+   also load a checkpoint from either a Linux or Windows version on either OS.
+   However, the executable and checkpoint file must have the same version
+   number. Complete any active assignments before you upgrade.
 
 Q: What do the version numbers mean?
 A: Stable releases are usually named 0.x where "x" is incremented for each
@@ -375,7 +382,7 @@ A: Stable releases are usually named 0.x where "x" is incremented for each
 ###########
 
 0.24
-- merge in changes from the unreleased version 0.22
+- merge in changes from unreleased version 0.22
   - drop support for compute capability 1.x and 32-bit builds
   - CRC32 checksums to reduce invalid results
   - improved performance on Pascal devices

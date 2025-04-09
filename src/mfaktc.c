@@ -1,6 +1,6 @@
 /*
 This file is part of mfaktc.
-Copyright (C) 2009, 2010, 2011, 2012, 2013, 2014, 2015  Oliver Weihe (o.weihe@t-online.de)
+Copyright (C) 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2018, 2019  Oliver Weihe (o.weihe@t-online.de)
 
 mfaktc is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -26,7 +26,7 @@ along with mfaktc.  If not, see <http://www.gnu.org/licenses/>.
 #include <time.h>
 
 #include <cuda.h>
-#include <cuda_runtime.h>  
+#include <cuda_runtime.h>
 
 #include "params.h"
 #include "my_types.h"
@@ -36,13 +36,13 @@ along with mfaktc.  If not, see <http://www.gnu.org/licenses/>.
 #include "read_config.h"
 #include "parse.h"
 #include "timer.h"
-#include "tf_72bit.h"
 #include "tf_96bit.h"
 #include "tf_barrett96.h"
 #include "checkpoint.h"
 #include "signal_handler.h"
 #include "output.h"
 #include "gpusieve.h"
+#include "cuda_basic_stuff.h"
 
 unsigned long long int calculate_k(unsigned int exp, int bits)
 /* calculates biggest possible k in "2 * exp * k + 1 < 2^bits" */
@@ -81,8 +81,6 @@ Because all currently available kernels can handle the full supported range
 of exponents this isn't used here for now. */
 {
   int ret = 0;
-
-  if( kernel == _71BIT_MUL24                                                                                                    && mystuff->bit_max_stage <= 71) ret = 1;
 
   if((kernel == _75BIT_MUL32    || (mystuff->gpu_sieving && mystuff->exponent >= mystuff->gpu_sieve_min_exp && kernel == _75BIT_MUL32_GS))    && mystuff->bit_max_stage <= 75) ret = 1;
   if((kernel == _95BIT_MUL32    || (mystuff->gpu_sieving && mystuff->exponent >= mystuff->gpu_sieve_min_exp && kernel == _95BIT_MUL32_GS))    && mystuff->bit_max_stage <= 95) ret = 1;
@@ -163,14 +161,14 @@ other return value
   unsigned int f_hi, f_med, f_low;
   struct timeval timer, timer_last_checkpoint;
   static struct timeval timer_last_addfilecheck;
-  int factorsfound = 0, numfactors = 0, restart = 0;
+  int factorsfound = 0, numfactors = 0, restart = 0, factorindex = 0;
 
   int retval = 0;
   
   cudaError_t cudaError;
   
   unsigned long long int time_run, time_est;
-  
+
   mystuff->stats.output_counter = 0; /* reset output counter, needed for status headline */
   mystuff->stats.ghzdays = primenet_ghzdays(mystuff->exponent, mystuff->bit_min, mystuff->bit_max_stage);
 
@@ -224,28 +222,8 @@ other return value
   {
 /* select the GPU kernel (fastest GPU kernel has highest priority)
 see benchmarks in src/kernel_benchmarks.txt */
-    if(mystuff->compcapa_major == 1)
-    {
-           if(kernel_possible(BARRETT76_MUL32_GS, mystuff)) kernel = BARRETT76_MUL32_GS;
-      else if(kernel_possible(BARRETT77_MUL32_GS, mystuff)) kernel = BARRETT77_MUL32_GS;
-      else if(kernel_possible(BARRETT87_MUL32_GS, mystuff)) kernel = BARRETT87_MUL32_GS;
-      else if(kernel_possible(BARRETT88_MUL32_GS, mystuff)) kernel = BARRETT88_MUL32_GS;
-      else if(kernel_possible(BARRETT79_MUL32_GS, mystuff)) kernel = BARRETT79_MUL32_GS;
-      else if(kernel_possible(BARRETT92_MUL32_GS, mystuff)) kernel = BARRETT92_MUL32_GS;
-      else if(kernel_possible(_75BIT_MUL32_GS,    mystuff)) kernel = _75BIT_MUL32_GS;
-      else if(kernel_possible(_95BIT_MUL32_GS,    mystuff)) kernel = _95BIT_MUL32_GS;
 
-      else if(kernel_possible(BARRETT76_MUL32,    mystuff)) kernel = BARRETT76_MUL32;
-      else if(kernel_possible(BARRETT77_MUL32,    mystuff)) kernel = BARRETT77_MUL32;
-      else if(kernel_possible(_71BIT_MUL24,       mystuff)) kernel = _71BIT_MUL24;
-      else if(kernel_possible(BARRETT87_MUL32,    mystuff)) kernel = BARRETT87_MUL32;
-      else if(kernel_possible(BARRETT88_MUL32,    mystuff)) kernel = BARRETT88_MUL32;
-      else if(kernel_possible(BARRETT79_MUL32,    mystuff)) kernel = BARRETT79_MUL32;
-      else if(kernel_possible(BARRETT92_MUL32,    mystuff)) kernel = BARRETT92_MUL32;
-      else if(kernel_possible(_75BIT_MUL32,       mystuff)) kernel = _75BIT_MUL32;
-      else if(kernel_possible(_95BIT_MUL32,       mystuff)) kernel = _95BIT_MUL32;
-    }
-    else // mystuff->compcapa_major != 1
+//    if(mystuff->compcapa_major >= 2)
     {
            if(kernel_possible(BARRETT76_MUL32_GS, mystuff)) kernel = BARRETT76_MUL32_GS;
       else if(kernel_possible(BARRETT87_MUL32_GS, mystuff)) kernel = BARRETT87_MUL32_GS;
@@ -267,8 +245,7 @@ see benchmarks in src/kernel_benchmarks.txt */
     }
   }
 
-       if(kernel == _71BIT_MUL24)       sprintf(mystuff->stats.kernelname, "71bit_mul24");
-  else if(kernel == _75BIT_MUL32)       sprintf(mystuff->stats.kernelname, "75bit_mul32");
+       if(kernel == _75BIT_MUL32)       sprintf(mystuff->stats.kernelname, "75bit_mul32");
   else if(kernel == _95BIT_MUL32)       sprintf(mystuff->stats.kernelname, "95bit_mul32");
 
   else if(kernel == _75BIT_MUL32_GS)    sprintf(mystuff->stats.kernelname, "75bit_mul32_gs");
@@ -294,13 +271,34 @@ see benchmarks in src/kernel_benchmarks.txt */
 
   if(mystuff->mode == MODE_NORMAL)
   {
-    if((mystuff->checkpoints == 1) && (checkpoint_read(mystuff->exponent, mystuff->bit_min, mystuff->bit_max_stage, &cur_class, &factorsfound, mystuff->factors_string, &(mystuff->stats.bit_level_time)) == 1))
+    if((mystuff->checkpoints == 1) && (checkpoint_read(mystuff->exponent, mystuff->bit_min, mystuff->bit_max_stage, &cur_class, &factorsfound, mystuff->factors, &(mystuff->stats.bit_level_time)) == 1))
     {
       logprintf(mystuff, "\nfound a valid checkpoint file!\n");
-      if(mystuff->verbosity >= 1)logprintf(mystuff, "  last finished class was: %d\n", cur_class);
-      if(mystuff->verbosity >= 1)logprintf(mystuff, "  found %d factor(s) already%s%s\n", factorsfound, factorsfound > 0 ? ": " : "", mystuff->factors_string);
-      if(mystuff->verbosity >= 1)logprintf(mystuff, "  previous work took %llu ms\n\n", mystuff->stats.bit_level_time);
-      else                       logprintf(mystuff, "\n");
+      if (mystuff->verbosity >= 1)
+      {
+        logprintf(mystuff, "  last finished class was: %d\n", cur_class);
+        if (factorsfound > 0)
+        {
+          factorindex = factorsfound;
+          logprintf(mystuff, "  found %d factor(s) already: ", factorsfound);
+          for (i = 0; i < MAX_FACTORS_PER_JOB; i++)
+          {
+            if (mystuff->factors[i].d0 || mystuff->factors[i].d1 || mystuff->factors[i].d2)
+            {
+              char factor[MAX_DEZ_96_STRING_LENGTH];
+              print_dez96(mystuff->factors[i], factor);
+              logprintf(mystuff, "%s ", factor);
+            }
+          }  
+          logprintf(mystuff, "\n");
+        }
+        else
+        {
+            logprintf(mystuff, "  found no factors yet.\n");
+        }
+        logprintf(mystuff, "  previous work took %llu ms\n\n", mystuff->stats.bit_level_time);
+      }
+      else logprintf(mystuff, "\n");
       cur_class++; // the checkpoint contains the last complete processed class!
 
 /* calculate the number of classes which are allready processed. This value is needed to estimate ETA */
@@ -350,8 +348,7 @@ see benchmarks in src/kernel_benchmarks.txt */
 	}
         mystuff->stats.class_counter++;
       
-             if(kernel == _71BIT_MUL24)       numfactors = tf_class_71          (k_min+cur_class, k_max, mystuff);
-        else if(kernel == _75BIT_MUL32)       numfactors = tf_class_75          (k_min+cur_class, k_max, mystuff);
+             if(kernel == _75BIT_MUL32)       numfactors = tf_class_75          (k_min+cur_class, k_max, mystuff);
         else if(kernel == _95BIT_MUL32)       numfactors = tf_class_95          (k_min+cur_class, k_max, mystuff);
 
         else if(kernel == _75BIT_MUL32_GS)    numfactors = tf_class_75_gs       (k_min+cur_class, k_max, mystuff);
@@ -380,24 +377,24 @@ see benchmarks in src/kernel_benchmarks.txt */
         if(cudaError != cudaSuccess)
         {
           logprintf(mystuff, "ERROR: cudaGetLastError() returned %d: %s\n", cudaError, cudaGetErrorString(cudaError));
-          return RET_CUDA_ERROR; /* bail out, we might have a serios problem (detected by cudaGetLastError())... */
+          return RET_CUDA_ERROR; /* bail out, we might have a serious problem (detected by cudaGetLastError())... */
         }
         factorsfound += numfactors;
         if(mystuff->mode == MODE_NORMAL)
         {
           if (numfactors > 0)
           {
-            char temp_factors_string[500];
-            char factorstring[50];
             int96 factor;
-            for (i = 0; (i < numfactors) && (i < 10); i++)
+            for (i = 0; (i < numfactors) && (i < 10); i++) /* 10 is the max factors per class allowed in every kernel */
             {
               factor.d2 = mystuff->h_RES[i * 3 + 1];
               factor.d1 = mystuff->h_RES[i * 3 + 2];
               factor.d0 = mystuff->h_RES[i * 3 + 3];
-              print_dez96(factor, factorstring);
-              sprintf(temp_factors_string, mystuff->factors_string[0] ? "%s,\"%s\"" : "%s\"%s\"", mystuff->factors_string, factorstring);
-              sprintf(mystuff->factors_string, temp_factors_string);
+              mystuff->factors[factorindex++] = factor;
+              if (factorindex >= MAX_FACTORS_PER_JOB) {
+                  logprintf(mystuff, "ERROR: Too many factors found for this job, (>%u), TF a smaller range", MAX_FACTORS_PER_JOB);
+                  return RET_QUIT;
+              }
             }
           }
           if(mystuff->checkpoints == 1)
@@ -405,7 +402,7 @@ see benchmarks in src/kernel_benchmarks.txt */
             if (numfactors > 0 || timer_diff(&timer_last_checkpoint) / 1000000 >= (unsigned long long int)mystuff->checkpointdelay || mystuff->quit)
             {
                 timer_init(&timer_last_checkpoint);
-                checkpoint_write(mystuff->exponent, mystuff->bit_min, mystuff->bit_max_stage, cur_class, factorsfound, mystuff->factors_string, mystuff->stats.bit_level_time);
+                checkpoint_write(mystuff->exponent, mystuff->bit_min, mystuff->bit_max_stage, cur_class, factorsfound, mystuff->factors, mystuff->stats.bit_level_time);
             }
           }
           if((mystuff->addfiledelay > 0) && timer_diff(&timer_last_addfilecheck) / 1000000 >= (unsigned long long int)mystuff->addfiledelay)
@@ -428,7 +425,7 @@ see benchmarks in src/kernel_benchmarks.txt */
   if(mystuff->mode == MODE_NORMAL)
   {
     retval = factorsfound;
-    if(mystuff->checkpoints == 1)checkpoint_delete(mystuff->exponent);
+    if(mystuff->checkpoints == 1)checkpoint_delete(mystuff->exponent, mystuff->bit_min, mystuff->bit_max_stage);
   }
   else // mystuff->mode != MODE_NORMAL
   {
@@ -461,17 +458,6 @@ k_max and k_min are used as 64bit temporary integers here...
 
       f_hi  = k_min + (mystuff->exponent * f_hi); /* f_{hi|med|low} = 2 * k_hint * mystuff->exponent +1 */
       
-      if(kernel == _71BIT_MUL24) /* 71bit kernel uses only 24bit per int */
-      {
-        f_hi  <<= 16;
-        f_hi   += f_med >> 16;
-
-        f_med <<= 8;
-        f_med  += f_low >> 24;
-        f_med  &= 0x00FFFFFF;
-        
-        f_low  &= 0x00FFFFFF;
-      }
       k_min=0; /* using k_min for counting number of matches here */
       for(i=0; ((unsigned int)i < mystuff->h_RES[0]) && (i < 10); i++)
       {
@@ -541,18 +527,12 @@ RET_CUDA_ERROR we might have a serios problem (detected by cudaGetLastError())
 {
   int i, j, tf_res, st_success=0, st_nofactor=0, st_wrongfactor=0, st_unknown=0;
 
-#ifdef WAGSTAFF
-  #define NUM_SELFTESTS 1591
-#else /* Mersennes */
-  #define NUM_SELFTESTS 2867
-#endif
-  unsigned int exp[NUM_SELFTESTS], index[9];
+  unsigned int index[9];
   int num_selftests=0;
-  int bit_min[NUM_SELFTESTS], f_class;
-  unsigned long long int k[NUM_SELFTESTS];
+  int f_class;
   int retval=1;
 
-  #define NUM_KERNEL 17
+  #define NUM_KERNEL 16
   int kernels[NUM_KERNEL+1]; // currently there are <NUM_KERNEL> different kernels, kernel numbers start at 1!
   int kernel_success[NUM_KERNEL+1], kernel_fail[NUM_KERNEL+1];
 
@@ -562,6 +542,8 @@ RET_CUDA_ERROR we might have a serios problem (detected by cudaGetLastError())
   #include "selftest-data-mersenne.c"  
 #endif
 
+  int testcases = sizeof(st_data) / sizeof(st_data[0]);
+
   for(i = 0; i <= NUM_KERNEL; i++)
   {
     kernel_success[i] = 0;
@@ -570,14 +552,15 @@ RET_CUDA_ERROR we might have a serios problem (detected by cudaGetLastError())
 
   if(type == 0)
   {
-    for(i = 0; i < NUM_SELFTESTS; i++)
+    for(i = 0; i < testcases; i++)
     {
-      logprintf(mystuff, "########## testcase %d/%d ##########\n", i+1, NUM_SELFTESTS);
-      f_class = (int)(k[i] % NUM_CLASSES);
 
-      mystuff->exponent           = exp[i];
-      mystuff->bit_min            = bit_min[i];
-      mystuff->bit_max_assignment = bit_min[i] + 1;
+      logprintf(mystuff, "########## testcase %d/%d ##########\n", i+1, testcases);
+      f_class = (int)(st_data[i].k % NUM_CLASSES);
+
+      mystuff->exponent           = st_data[i].exp;
+      mystuff->bit_min            = st_data[i].bit_min;
+      mystuff->bit_max_assignment = mystuff->bit_min + 1;
       mystuff->bit_max_stage      = mystuff->bit_max_assignment;
 
 /* create a list which kernels can handle this testcase */
@@ -596,14 +579,19 @@ RET_CUDA_ERROR we might have a serios problem (detected by cudaGetLastError())
       if(kernel_possible(BARRETT76_MUL32_GS, mystuff)) kernels[j++] = BARRETT76_MUL32_GS;
       if(kernel_possible(_95BIT_MUL32,       mystuff)) kernels[j++] = _95BIT_MUL32;
       if(kernel_possible(_75BIT_MUL32,       mystuff)) kernels[j++] = _75BIT_MUL32;
-      if(kernel_possible(_71BIT_MUL24,       mystuff)) kernels[j++] = _71BIT_MUL24;
       if(kernel_possible(_95BIT_MUL32_GS,    mystuff)) kernels[j++] = _95BIT_MUL32_GS;
       if(kernel_possible(_75BIT_MUL32_GS,    mystuff)) kernels[j++] = _75BIT_MUL32_GS;
+      
+      if(j > NUM_KERNEL)
+      {
+        printf("ERROR: Too many kernels in selftest!\n");
+        exit(1);
+      }
 
       do
       {
         num_selftests++;
-        tf_res=tf(mystuff, f_class, k[i], kernels[--j]);
+        tf_res=tf(mystuff, f_class, st_data[i].k, kernels[--j]);
              if(tf_res == 0)st_success++;
         else if(tf_res == 1)st_nofactor++;
         else if(tf_res == 2)st_wrongfactor++;
@@ -619,22 +607,22 @@ RET_CUDA_ERROR we might have a serios problem (detected by cudaGetLastError())
   else if(type == 1)
   {
 #ifdef WAGSTAFF
-    index[0]=  26; index[1]=1000; index[2]=1078; /* some factors below 2^71 (test the 71/75 bit kernel depending on compute capability) */
-    index[3]=1290; index[4]=1291; index[5]=1292; /* some factors below 2^75 (test 75 bit kernel) */
-    index[6]=1566; index[7]=1577; index[8]=1588; /* some factors below 2^95 (test 95 bit kernel) */
+    index[0]=  26; index[1]=1000; index[2]=1078; /* some factors below 2^71 */
+    index[3]=1290; index[4]=1291; index[5]=1292; /* some factors below 2^75 */
+    index[6]=1566; index[7]=1577; index[8]=1588; /* some factors below 2^95 */
 #else /* Mersennes */
-    index[0]=   2; index[1]=  25; index[2]=  57; /* some factors below 2^71 (test the 71/75 bit kernel depending on compute capability) */
-    index[3]=  70; index[4]=  88; index[5]= 106; /* some factors below 2^75 (test 75 bit kernel) */
-    index[6]=1547; index[7]=1552; index[8]=1556; /* some factors below 2^95 (test 95 bit kernel) */
+    index[0]=   2; index[1]=  25; index[2]=  57; /* some factors below 2^71 */
+    index[3]=  70; index[4]=  88; index[5]= 106; /* some factors below 2^75 */
+    index[6]=1547; index[7]=1552; index[8]=1556; /* some factors below 2^95 */
 #endif
         
     for(i = 0; i < 9; i++)
     {
-      f_class = (int)(k[index[i]] % NUM_CLASSES);
+      f_class = (int)(st_data[index[i]].k % NUM_CLASSES);
       
-      mystuff->exponent           = exp[index[i]];
-      mystuff->bit_min            = bit_min[index[i]];
-      mystuff->bit_max_assignment = bit_min[index[i]] + 1;
+      mystuff->exponent           = st_data[index[i]].exp;
+      mystuff->bit_min            = st_data[index[i]].bit_min;
+      mystuff->bit_max_assignment = mystuff->bit_min + 1;
       mystuff->bit_max_stage      = mystuff->bit_max_assignment;
 
       j = 0;
@@ -652,14 +640,19 @@ RET_CUDA_ERROR we might have a serios problem (detected by cudaGetLastError())
       if(kernel_possible(BARRETT76_MUL32_GS, mystuff)) kernels[j++] = BARRETT76_MUL32_GS;
       if(kernel_possible(_95BIT_MUL32,       mystuff)) kernels[j++] = _95BIT_MUL32;
       if(kernel_possible(_75BIT_MUL32,       mystuff)) kernels[j++] = _75BIT_MUL32;
-      if(kernel_possible(_71BIT_MUL24,       mystuff)) kernels[j++] = _71BIT_MUL24;
       if(kernel_possible(_95BIT_MUL32_GS,    mystuff)) kernels[j++] = _95BIT_MUL32_GS;
       if(kernel_possible(_75BIT_MUL32_GS,    mystuff)) kernels[j++] = _75BIT_MUL32_GS;
+
+      if(j > NUM_KERNEL)
+      {
+        printf("ERROR: Too many kernels in selftest!\n");
+        exit(1);
+      }
 
       do
       {
         num_selftests++;
-        tf_res=tf(mystuff, f_class, k[index[i]], kernels[--j]);
+        tf_res=tf(mystuff, f_class, st_data[index[i]].k, kernels[--j]);
              if(tf_res == 0)st_success++;
         else if(tf_res == 1)st_nofactor++;
         else if(tf_res == 2)st_wrongfactor++;
@@ -683,8 +676,7 @@ RET_CUDA_ERROR we might have a serios problem (detected by cudaGetLastError())
     logprintf(mystuff, "  -------------------+---------+-------\n");
     for(i = 0; i <= NUM_KERNEL; i++)
     {
-           if(i == _71BIT_MUL24)       logprintf(mystuff, "  71bit_mul24        | %6d  | %6d\n", kernel_success[i], kernel_fail[i]);
-      else if(i == _75BIT_MUL32)       logprintf(mystuff, "  75bit_mul32        | %6d  | %6d\n", kernel_success[i], kernel_fail[i]);
+           if(i == _75BIT_MUL32)       logprintf(mystuff, "  75bit_mul32        | %6d  | %6d\n", kernel_success[i], kernel_fail[i]);
       else if(i == _95BIT_MUL32)       logprintf(mystuff, "  95bit_mul32        | %6d  | %6d\n", kernel_success[i], kernel_fail[i]);
 
       else if(i == _75BIT_MUL32_GS)    logprintf(mystuff, "  75bit_mul32_gs     | %6d  | %6d\n", kernel_success[i], kernel_fail[i]);
@@ -747,7 +739,7 @@ int main(int argc, char **argv)
   int i, tmp = 0;
   char *ptr;
   int use_worktodo = 1;
-    
+
   i = 1;
   memset(&mystuff, 0, sizeof(mystuff));
   mystuff.mode = MODE_NORMAL;
@@ -758,15 +750,16 @@ int main(int argc, char **argv)
   mystuff.bit_max_stage = -1;
   mystuff.logging = -1;
   mystuff.gpu_sieving = 0;
-  mystuff.gpu_sieve_size = GPU_SIEVE_SIZE_DEFAULT * 1024 * 1024;		/* Size (in bits) of the GPU sieve.  Default is 128M bits. */
+  mystuff.gpu_sieve_size = GPU_SIEVE_SIZE_DEFAULT * 1024 * 1024;		/* Size (in bits) of the GPU sieve. Default is 128M bits. */
   mystuff.gpu_sieve_primes = GPU_SIEVE_PRIMES_DEFAULT;				/* Default to sieving primes below about 1.05M */
-  mystuff.gpu_sieve_processing_size = GPU_SIEVE_PROCESS_SIZE_DEFAULT * 1024;	/* Default to 8K bits processed by each block in a Barrett kernel. */
+  mystuff.gpu_sieve_processing_size = GPU_SIEVE_PROCESS_SIZE_DEFAULT * 1024;	/* Default to 16K bits processed by each block in a Barrett kernel. */
   sprintf(mystuff.resultfile, "results.txt");
   sprintf(mystuff.jsonresultfile, "results.json.txt");
   sprintf(mystuff.logfile, "mfaktc.log");
   sprintf(mystuff.workfile, "worktodo.txt");
   sprintf(mystuff.addfile, "worktodo.add");
   mystuff.addfilestatus = -1;                                                   /* -1 -> timer not initialized! */
+  mystuff.cuda_toolkit = CUDART_VERSION;
 
   // need to see if we should log all the output before all of the other preamble
   my_read_int("mfaktc.ini", "Logging", &(mystuff.logging));
@@ -928,13 +921,19 @@ int main(int argc, char **argv)
 #ifdef RAW_GPU_BENCH
   if(mystuff.verbosity >= 1)logprintf(&mystuff, "  RAW_GPU_BENCH             enabled (DEBUG option)\n");
 #endif
+#ifdef TRACE_FC
+  if(mystuff.verbosity >= 1)
+  {
+                            printf("  TRACE_FC                  enabled (DEBUG option)\n");
+                            printf("  Factor Candidate to trace 0x %08X %08X %08X\n", TRACE_D2, TRACE_D1, TRACE_D0);
+  }
+#endif
 
   read_config(&mystuff);
 
   int drv_ver, rt_ver;
   if(mystuff.verbosity >= 1)logprintf(&mystuff, "\nCUDA version info\n");
   if(mystuff.verbosity >= 1)logprintf(&mystuff, "  binary compiled for CUDA  %d.%d\n", CUDART_VERSION/1000, CUDART_VERSION%100);
-#if CUDART_VERSION >= 2020
   cudaRuntimeGetVersion(&rt_ver);
   if(mystuff.verbosity >= 1)logprintf(&mystuff, "  CUDA runtime version      %d.%d\n", rt_ver/1000, rt_ver%100);
   cudaDriverGetVersion(&drv_ver);  
@@ -953,7 +952,6 @@ int main(int argc, char **argv)
     close_log(&mystuff);
     return 1;
   }
-#endif  
 
   if(cudaSetDevice(devicenumber)!=cudaSuccess)
   {
@@ -966,12 +964,9 @@ int main(int argc, char **argv)
   cudaGetDeviceProperties(&deviceinfo, devicenumber);
   mystuff.compcapa_major = deviceinfo.major;
   mystuff.compcapa_minor = deviceinfo.minor;
-#if CUDART_VERSION >= 6050
+
   mystuff.max_shared_memory = (int)deviceinfo.sharedMemPerMultiprocessor;
-#else
-  if(mystuff.compcapa_major == 1)mystuff.max_shared_memory = 16384; /* assume 16kiB for CC 1.x */
-  else                           mystuff.max_shared_memory = 49152; /* assume 48kiB for all other */
-#endif
+
   if(mystuff.verbosity >= 1)
   {
     logprintf(&mystuff, "\nCUDA device info\n");
@@ -997,15 +992,18 @@ int main(int argc, char **argv)
     }
     
     logprintf(&mystuff, "  clock rate (CUDA cores)   %dMHz\n", deviceinfo.clockRate / 1000);
-#if CUDART_VERSION >= 5000
     logprintf(&mystuff, "  memory clock rate:        %dMHz\n", deviceinfo.memoryClockRate / 1000);
     logprintf(&mystuff, "  memory bus width:         %d bit\n", deviceinfo.memoryBusWidth);
-#endif
   }
 
-  if((mystuff.compcapa_major == 1) && (mystuff.compcapa_minor == 0))
+  if(mystuff.compcapa_major == 1) // CC 1.x
   {
-    logprintf(&mystuff, "Sorry, devices with compute capability 1.0 are not supported!\n");
+
+    logprintf(&mystuff, "\n\n\nSorry, devices with compute capability 1.%d are not supported!\n", mystuff.compcapa_minor);
+    if(mystuff.compcapa_minor > 0) // CC 1.1 to CC 1.3, CC 1.0 was NEVER supported by mfaktc.
+    {
+      logprintf(&mystuff, "  Last version supporting compute capability 1.1, 1.2 and 1.3 is mfaktc 0.21!\n");
+    }
     close_log(&mystuff);
     return 1;
   }
@@ -1021,13 +1019,9 @@ int main(int argc, char **argv)
   cudaSetDeviceFlags(cudaDeviceBlockingSync);
 
   if(mystuff.verbosity >= 1)logprintf(&mystuff, "\nAutomatic parameters\n");
-#if CUDART_VERSION >= 2000
   i = THREADS_PER_BLOCK * deviceinfo.multiProcessorCount;
   while( (i * 2) <= mystuff.threads_per_grid_max) i = i * 2;
   mystuff.threads_per_grid = i;
-#else
-  mystuff.threads_per_grid = mystuff.threads_per_grid_max;
-#endif
   if(mystuff.verbosity >= 1)logprintf(&mystuff, "  threads per grid          %d\n", mystuff.threads_per_grid);
   
   if(mystuff.threads_per_grid % THREADS_PER_BLOCK)
@@ -1102,6 +1096,10 @@ int main(int argc, char **argv)
     return 1;
   }
 #endif  
+
+  if(check_subcc_bug(&mystuff) != 0) return 1; /* subcc bug detected */
+
+  get_CUDA_arch(&mystuff);
   
   sieve_init();
   if(mystuff.gpu_sieving)gpusieve_init(&mystuff);
@@ -1140,7 +1138,12 @@ int main(int argc, char **argv)
         mystuff.bit_max_assignment = bit_max;
         mystuff.assignment_key[0] = 0;
       }
-      mystuff.factors_string[0] = 0;
+      for (i = 0; i < MAX_FACTORS_PER_JOB; i++)
+      {
+          mystuff.factors[i].d0 = 0;
+          mystuff.factors[i].d1 = 0;
+          mystuff.factors[i].d2 = 0;
+      }
       if(parse_ret == OK)
       {
         if(mystuff.verbosity >= 1)logprintf(&mystuff, "got assignment: exp=%u bit_min=%d bit_max=%d (%.2f GHz-days)\n", mystuff.exponent, mystuff.bit_min, mystuff.bit_max_assignment, primenet_ghzdays(mystuff.exponent, mystuff.bit_min, mystuff.bit_max_assignment));
@@ -1162,7 +1165,6 @@ int main(int argc, char **argv)
         while(mystuff.bit_max_stage <= mystuff.bit_max_assignment && !mystuff.quit)
         {
           tmp = tf(&mystuff, 0, 0, AUTOSELECT_KERNEL);
-//          tmp = tf(&mystuff, 0, 0, _71BIT_MUL24);
 //          tmp = tf(&mystuff, 0, 0, _75BIT_MUL32);
 //          tmp = tf(&mystuff, 0, 0, _75BIT_MUL32_GS);
 //          tmp = tf(&mystuff, 0, 0, _95BIT_MUL32);

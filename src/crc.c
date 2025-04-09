@@ -1,6 +1,6 @@
 /*
 This file is part of mfaktc.
-Copyright (C) 2009, 2010, 2011, 2012, 2015  Oliver Weihe (o.weihe@t-online.de)
+Copyright (C) 2009, 2010, 2011, 2013, 2015  Oliver Weihe (o.weihe@t-online.de)
 
 mfaktc is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -17,21 +17,24 @@ along with mfaktc.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 
-#if defined(NVCC_EXTERN) && !defined(_MSC_VER)
-extern "C" {
-#endif
-void print_help(char *string);
-void logprintf(mystuff_t* mystuff, const char* fmt, ...);
+#include "crc.h"
 
-void print_dez96(int96 a, char *buf);
-void print_dez192(int192 a, char *buf);
-
-int96 parse_dez96(char* str);
-
-void print_status_line(mystuff_t *mystuff);
-void print_result_line(mystuff_t *mystuff, int factorsfound);
-void print_factor(mystuff_t *mystuff, int factor_number, char *factor);
-double primenet_ghzdays(unsigned int exp, int bit_min, int bit_max);
-#if defined(NVCC_EXTERN) && !defined(_MSC_VER)
+unsigned int crc32_checksum(char *string, int chars)
+/* generates a CRC-32 like checksum of the string */
+{
+  unsigned int c, m, chksum = 0xFFFFFFFF;
+  int i,j;
+  
+  for(i=0;i<chars;i++)
+  {
+    c = string[i];
+    chksum ^= c;
+    for(j=7;j>=0;j--)
+    {
+      m = -(chksum & 1);
+      chksum = (chksum >> 1) ^ (0xEDB88320 & m);
+    }
+  }
+  chksum ^= 0xFFFFFFFF;
+  return chksum;
 }
-#endif

@@ -1,7 +1,8 @@
 /*
 This file is part of mfaktc.
-Copyright (C) 2009, 2010, 2011, 2012  Oliver Weihe (o.weihe@t-online.de)
-                                      George Woltman (woltman@alum.mit.edu)
+Copyright (C) 2009, 2010, 2011, 2012, 2017, 2018, 2019
+                                            Oliver Weihe (o.weihe@t-online.de)
+                                            George Woltman (woltman@alum.mit.edu)
 
 mfaktc is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -66,7 +67,74 @@ res = a - b */
 __device__ static void mul_96(int96 *res, int96 a, int96 b)
 /* res = a * b (only lower 96 bits of the result) */
 {
-#if (__CUDA_ARCH__ >= FERMI) && (CUDART_VERSION >= 4010) /* multiply-add with carry is not available on CC 1.x devices and before CUDA 4.1 */
+//#if (__CUDA_ARCH__ >= MAXWELL)
+#if (__CUDA_ARCH__ >= 9999)
+  asm volatile("{\n\t"
+      ".reg .u16 a0, a1, a2, a3, a4, a5;\n\t"
+      ".reg .u16 b0, b1, b2, b3, b4, b5;\n\t"
+      ".reg .u32 t0, t1, t2;\n\t"
+
+      "mov.b32          {a0,a1}, %3;\n\t"
+      "mov.b32          {a2,a3}, %4;\n\t"
+      "mov.b32          {a4,a5}, %5;\n\t"
+
+      "mov.b32          {b0,b1}, %6;\n\t"
+      "mov.b32          {b2,b3}, %7;\n\t"
+      "mov.b32          {b4,b5}, %8;\n\t"
+
+      "mul.wide.u16     %0, a0, b1;\n\t"
+      "mul.wide.u16     %1, a0, b3;\n\t"
+      "mul.wide.u16     %2, a0, b5;\n\t"
+
+      "mul.wide.u16     t0, a1, b0;\n\t"
+      "mul.wide.u16     t1, a1, b2;\n\t"
+      "mul.wide.u16     t2, a1, b4;\n\t"
+      "add.cc.u32       %0, %0, t0;\n\t"
+      "addc.cc.u32      %1, %1, t1;\n\t"
+      "addc.u32         %2, %2, t2;\n\t"
+
+      "mul.wide.u16     t1, a2, b1;\n\t"
+      "mul.wide.u16     t2, a2, b3;\n\t"
+      "add.cc.u32       %1, %1, t1;\n\t"
+      "addc.u32         %2, %2, t2;\n\t"
+
+      "mul.wide.u16     t1, a3, b0;\n\t"
+      "mul.wide.u16     t2, a3, b2;\n\t"
+      "add.cc.u32       %1, %1, t1;\n\t"
+      "addc.u32         %2, %2, t2;\n\t"
+
+      "mad.wide.u16     %2, a4, b1, %2;\n\t"
+
+      "mad.wide.u16     %2, a5, b0, %2;\n\t"
+
+      "shf.l.clamp.b32  %2, %1, %2, 16;\n\t"
+      "shf.l.clamp.b32  %1, %0, %1, 16;\n\t"
+      "shf.l.clamp.b32  %0,  0, %0, 16;\n\t"
+
+      "mul.wide.u16     t0, a0, b0;\n\t"
+      "mul.wide.u16     t1, a0, b2;\n\t"
+      "mul.wide.u16     t2, a0, b4;\n\t"
+      "add.cc.u32       %0, %0, t0;\n\t"
+      "addc.cc.u32      %1, %1, t1;\n\t"
+      "addc.u32         %2, %2, t2;\n\t"
+
+      "mul.wide.u16     t1, a1, b1;\n\t"
+      "mul.wide.u16     t2, a1, b3;\n\t"
+      "add.cc.u32       %1, %1, t1;\n\t"
+      "addc.u32         %2, %2, t2;\n\t"
+
+      "mul.wide.u16     t1, a2, b0;\n\t"
+      "mul.wide.u16     t2, a2, b2;\n\t"
+      "add.cc.u32       %1, %1, t1;\n\t"
+      "addc.u32         %2, %2, t2;\n\t"
+
+      "mad.wide.u16     %2, a3, b1, %2;\n\t"
+
+      "mad.wide.u16     %2, a4, b0, %2;\n\t"
+      "}"
+      : "=r" (res->d0), "=r" (res->d1), "=r" (res->d2)
+      : "r" (a.d0), "r" (a.d1), "r" (a.d2), "r" (b.d0), "r" (b.d1), "r" (b.d2));
+#elif (__CUDA_ARCH__ >= FERMI) && (CUDART_VERSION >= 4010) /* multiply-add with carry is not available on CC 1.x devices and before CUDA 4.1 */
   asm volatile("{\n\t"
       "mul.lo.u32    %0, %3, %6;\n\t"       /* (a.d0 * b.d0).lo */
 
@@ -308,8 +376,111 @@ __device__ static void square_96_192(int192 *res, int96 a)
 /* res = a^2
 assuming that a is < 2^95 (a.d2 < 2^31)! */
 {
+<<<<<<< HEAD
 #if (__CUDA_ARCH__ >= FERMI) && (CUDART_VERSION >= 4010) /* multiply-add with carry is not available on CC 1.x devices and before CUDA 4.1 */
   asm volatile("{\n\t"
+=======
+#if (__CUDA_ARCH__ >= COMPUTE_CAPABILITY_PASCAL) && (__CUDA_ARCH__ < VOLTA)
+  asm("{\n\t"
+      ".reg .u16 a0, a1, a2, a3, a4, a5;\n\t" /* 16 bits of input each, FIXME: a5 not needed */
+      ".reg .u32 s0, s1, s2, s3, s4, s5;\n\t"
+      ".reg .u32 t0, t1, t2, t3, t4, t5;\n\t"
+      ".reg .u32 t;\n\t"
+
+      "mov.b32         {a0,a1}, %6;\n\t"
+      "mov.b32         {a2,a3}, %7;\n\t"
+      "mov.b32         {a4,a5}, %8;\n\t"
+      
+      "mul.wide.u16    %0, a0, a1;\n\t"
+      "mul.wide.u16    %1, a0, a3;\n\t"
+      "mul.wide.u16    %2, a0, a5;\n\t"
+      "mul.wide.u16    %3, a2, a5;\n\t"
+      "mul.wide.u16    %4, a4, a5;\n\t"
+
+      "mul.wide.u16    t1, a1, a2;\n\t"
+      "mul.wide.u16    t2, a1, a4;\n\t"
+      "add.cc.u32      %1, %1, t1;\n\t"
+      "addc.cc.u32     %2, %2, t2;\n\t"
+      "addc.u32        %3, %3,  0;\n\t" // no futher carry needed: (2^16-1)^2, can take 2^17 carries!
+
+      "mul.wide.u16    t2, a2, a3;\n\t"
+      "mul.wide.u16    t3, a3, a4;\n\t"
+      "add.cc.u32      %2, %2, t2;\n\t"
+      "addc.cc.u32     %3, %3, t3;\n\t"
+      "addc.u32        %4, %4,  0;\n\t" // no futher carry needed: (2^16-1)^2, can take 2^17 carries!
+
+      "shf.l.clamp.b32 %5, %4,  0, 17;\n\t" // shiftleft partial sum by 16 bits *AND* multiply by two
+      "shf.l.clamp.b32 %4, %3, %4, 17;\n\t"
+      "shf.l.clamp.b32 %3, %2, %3, 17;\n\t"
+      "shf.l.clamp.b32 %2, %1, %2, 17;\n\t"
+      "shf.l.clamp.b32 %1, %0, %1, 17;\n\t"
+      "shf.l.clamp.b32 %0,  0, %0, 17;\n\t"
+/*      
+      "mul.wide.u16   s2, a0, a4;\n\t"
+      "mul.wide.u16   s3, a1, a5;\n\t"
+      "mul.wide.u16   s4, a3, a5;\n\t"
+
+      "mul.wide.u16   t1, a0, a2;\n\t"
+      "mul.wide.u16   t2, a1, a3;\n\t"
+      "mul.wide.u16   t3, a2, a4;\n\t"
+
+      "add.cc.u32     t2, t2, s2;\n\t"
+      "addc.cc.u32    t3, t3, s3;\n\t"
+      "addc.u32       t4,  0, s4;\n\t"
+      
+      "add.cc.u32     %1, %1, t1;\n\t"
+      "addc.cc.u32    %2, %2, t2;\n\t"
+      "addc.cc.u32    %3, %3, t3;\n\t"
+      "addc.cc.u32    %4, %4, t4;\n\t"
+      "addc.u32       %5, %5,  0;\n\t"
+
+      "add.cc.u32     %1, %1, t1;\n\t"
+      "addc.cc.u32    %2, %2, t2;\n\t"
+      "addc.cc.u32    %3, %3, t3;\n\t"
+      "addc.cc.u32    %4, %4, t4;\n\t"
+      "addc.u32       %5, %5,  0;\n\t"*/
+      
+      "mul.wide.u16   s2, a0, a4;\n\t"
+      "mul.wide.u16   s3, a1, a5;\n\t"
+      "mul.wide.u16   s4, a3, a5;\n\t" // on input a5 is limited to (2^15)-1 thus s4 <= ((2^16)-1) * ((2^15)-1 ) = 2147385345
+
+      "mul.wide.u16   t1, a0, a2;\n\t"
+      "mul.wide.u16   t2, a1, a3;\n\t"
+      "mul.wide.u16   t3, a2, a4;\n\t"
+
+      "add.cc.u32     t2, t2, s2;\n\t"
+      "addc.cc.u32    t3, t3, s3;\n\t"
+      "addc.u32       t4,  0, s4;\n\t" // t4 <= 2147385345 + 1 = 2147385346 < (2^31) -1
+      
+      "add.cc.u32     t1, t1, t1;\n\t"
+      "addc.cc.u32    t2, t2, t2;\n\t"
+      "addc.cc.u32    t3, t3, t3;\n\t"
+      "addc.u32       t4, t4, t4;\n\t" // no carry to t5 because t4 of above
+
+      "add.cc.u32     %1, %1, t1;\n\t"
+      "addc.cc.u32    %2, %2, t2;\n\t"
+      "addc.cc.u32    %3, %3, t3;\n\t"
+      "addc.cc.u32    %4, %4, t4;\n\t"
+      "addc.u32       %5, %5,  0;\n\t"
+
+      "mul.wide.u16   t0, a0, a0;\n\t"
+      "mul.wide.u16   t1, a1, a1;\n\t"
+      "mul.wide.u16   t2, a2, a2;\n\t"
+      "mul.wide.u16   t3, a3, a3;\n\t"
+      "mul.wide.u16   t4, a4, a4;\n\t"
+      "mul.wide.u16   t5, a5, a5;\n\t"
+      "add.cc.u32     %0, %0, t0;\n\t"
+      "addc.cc.u32    %1, %1, t1;\n\t"
+      "addc.cc.u32    %2, %2, t2;\n\t"
+      "addc.cc.u32    %3, %3, t3;\n\t"
+      "addc.cc.u32    %4, %4, t4;\n\t"
+      "addc.u32       %5, %5, t5;\n\t"
+      "}"
+      : "=r" (res->d0), "=r" (res->d1), "=r" (res->d2), "=r" (res->d3), "=r" (res->d4), "=r" (res->d5)
+      : "r" (a.d0), "r" (a.d1), "r" (a.d2));
+#elif (__CUDA_ARCH__ >= FERMI) && (CUDART_VERSION >= 4010) /* multiply-add with carry is not available on CC 1.x devices and before CUDA 4.1 */
+  asm("{\n\t"
+>>>>>>> 050f0a7 (0.24.0 squashed commit)
       ".reg .u32 a2;\n\t"
 
       "mul.lo.u32      %0, %6, %6;\n\t"       /* (a.d0 * a.d0).lo */
@@ -390,8 +561,144 @@ this is a stripped down version of square_96_192, it doesn't compute res.d5
 and is a little bit faster.
 For correct results a must be less than 2^80 (a.d2 less than 2^16) */
 {
+<<<<<<< HEAD
 #if (__CUDA_ARCH__ >= FERMI) && (CUDART_VERSION >= 4010) /* multiply-add with carry is not available on CC 1.x devices and before CUDA 4.1 */
   asm volatile("{\n\t"
+=======
+#if (__CUDA_ARCH__ >= COMPUTE_CAPABILITY_PASCAL) && (__CUDA_ARCH__ < VOLTA)
+  asm("{\n\t"
+      ".reg .u16 a0, a1, a2, a3, a4, a5;\n\t" /* 16 bits of input each, FIXME: a5 not needed */
+      ".reg .u32 s0, s1, s2, s3, s4;\n\t"
+      ".reg .u32 t0, t1, t2, t3, t4;\n\t"
+      ".reg .u32 t;\n\t"
+
+      "mov.b32         {a0,a1}, %5;\n\t"
+      "mov.b32         {a2,a3}, %6;\n\t"
+      "mov.b32         {a4,a5}, %7;\n\t"
+
+/*      "mul.wide.u16    %0, a0, a0;\n\t"    // max value: (2^16-1)^2, can take 2^17 carries!
+      "mul.wide.u16    %1, a1, a1;\n\t"
+      "mul.wide.u16    %2, a2, a2;\n\t"
+      "mul.wide.u16    %3, a3, a3;\n\t"
+      "mul.wide.u16    %4, a4, a4;\n\t"
+
+      "mul.wide.u16    t0, a0, a4;\n\t"
+      "add.cc.u32      %2, %2, t0;\n\t"
+      "addc.u32        %3, %3,  0;\n\t"
+      "add.cc.u32      %2, %2, t0;\n\t"
+      "addc.u32        %3, %3,  0;\n\t"
+
+      "mul.wide.u16    t0, a0, a2;\n\t"
+      "mul.wide.u16    t1, a1, a3;\n\t"
+      "mul.wide.u16    t2, a2, a4;\n\t"
+      "add.cc.u32      %1, %1, t0;\n\t"
+      "addc.cc.u32     %2, %2, t1;\n\t"
+      "addc.cc.u32     %3, %3, t2;\n\t"
+      "addc.u32        %4, %4,  0;\n\t"
+      "add.cc.u32      %1, %1, t0;\n\t"
+      "addc.cc.u32     %2, %2, t1;\n\t"
+      "addc.cc.u32     %3, %3, t2;\n\t"
+      "addc.u32        %4, %4,  0;\n\t"
+
+      "mul.wide.u16    s0, a0, a1;\n\t"
+      "mul.wide.u16    s1, a0, a3;\n\t"
+      "mul.wide.u16    s2, a2, a3;\n\t"
+      "mul.wide.u16    s3, a3, a4;\n\t"
+//      "add.cc.u32      s0, s0, s0;\n\t"
+//      "addc.cc.u32     s1, s1, s1;\n\t"
+//      "addc.cc.u32     s2, s2, s2;\n\t"
+//      "addc.cc.u32     s3, s3, s3;\n\t"
+//      "addc.u32        s4,  0,  0;\n\t"
+
+      "mul.wide.u16    t0, a1, a2;\n\t"
+      "mul.wide.u16    t1, a1, a4;\n\t"
+//      "add.cc.u32      t0, t0, t0;\n\t"
+//      "addc.cc.u32     t1, t1, t1;\n\t"
+//      "addc.u32        t2,  0,  0;\n\t"
+      "add.cc.u32      s1, s1, t0;\n\t"
+      "addc.cc.u32     s2, s2, t1;\n\t"
+//      "addc.cc.u32     s3, s3,  0;\n\t"
+//      "addc.u32        s4,  0,  0;\n\t"
+      "addc.u32        s3, s3,  0;\n\t"
+
+//      "shf.l.clamp.b32 t4, s3, s4, 16;\n\t"
+//      "shf.l.clamp.b32 t3, s2, s3, 16;\n\t"
+//      "shf.l.clamp.b32 t2, s1, s2, 16;\n\t"
+//      "shf.l.clamp.b32 t1, s0, s1, 16;\n\t"
+//      "shf.l.clamp.b32 t0,  0, s0, 16;\n\t"
+
+      "shf.l.clamp.b32 t4, s3,  0, 17;\n\t"
+      "shf.l.clamp.b32 t3, s2, s3, 17;\n\t"
+      "shf.l.clamp.b32 t2, s1, s2, 17;\n\t"
+      "shf.l.clamp.b32 t1, s0, s1, 17;\n\t"
+      "shf.l.clamp.b32 t0,  0, s0, 17;\n\t"
+
+//      "add.cc.u32      %0, %0, t0;\n\t"
+//      "addc.cc.u32     %1, %1, t1;\n\t"
+//      "addc.cc.u32     %2, %2, t2;\n\t"
+//      "addc.cc.u32     %3, %3, t3;\n\t"
+//      "addc.u32        %4, %4, t4;\n\t"
+
+      "add.cc.u32      %0, %0, t0;\n\t"
+      "addc.cc.u32     %1, %1, t1;\n\t"
+      "addc.cc.u32     %2, %2, t2;\n\t"
+      "addc.cc.u32     %3, %3, t3;\n\t"
+      "addc.u32        %4, %4, t4;\n\t"*/
+
+      "mul.wide.u16    %0, a0, a1;\n\t"
+      "mul.wide.u16    %1, a0, a3;\n\t"
+      "mul.wide.u16    %2, a2, a3;\n\t"
+      "mul.wide.u16    %3, a3, a4;\n\t"
+      "mul.wide.u16    s1, a1, a2;\n\t"
+      "mul.wide.u16    s2, a1, a4;\n\t"
+      "add.cc.u32      %1, %1, s1;\n\t"
+      "addc.cc.u32     %2, %2, s2;\n\t"
+      "addc.u32        %3, %3,  0;\n\t" // no futher carry needed: (2^16-1)^2, can take 2^17 carries!
+
+      "shf.l.clamp.b32 %4, %3,  0, 17;\n\t" // shiftleft partial sum by 16 bits *AND* multiply by two
+      "shf.l.clamp.b32 %3, %2, %3, 17;\n\t"
+      "shf.l.clamp.b32 %2, %1, %2, 17;\n\t"
+      "shf.l.clamp.b32 %1, %0, %1, 17;\n\t"
+      "shf.l.clamp.b32 %0,  0, %0, 17;\n\t"
+
+      "mul.wide.u16    s1, a0, a2;\n\t"
+      "mul.wide.u16    s2, a0, a4;\n\t"
+      "mul.wide.u16     t, a1, a3;\n\t"
+      "mul.wide.u16    s3, a2, a4;\n\t"
+      "add.cc.u32      s2, s2,  t;\n\t"
+      "addc.u32        s3, s3,  0;\n\t" // no futher carry needed: (2^16-1)^2, can take 2^17 carries!
+      "add.cc.u32      %1, %1, s1;\n\t"
+      "addc.cc.u32     %2, %2, s2;\n\t"
+      "addc.cc.u32     %3, %3, s3;\n\t"
+      "addc.u32        %4, %4,  0;\n\t"
+      "add.cc.u32      %1, %1, s1;\n\t"
+      "addc.cc.u32     %2, %2, s2;\n\t"
+      "addc.cc.u32     %3, %3, s3;\n\t"
+      "addc.u32        %4, %4,  0;\n\t"
+
+/*      "add.cc.u32      %0, %0, %0;\n\t"
+      "addc.cc.u32     %1, %1, %1;\n\t"
+      "addc.cc.u32     %2, %2, %2;\n\t"
+      "addc.cc.u32     %3, %3, %3;\n\t"
+      "addc.u32        %4, %4, %4;\n\t"*/
+
+      "mul.wide.u16    s0, a0, a0;\n\t"
+      "mul.wide.u16    s1, a1, a1;\n\t"
+      "mul.wide.u16    s2, a2, a2;\n\t"
+      "mul.wide.u16    s3, a3, a3;\n\t"
+      "mul.wide.u16    s4, a4, a4;\n\t"
+      "add.cc.u32      %0, %0, s0;\n\t"
+      "addc.cc.u32     %1, %1, s1;\n\t"
+      "addc.cc.u32     %2, %2, s2;\n\t"
+      "addc.cc.u32     %3, %3, s3;\n\t"
+      "addc.u32        %4, %4, s4;\n\t"
+
+      "}"
+      : "=r"(res->d0), "=r"(res->d1), "=r"(res->d2), "=r"(res->d3), "=r"(res->d4)
+      : "r"(a.d0), "r"(a.d1), "r"(a.d2));
+#elif (__CUDA_ARCH__ >= FERMI) && (CUDART_VERSION >= 4010) /* multiply-add with carry is not available on CC 1.x devices and before CUDA 4.1 */
+  asm("{\n\t"
+>>>>>>> 050f0a7 (0.24.0 squashed commit)
       ".reg .u32 a2;\n\t"
 
       "mul.lo.u32     %0, %5, %5;\n\t"     /* (a.d0 * a.d0).lo */

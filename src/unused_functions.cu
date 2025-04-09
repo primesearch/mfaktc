@@ -85,10 +85,40 @@ __device__ static void mul_96(int96 *res, int96 a, int96 b)
 }
 
 
+//__device__ static void mul_96_192(int192 *res, int96 a, int96 b)
+/* res = a * b */
+/*{
+  res->d0 = __umul32  (a.d0, b.d0);
+  res->d1 = __umul32hi(a.d0, b.d0);
+  res->d2 = __umul32  (a.d2, b.d0);
+  res->d3 = __umul32hi(a.d2, b.d0);
+  
+  res->d1 = __add_cc (res->d1, __umul32  (a.d1, b.d0));
+  res->d2 = __addc_cc(res->d2, __umul32hi(a.d1, b.d0));
+  res->d3 = __addc_cc(res->d3, __umul32  (a.d2, b.d1));
+  res->d4 = __addc   (      0,                      0);
+  
+  res->d1 = __add_cc (res->d1, __umul32  (a.d0, b.d1));
+  res->d2 = __addc_cc(res->d2, __umul32hi(a.d0, b.d1));
+  res->d3 = __addc_cc(res->d3, __umul32  (a.d1, b.d2));
+  res->d4 = __addc_cc(res->d4, __umul32hi(a.d1, b.d2));  
+  res->d5 = __addc   (      0,                      0);
+
+  res->d2 = __add_cc (res->d2, __umul32  (a.d0, b.d2));
+  res->d3 = __addc_cc(res->d3, __umul32hi(a.d0, b.d2));
+  res->d4 = __addc_cc(res->d4, __umul32  (a.d2, b.d2));
+  res->d5 = __addc   (res->d5, __umul32hi(a.d2, b.d2));
+
+  res->d2 = __add_cc (res->d2, __umul32  (a.d1, b.d1));
+  res->d3 = __addc_cc(res->d3, __umul32hi(a.d1, b.d1));
+  res->d4 = __addc_cc(res->d4, __umul32hi(a.d2, b.d1));
+  res->d5 = __addc   (res->d5,                      0);
+}*/
+
+
 __device__ static void mad_96(int96 *res, int96 a, int96 b, int96 c)
 /* res = a * b + c (only lower 96 bits of the result) */
 {
-#if (__CUDA_ARCH__ >= FERMI) && (CUDART_VERSION >= 4010) /* multiply-add with carry is not available on CC 1.x devices and before CUDA 4.1 */
   asm("{\n\t"
       "mad.lo.cc.u32  %0, %3, %6, %9;\n\t"   /* (a.d0 * b.d0).lo + c.d0 */
       "madc.hi.cc.u32 %1, %3, %6, %10;\n\t"  /* (a.d0 * b.d0).hi + c.d1 */
@@ -106,21 +136,6 @@ __device__ static void mad_96(int96 *res, int96 a, int96 b, int96 c)
       "}"
       : "=r" (res->d0), "=r" (res->d1), "=r" (res->d2)
       : "r" (a.d0), "r" (a.d1), "r" (a.d2), "r" (b.d0), "r" (b.d1), "r" (b.d2), "r" (c.d0), "r" (c.d1), "r" (c.d2));
-#else
-  res->d0 = __add_cc (__umul32  (a.d0, b.d0), c.d0);
-  res->d1 = __addc_cc(__umul32hi(a.d0, b.d0), __umul32  (a.d1, b.d0));
-  res->d2 = __addc   (__umul32  (a.d2, b.d0), __umul32hi(a.d1, b.d0));
-
-  res->d1 = __add_cc (res->d1,                c.d1);
-  res->d2 = __addc   (res->d2,                c.d2);
-  
-  res->d1 = __add_cc (res->d1,                __umul32  (a.d0, b.d1));
-  res->d2 = __addc   (res->d2,                __umul32hi(a.d0, b.d1));
-
-  res->d2+= __umul32  (a.d0, b.d2);
-
-  res->d2+= __umul32  (a.d1, b.d1);
-#endif
 }
 
 
@@ -141,39 +156,18 @@ __device__ static int cmp_96(int96 a, int96 b)
 
 
 /* If no bit is set, CC 2.x returns 32, CC 1.x returns 31
-Using trippel underscore because __clz() is used by CUDA toolkit */
+Using triple underscore because __clz() is used by CUDA toolkit */
 __device__ static unsigned int ___clz (unsigned int a)
 {
-#if (__CUDA_ARCH__ >= FERMI) /* clz (count leading zeroes) is not available on CC 1.x devices */
 	unsigned int r;
 	asm("clz.b32 %0, %1;" : "=r" (r) : "r" (a));
 	return r;
-#else
-	unsigned int r = 0;
-	if ((a & 0xFFFF0000) == 0) r = 16, a <<= 16;
-	if ((a & 0xFF000000) == 0) r += 8, a <<= 8;
-	if ((a & 0xF0000000) == 0) r += 4, a <<= 4;
-	if ((a & 0xC0000000) == 0) r += 2, a <<= 2;
-	if ((a & 0x80000000) == 0) r += 1;
-	return r;
-#endif
 }
 
 
 __device__ static unsigned int __popcnt (unsigned int a)
 {
-#if (__CUDA_ARCH__ >= FERMI) /* popc (population count) is not available on CC 1.x devices */
 	unsigned int r;
 	asm("popc.b32 %0, %1;" : "=r" (r) : "r" (a));
 	return r;
-#else
-	a = (a&0x55555555) + ((a>> 1)&0x55555555);  // Generate sixteen 2-bit sums
-	a = (a&0x33333333) + ((a>> 2)&0x33333333);  // Generate eight 3-bit sums
-	a = (a&0x07070707) + ((a>> 4)&0x07070707);  // Generate four 4-bit sums
-	a = (a&0x000F000F) + ((a>> 8)&0x000F000F);  // Generate two 5-bit sums
-	a = (a&0x0000001F) + ((a>>16)&0x0000001F);  // Generate one 6-bit sum
-	return a;
-#endif
 }
-
-

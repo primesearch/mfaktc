@@ -1,6 +1,6 @@
 /*
 This file is part of mfaktc.
-Copyright (C) 2009, 2010, 2011, 2012, 2014  Oliver Weihe (o.weihe@t-online.de)
+Copyright (C) 2009, 2010, 2011, 2012, 2014, 2015  Oliver Weihe (o.weihe@t-online.de)
 
 mfaktc is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -90,7 +90,6 @@ Input assumptions:
 
 // nn = n * qi
   nn.d2 =                                 __umul32(n.d0, qi);
-#if (__CUDA_ARCH__ >= KEPLER) && (CUDART_VERSION >= 4010) /* multiply-add with carry is not available on CC 1.x devices and before CUDA 4.1 */
   nn.d3 = __umad32hi_cc       (n.d0, qi,  __umul32(n.d1, qi));
   #ifndef INV_160_96
   nn.d4 = __umad32hic_cc      (n.d1, qi,  __umul32(n.d2, qi));
@@ -98,15 +97,6 @@ Input assumptions:
   #else
   nn.d4 = __umad32hic         (n.d1, qi,  __umul32(n.d2, qi));
   #endif
-#else
-  nn.d3 = __add_cc (__umul32hi(n.d0, qi), __umul32(n.d1, qi));
-  #ifndef INV_160_96
-  nn.d4 = __addc_cc(__umul32hi(n.d1, qi), __umul32(n.d2, qi));
-  nn.d5 = __addc   (__umul32hi(n.d2, qi),                  0);
-  #else
-  nn.d4 = __addc   (__umul32hi(n.d1, qi), __umul32(n.d2, qi));
-  #endif
-#endif
 
 //  q = q - nn
   q.d2 = __sub_cc (q.d2, nn.d2);
@@ -320,11 +310,9 @@ one. Sometimes the result is a little bit bigger than n
   }
   if(cmp_ge_96(tmp96,n))
   {
-  #if defined USE_DEVICE_PRINTF && __CUDA_ARCH__ >= FERMI
     printf("EEEEEK, final value of tmp96 is too big\n");
     printf("  tmp96 = 0x %08x %08x %08x\n", tmp96.d2, tmp96.d1, tmp96.d0);
     printf("  n =     0x %08x %08x %08x\n", n.d2, n.d1, n.d0);
-  #endif
   }
 #endif
 }

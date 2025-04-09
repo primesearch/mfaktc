@@ -1,3 +1,9 @@
+
+version 0.24
+==============================
+- merge 0.22 and 0.23 together
+- add JSON CRC-32 checksum to json output
+
 version 0.23.3
 ==============================
 bug fixes:

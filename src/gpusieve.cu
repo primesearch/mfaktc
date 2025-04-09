@@ -14,7 +14,7 @@ additions public too, so that others may benefit from your work.
 
 #include <stdio.h>
 #include <cuda.h>
-#include <cuda_runtime.h>  
+#include <cuda_runtime.h>
 
 #include "params.h"
 #include "my_types.h"
@@ -25,10 +25,6 @@ additions public too, so that others may benefit from your work.
 #undef NVCC_EXTERN
 
 #undef RAW_GPU_BENCH // FIXME
-
-#if (__CUDA_ARCH__ < FERMI) /* printf is not available on CC 1.x devices */
-#undef GWDEBUG
-#endif
 
 typedef unsigned char uint8;
 typedef unsigned short uint16;
@@ -109,6 +105,7 @@ inline void __checkCudaErrors(cudaError err, const char *file, const int line )
 // would change the gen_pinv macro to not add one.
 
 // NOTE: This routine has a number of failure cases (samples below) which don't affect us, but should be investigated someday!
+// OW 2016: see mod_p_above64k() below.
 //	x mod p out of range!! x = 113175, p = 113177, pinv = 37950, r = -2
 //	x mod p out of range!! x = 126009, p = 126011, pinv = 34085, r = -2
 //	x mod p out of range!! x = 121506, p = 121507, pinv = 35348, r = -1
@@ -151,7 +148,41 @@ __device__ __inline static int mod_p (int x, int p, int pinv)
 	if (r < 0 || r >= p)
 		printf ("x mod p out of range!! x = %d, p = %d, pinv = %d, r = %d\n", x, p, pinv, r);
 #endif
+	if (r < 0 || r >= p)
+		printf ("x mod p out of range!! x = %d, p = %d, pinv = %d, r = %d\n", x, p, pinv, r);
+	return r;
+}
 
+
+__device__ __inline static int mod_p_above64k (int x, int p, int pinv)
+{
+//	int	q, r, a, b;
+
+//	q = __mulhi (x, pinv);		// quotient = x * inverse_of_p
+//	a = x - q * p;			// x mod p (but may be too large by one p)
+//	b = a - p;			// x mod p (the alternative return value)
+//	asm("slct.s32.s32 %0, %1, %2, %3;" : "=r" (r) : "r" (b) , "r" (a) , "r" (b));
+
+// CUDA compiler generated crappy PTX code for the statements above.  I replaced them with my own PTX code.
+// Even the code below generates a needless copying of x.
+
+	int	r;
+	asm ("mul.hi.s32 %0, %1, %2;\n\t"		//	r = __mulhi (x, pinv);
+	     "slct.s32.s32 %0, 0, %0, %0;\n\t"		//	r = min(0, r);	// correction for 2^16 < p < 2^17 (see above mod_p())
+	     "mul.lo.s32 %0, %0, %3;\n\t"		//	r = r * p;
+	     "sub.s32 	%1, %1, %0;\n\t"		//	x = x - r;
+	     "sub.s32 	%0, %1, %3;\n\t"		//	r = x - p;
+	     "slct.s32.s32 %0, %0, %1, %0;"		//	r = (r >= 0) ? r : x
+	     : "=r" (r), "+r" (x) : "r" (pinv), "r" (p));
+
+#ifdef GWDEBUG
+	if (pinv != gen_pinv (p))
+		printf ("p doesn't match pinv!! p = %d, pinv = %d\n", p, pinv);
+	if (r < 0 || r >= p)
+		printf ("x mod p out of range!! x = %d, p = %d, pinv = %d, r = %d\n", x, p, pinv, r);
+#endif
+	if (r < 0 || r >= p)
+		printf ("x mod p (above64k) out of range!! x = %d, p = %d, pinv = %d, r = %d\n", x, p, pinv, r);
 	return r;
 }
 
@@ -893,7 +924,7 @@ __global__ static void __launch_bounds__(256,6) SegSieve (uint8 *big_bit_array_d
 		p2 = pinfo32[threadsPerBlock * 2 + threadIdx.x];
 		validate_bclr (bclr2, p2);
 
-		bclr2 = mod_p (bclr2 - block_start, p2, pinv2);
+		bclr2 = mod_p_above64k (bclr2 - block_start, p2, pinv2);
 
 		// Clear (rarely) 0, 1 or (rarely) 2 bits (bug: assumes block_size = 64K)
 		if (bclr2 < block_size) {
@@ -907,7 +938,7 @@ __global__ static void __launch_bounds__(256,6) SegSieve (uint8 *big_bit_array_d
 		p = pinfo32[threadsPerBlock * 5 + threadIdx.x];
 		validate_bclr (bclr, p);
 
-		bclr = mod_p (bclr - block_start, p, pinv);
+		bclr = mod_p_above64k (bclr - block_start, p, pinv);
 
 		// Clear (rarely) 0, 1 or (rarely) 2 bits (bug: assumes block_size = 64K)
 		if (bclr < block_size) bitOr (locsieve, bclr);
@@ -939,9 +970,9 @@ __global__ static void __launch_bounds__(256,6) SegSieve (uint8 *big_bit_array_d
 		validate_bclr (bclr2, p2);
 		validate_bclr (bclr, p);
 
-		bclr3 = mod_p (bclr3 - block_start, p3, pinv3);
-		bclr2 = mod_p (bclr2 - block_start, p2, pinv2);
-		bclr = mod_p (bclr - block_start, p, pinv);
+		bclr3 = mod_p_above64k (bclr3 - block_start, p3, pinv3);
+		bclr2 = mod_p_above64k (bclr2 - block_start, p2, pinv2);
+		bclr = mod_p_above64k (bclr - block_start, p, pinv);
 
 		// Optionally clear bit (bug: assumes block_size <= 64K)
 		if (bclr3 < block_size) bitOr (locsieve, bclr3);
@@ -1184,14 +1215,12 @@ __global__ static void __launch_bounds__(256,6) CalcBitToClear (uint32 exponent,
 	factor_mod_p = (2 * k_mod_p * exponent + 1) % prime;
 	bit_to_clear = ((uint64) prime - factor_mod_p) * modinv % prime;
 
-#if (__CUDA_ARCH__ >= FERMI) /* printf is not available on CC 1.x devices */
 //k_base.d0 = __add_cc (k_base.d0, __umul32  (bit_to_clear, NUM_CLASSES));
 //k_base.d1 = __addc   (k_base.d1, __umul32hi(bit_to_clear, NUM_CLASSES));	/* k is limited to 2^64 -1 so there is no need for k.d2 */
 //k_mod_p = (((uint64) k_base.d1 << 32) + k_base.d0) % prime;
 //factor_mod_p = (2 * k_mod_p * exponent + 1) % prime;
 //if (factor_mod_p != 0)
 //printf ("FAIL!: %d, %d, %d\n", index, prime, bit_to_clear);
-#endif
 
 // Handle the primes that are processed with special code.  That is, they are not part of an official "row" in pinfo_dev.
 // For these primes we store bit-to-clear in a 16-bit word.
@@ -1270,8 +1299,11 @@ static	int	gpusieve_initialized = 0;
 	if (gpusieve_initialized) return;
 	gpusieve_initialized = 1;
 
-	// Prefer 48KB shared memory
-	cudaThreadSetCacheConfig(cudaFuncCachePreferShared);
+	// Prefer shared memory over L1 cache
+	if(cudaDeviceSetCacheConfig(cudaFuncCachePreferShared) != cudaSuccess)
+	{
+	  printf("WARNING: cudaDeviceSetCacheConfig(cudaFuncCachePreferShared); failed!\n");
+	}
 
 	// Allocate the big sieve array (default is 128M bits)
 	checkCudaErrors (cudaMalloc ((void**) &mystuff->d_bitarray, mystuff->gpu_sieve_size / 8));
@@ -1597,7 +1629,7 @@ static uint32	last_exponent_initialized = 0;
 
 	// Calculate the modular inverses that will be used by each class to calculate initial bit-to-clear for each prime
 	CalcModularInverses<<<primes_per_thread+1, threadsPerBlock>>>(mystuff->exponent, (int *)mystuff->d_calc_bit_to_clear_info);
-	cudaThreadSynchronize ();
+	cudaDeviceSynchronize ();
 }
 
 
@@ -1619,7 +1651,7 @@ void gpusieve_init_class (mystuff_t *mystuff, unsigned long long k_min)
 
 	// Calculate the initial bit-to-clear for each prime
 	CalcBitToClear<<<primes_per_thread+1, threadsPerBlock>>>(mystuff->exponent, k_base, (int *)mystuff->d_calc_bit_to_clear_info, (uint8 *)mystuff->d_sieve_info);
-	cudaThreadSynchronize ();
+	cudaDeviceSynchronize ();
 }
 
 
@@ -1643,6 +1675,6 @@ void gpusieve (mystuff_t *mystuff, unsigned long long num_k_remaining)
 
 	// Do some sieving on the GPU!
 	SegSieve<<<(sieve_size + block_size - 1) / block_size, threadsPerBlock>>>((uint8 *)mystuff->d_bitarray, (uint8 *)mystuff->d_sieve_info, primes_per_thread);
-	cudaThreadSynchronize ();
+	cudaDeviceSynchronize ();
 }
 

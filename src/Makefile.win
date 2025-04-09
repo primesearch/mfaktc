@@ -25,13 +25,16 @@ LINK = link
 LFLAGS = /nologo
 
 CSRC  = sieve.c timer.c parse.c read_config.c mfaktc.c checkpoint.c \
-	signal_handler.c output.c
-CUSRC = tf_72bit.cu tf_96bit.cu tf_barrett96.cu tf_barrett96_gs.cu gpusieve.cu
+	signal_handler.c output.c crc.c
+CUSRC = tf_96bit.cu tf_barrett96.cu tf_barrett96_gs.cu gpusieve.cu \
+        cuda_basic_stuff.cu
 
 CUOBJS = $(CUSRC:.cu=.obj) tf_75bit.obj
 COBJS  = $(CSRC:.c=.obj)
 
 LIBS = "$(CUDA_PATH)\lib\x64\cudart_static.lib"
+
+INSTALL = copy
 
 INSTALL = copy
 

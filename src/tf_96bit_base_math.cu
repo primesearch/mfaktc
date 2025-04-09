@@ -376,12 +376,8 @@ __device__ static void square_96_192(int192 *res, int96 a)
 /* res = a^2
 assuming that a is < 2^95 (a.d2 < 2^31)! */
 {
-<<<<<<< HEAD
-#if (__CUDA_ARCH__ >= FERMI) && (CUDART_VERSION >= 4010) /* multiply-add with carry is not available on CC 1.x devices and before CUDA 4.1 */
-  asm volatile("{\n\t"
-=======
 #if (__CUDA_ARCH__ >= COMPUTE_CAPABILITY_PASCAL) && (__CUDA_ARCH__ < VOLTA)
-  asm("{\n\t"
+  asm volatile("{\n\t"
       ".reg .u16 a0, a1, a2, a3, a4, a5;\n\t" /* 16 bits of input each, FIXME: a5 not needed */
       ".reg .u32 s0, s1, s2, s3, s4, s5;\n\t"
       ".reg .u32 t0, t1, t2, t3, t4, t5;\n\t"
@@ -480,7 +476,6 @@ assuming that a is < 2^95 (a.d2 < 2^31)! */
       : "r" (a.d0), "r" (a.d1), "r" (a.d2));
 #elif (__CUDA_ARCH__ >= FERMI) && (CUDART_VERSION >= 4010) /* multiply-add with carry is not available on CC 1.x devices and before CUDA 4.1 */
   asm("{\n\t"
->>>>>>> 050f0a7 (0.24.0 squashed commit)
       ".reg .u32 a2;\n\t"
 
       "mul.lo.u32      %0, %6, %6;\n\t"       /* (a.d0 * a.d0).lo */
@@ -561,12 +556,8 @@ this is a stripped down version of square_96_192, it doesn't compute res.d5
 and is a little bit faster.
 For correct results a must be less than 2^80 (a.d2 less than 2^16) */
 {
-<<<<<<< HEAD
-#if (__CUDA_ARCH__ >= FERMI) && (CUDART_VERSION >= 4010) /* multiply-add with carry is not available on CC 1.x devices and before CUDA 4.1 */
-  asm volatile("{\n\t"
-=======
 #if (__CUDA_ARCH__ >= COMPUTE_CAPABILITY_PASCAL) && (__CUDA_ARCH__ < VOLTA)
-  asm("{\n\t"
+  asm volatile("{\n\t"
       ".reg .u16 a0, a1, a2, a3, a4, a5;\n\t" /* 16 bits of input each, FIXME: a5 not needed */
       ".reg .u32 s0, s1, s2, s3, s4;\n\t"
       ".reg .u32 t0, t1, t2, t3, t4;\n\t"
@@ -697,8 +688,7 @@ For correct results a must be less than 2^80 (a.d2 less than 2^16) */
       : "=r"(res->d0), "=r"(res->d1), "=r"(res->d2), "=r"(res->d3), "=r"(res->d4)
       : "r"(a.d0), "r"(a.d1), "r"(a.d2));
 #elif (__CUDA_ARCH__ >= FERMI) && (CUDART_VERSION >= 4010) /* multiply-add with carry is not available on CC 1.x devices and before CUDA 4.1 */
-  asm("{\n\t"
->>>>>>> 050f0a7 (0.24.0 squashed commit)
+  asm volatile("{\n\t"
       ".reg .u32 a2;\n\t"
 
       "mul.lo.u32     %0, %5, %5;\n\t"     /* (a.d0 * a.d0).lo */

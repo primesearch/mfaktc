@@ -36,8 +36,6 @@ LIBS = "$(CUDA_PATH)\lib\x64\cudart_static.lib"
 
 INSTALL = copy
 
-INSTALL = copy
-
 ############################################################################################################
 
 all : ..\mfaktc-win-64.exe ..\mfaktc.ini

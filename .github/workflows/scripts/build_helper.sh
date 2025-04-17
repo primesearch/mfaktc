@@ -107,7 +107,8 @@ fi
 NVCC_VER="$(nvcc --version | tail -n1 | sed -E 's/^Build //')"
 
 # Version from src/params.h
-MFAKTC_VER="$(grep -Eo '#define MFAKTC_VERSION "([0-9]\.[0-9]+\.[-0-9a-z]+)"' src/params.h | cut -d '"' -f 2)"
+# Match semver: https://semver.org/#is-there-a-suggested-regular-expression-regex-to-check-a-semver-string
+MFAKTC_VER="$(LC_ALL=en_US.utf8 grep -iPo '#define[\s\t]+MFAKTC_VERSION[\s\t]+"v?\d+(?:\.\d+(?:\.\d+)?(?:-\d+)?|\b)(?:-?(?:alpha|beta|pre)\.?(?:\d+)?\b)?' src/params.h | cut -d '"' -f 2)"
 
 # Git-formatted version
 GIT_TAG_VER="$(git describe --tags)"

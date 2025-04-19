@@ -1,6 +1,6 @@
 /*
 This file is part of mfaktc.
-Copyright (C) 2009, 2010, 2011, 2012, 2013  Oliver Weihe (o.weihe@t-online.de)
+Copyright (C) 2009, 2010, 2011, 2012, 2013, 2015  Oliver Weihe (o.weihe@t-online.de)
 
 mfaktc is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -96,9 +96,6 @@ __device__ static void create_FC96_mad(int96 *f, unsigned int exp, int96 k, unsi
 /* similar to create_FC96(), this versions uses multiply-add with carry which
 is faster for _SOME_ kernels. */
 {
-#if (__CUDA_ARCH__ < FERMI) || (CUDART_VERSION < 4010) /* multiply-add with carry is not available on CC 1.x devices and before CUDA 4.1 */
-  create_FC96(f, exp, k, k_offset);
-#else
   int96 exp96;
 
   exp96.d1 = exp >> 31;
@@ -117,7 +114,6 @@ is faster for _SOME_ kernels. */
     f->d1 = __add_cc(f->d1, k.d0);
     f->d2 = __addc  (f->d2, k.d1);  
   }							// f = 2 * k * exp + 1
-#endif
 }
 
 
@@ -140,6 +136,7 @@ assumes q < Xn where X is a small integer
   qf = qf * 4294967296.0f + __uint2float_rn(q.d1);
 
   qi=__float2uint_rz(qf*nf);
+  trace_96_32(__FILE__, __LINE__, n, "qi", qi);
 
 #ifdef DEBUG_GPU_MATH
 /* Barrett based kernels are made for factor candidates above 2^64,
@@ -165,29 +162,25 @@ are "out of range".
   if(n.d2 >= (1 << bit_min64) && n.d2 < (1 << bit_max64))
   {
     MODBASECASE_QI_ERROR(limit, 100, qi, 12);
-  #if defined USE_DEVICE_PRINTF && __CUDA_ARCH__ >= FERMI
+
     if(qi > limit)
     {
       printf("n = 0x %08X %08X %08X\n", n.d2, n.d1, n.d0);
       printf("bit_min = %d (%08X)\n", bit_min64, 1<<bit_min64);
     }
-  #endif
   }
 #endif
 
-#if (__CUDA_ARCH__ >= FERMI) && (CUDART_VERSION >= 4010) /* multiply-add with carry is not available on CC 1.x devices and before CUDA 4.1 */
   nn.d0 =                          __umul32(n.d0, qi);
   nn.d1 = __umad32hi_cc (n.d0, qi, __umul32(n.d1, qi));
   nn.d2 = __umad32hic   (n.d1, qi, __umul32(n.d2, qi));
-#else
-  nn.d0 =                                 __umul32(n.d0, qi);
-  nn.d1 = __add_cc (__umul32hi(n.d0, qi), __umul32(n.d1, qi));
-  nn.d2 = __addc   (__umul32hi(n.d1, qi), __umul32(n.d2, qi));
-#endif
+  trace_96_96(__FILE__, __LINE__, n, "nn", nn);
+  if(n.d0 == 0)printf("0x %08X %08X %08X\n", nn.d2, nn.d1, nn.d0);
 
   res->d0 = __sub_cc (q.d0, nn.d0);
   res->d1 = __subc_cc(q.d1, nn.d1);
   res->d2 = __subc   (q.d2, nn.d2);
+// FIXME  trace_96_96(__FILE__, __LINE__, n, "res", res);
 
 // perfect refinement not needed, barrett's modular reduction can handle numbers which are a little bit "too big".
 /*  if(cmp_ge_96(*res,n))
@@ -216,6 +209,7 @@ q must be less than 100n!
 #ifdef WAGSTAFF
   qi++; /* cause in underflow in subtraction so we can check for (-1) instead of (q - 1) */
 #endif
+  trace_96_32(__FILE__, __LINE__, n, "qi", qi);
 /* at this point the quotient still is sometimes to small (the error is 1 in this case)
 --> final res odd and qi correct: n might be a factor
     final res odd and qi too small: n can't be a factor (because the correct res is even)
@@ -226,6 +220,7 @@ so we compare the LSB of qi and q.d0, if they are the same (both even or both od
   qi += ((~qi) ^ q.d0) & 1;
  
   nn.d0 = __umul32(n.d0, qi);
+  trace_96_32(__FILE__, __LINE__, n, "nn.d0", nn.d0);
 
 #ifdef WAGSTAFF
   if((q.d0 - nn.d0) == 0xFFFFFFFF) /* is the lowest word of the result -1 (only in this case n might be a factor) */
@@ -233,18 +228,15 @@ so we compare the LSB of qi and q.d0, if they are the same (both even or both od
   if((q.d0 - nn.d0) == 1) /* is the lowest word of the result 1 (only in this case n might be a factor) */
 #endif
   {
-#if (__CUDA_ARCH__ >= FERMI) && (CUDART_VERSION >= 4010) /* multiply-add with carry is not available on CC 1.x devices and before CUDA 4.1 */
     nn.d1 = __umad32hi_cc (n.d0, qi, __umul32(n.d1, qi));
     nn.d2 = __umad32hic   (n.d1, qi, __umul32(n.d2, qi));
-#else
-    nn.d1 = __add_cc (__umul32hi(n.d0, qi), __umul32(n.d1, qi));
-    nn.d2 = __addc   (__umul32hi(n.d1, qi), __umul32(n.d2, qi));
-#endif
+    trace_96_96(__FILE__, __LINE__, n, "nn", nn);
 
 #ifdef WAGSTAFF
     res  = __sub_cc (q.d0, nn.d0);
     res &= __subc_cc(q.d1, nn.d1);
     res &= __subc   (q.d2, nn.d2);
+    trace_96_32(__FILE__, __LINE__, n, "res", res);
     
     if(res == 0xFFFFFFFF)
 #else /* Mersennes */
@@ -253,6 +245,17 @@ so we compare the LSB of qi and q.d0, if they are the same (both even or both od
 //           __sub_cc (q.d0, nn.d0); /* the compiler (release 5.0, V0.2.1221) doesn't want to execute this so we need the TWO lines above... */
     res |= __subc_cc(q.d1, nn.d1);
     res |= __subc   (q.d2, nn.d2);
+/*    asm("{\n\t"
+        ".reg .u32 t;\n\t"
+        
+        "sub.cc.u32     t, %1, %4;\n\t" // 32bit results not needed (checked above) but we need the carry!
+        "subc.cc.u32    t, %2, %5;\n\t"
+        "subc.u32      %0, %3, %6;\n\t"
+        "or.b32        %0, %0,  t;\n\t"
+        "}"
+        : "=r" (res)
+        : "r" (q.d0), "r" (q.d1), "r" (q.d2), "r" (nn.d0), "r" (nn.d1), "r" (nn.d2));*/
+    trace_96_32(__FILE__, __LINE__, n, "res", res);
 
     if(res == 0)
 #endif

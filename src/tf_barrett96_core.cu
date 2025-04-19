@@ -1,6 +1,6 @@
 /*
 This file is part of mfaktc.
-Copyright (C) 2009, 2010, 2011, 2012, 2013  Oliver Weihe (o.weihe@t-online.de)
+Copyright (C) 2009, 2010, 2011, 2012, 2013, 2015  Oliver Weihe (o.weihe@t-online.de)
 
 mfaktc is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -42,6 +42,7 @@ __device__ static void test_FC96_barrett92(int96 f, int192 b, unsigned int shift
   int96 tmp96;
   float ff;
 
+  trace_96_textmsg(__FILE__, __LINE__, f, "--- barrett92 start ---");
 /*
 ff = f as float, needed in mod_192_96().
 Precalculated here since it is the same for all steps in the following loop */
@@ -57,28 +58,34 @@ Precalculated here since it is the same for all steps in the following loop */
 #else
   div_192_96(&u,tmp192,f,ff,modbasecase_debug);		// u = floor(2^(95 + bits_in_f) / f), giving 96 bits of precision
 #endif
+  trace_96_96(__FILE__, __LINE__, f, "u", u);
 
   a.d0 = __fshift_r(b.d2, b.d3, bit_max64 - 1);		// a = floor(b / 2 ^ (bits_in_f - 1))
   a.d1 = __fshift_r(b.d3, b.d4, bit_max64 - 1);
   a.d2 = __fshift_r(b.d4, b.d5, bit_max64 - 1);
+  trace_96_96(__FILE__, __LINE__, f, "a", a);
 
   mul_96_192_no_low3(&tmp192, a, u);			// tmp192 = (b / 2 ^ (bits_in_f - 1)) * (2 ^ (95 + bits_in_f) / f)     (ignore the floor functions for now)
 
   a.d0 = tmp192.d3;					// a = tmp192 / 2^96, which if we do the math simplifies to the quotient: b / f
   a.d1 = tmp192.d4;
   a.d2 = tmp192.d5;
+  trace_96_96(__FILE__, __LINE__, f, "a", a);
 
   mul_96(&tmp96, a, f);					// tmp96 = quotient * f, we only compute the low 96-bits here
+  trace_96_96(__FILE__, __LINE__, f, "tmp96", tmp96);
 
   tmp96.d0 = __sub_cc (b.d0, tmp96.d0);			// Compute the remainder
   tmp96.d1 = __subc_cc(b.d1, tmp96.d1);			// we do not need the upper digits of b and tmp96 because the result is 0 after subtraction!
   tmp96.d2 = __subc   (b.d2, tmp96.d2);
+  trace_96_96(__FILE__, __LINE__, f, "a", a);
 
 #ifdef CPU_SIEVE
   shifter<<= 32 - shiftcount;
 #endif
   while(shifter)
   {
+    trace_96_textmsg(__FILE__, __LINE__, f, "--- main loop start ---");
 #ifndef DEBUG_GPU_MATH
     mod_simple_96(&a, tmp96, f, ff);			// Adjustment.  The code above/below may produce an a that is too large by up to 11 times f.
 #else
@@ -90,16 +97,19 @@ Precalculated here since it is the same for all steps in the following loop */
 							// On input a is at most 93 bits (see mod_simple_96 above)
 
     square_96_192(&b, a);				// b = a^2, b is at most 186 bits
+    trace_96_192(__FILE__, __LINE__, f, "b", b);
 
     a.d0 = __fshift_r(b.d2, b.d3, bit_max64 - 1);	// a = b / (2 ^ (bits_in_f - 1)), a is at most 95 bits
     a.d1 = __fshift_r(b.d3, b.d4, bit_max64 - 1);
     a.d2 = __fshift_r(b.d4, b.d5, bit_max64 - 1);
+    trace_96_96(__FILE__, __LINE__, f, "a", a);
 
     mul_96_192_no_low3(&tmp192, a, u);			// tmp192 = (b / 2 ^ (bits_in_f - 1)) * (2 ^ (95 + bits_in_f) / f)     (ignore the floor functions for now)
 
     a.d0 = tmp192.d3;					// a = tmp192 / 2^96, which if we do the math simplifies to the quotient: b / f
     a.d1 = tmp192.d4;
     a.d2 = tmp192.d5;
+    trace_96_96(__FILE__, __LINE__, f, "a", a);
 							// The quotient is off by at most 6.  A full mul_96_192 would add 5 partial results
 							// into tmp192.d2 which could have generated 4 carries into tmp192.d3.
 							// Also, since u was generated with the floor function, it could be low by up to
@@ -110,10 +120,12 @@ Precalculated here since it is the same for all steps in the following loop */
 							// A grand total of up to 6 carries lost.
 
     mul_96(&tmp96, a, f);				// tmp96 = quotient * f, we only compute the low 96-bits here
+    trace_96_96(__FILE__, __LINE__, f, "tmp96", tmp96);
 
     tmp96.d0 = __sub_cc (b.d0, tmp96.d0);		// Compute the remainder
     tmp96.d1 = __subc_cc(b.d1, tmp96.d1);		// we do not need the upper digits of b and tmp96 because the result is 0 after subtraction!
     tmp96.d2 = __subc   (b.d2, tmp96.d2);
+    trace_96_96(__FILE__, __LINE__, f, "a", a);
 							// Since the quotient was up to 6 too small, the remainder has a maximum value of 7*f,
 							// or 92 bits + log2 (7) bits, which is 94.807 bits.  In theory, this kernel can handle
 							// f values up to 2^92.193.
@@ -152,6 +164,7 @@ __device__ static void test_FC96_barrett88(int96 f, int192 b, unsigned int shift
   int96 tmp96;
   float ff;
   
+  trace_96_textmsg(__FILE__, __LINE__, f, "--- barrett88 start ---");
 /*
 ff = f as float, needed in mod_192_96().
 Precalculated here since it is the same for all steps in the following loop */
@@ -167,43 +180,52 @@ Precalculated here since it is the same for all steps in the following loop */
 #else
   div_192_96(&u,tmp192,f,ff,modbasecase_debug);		// u = floor(2^(95 + bits_in_f) / f), giving 96 bits of precision
 #endif
-
+  trace_96_96(__FILE__, __LINE__, f, "u", u);
+  
   a.d0 = __fshift_r(b.d2, b.d3, bit_max64 - 1);		// a = floor(b / 2 ^ (bits_in_f - 1))
   a.d1 = __fshift_r(b.d3, b.d4, bit_max64 - 1);
   a.d2 = __fshift_r(b.d4, b.d5, bit_max64 - 1);
+  trace_96_96(__FILE__, __LINE__, f, "a", a);
 
   mul_96_192_no_low3(&tmp192, a, u);			// tmp192 = (b / 2 ^ (bits_in_f - 1)) * (2 ^ (95 + bits_in_f) / f)     (ignore the floor functions for now)
 
   a.d0 = tmp192.d3;					// a = tmp192 / 2^96, which if we do the math simplifies to the quotient: b / f
   a.d1 = tmp192.d4;
   a.d2 = tmp192.d5;
+  trace_96_96(__FILE__, __LINE__, f, "a", a);
 
   mul_96(&tmp96, a, f);					// tmp96 = quotient * f, we only compute the low 96-bits here
+  trace_96_96(__FILE__, __LINE__, f, "tmp96", tmp96);
 
   a.d0 = __sub_cc (b.d0, tmp96.d0);			// Compute the remainder
   a.d1 = __subc_cc(b.d1, tmp96.d1);			// we do not need the upper digits of b and tmp96 because the result is 0 after subtraction!
   a.d2 = __subc   (b.d2, tmp96.d2);
+  trace_96_96(__FILE__, __LINE__, f, "a", a);
 
 #ifdef CPU_SIEVE
   shifter<<= 32 - shiftcount;
 #endif
   while(shifter)
   {
+    trace_96_textmsg(__FILE__, __LINE__, f, "--- main loop start ---");
 							// On input a is at most 90.807 bits (see end of this loop)
 
     square_96_192(&b, a);				// b = a^2, b is at most 181.614 bits
+    trace_96_192(__FILE__, __LINE__, f, "b", b);
 
     if(shifter&0x80000000)shl_192(&b);			// Optional multiply by 2.  At this point b can be 182.614 bits.
 
     a.d0 = __fshift_r(b.d2, b.d3, bit_max64 - 1);	// a = b / (2 ^ (bits_in_f - 1)), a can be 95.614 bits
     a.d1 = __fshift_r(b.d3, b.d4, bit_max64 - 1);
     a.d2 = __fshift_r(b.d4, b.d5, bit_max64 - 1);
+    trace_96_96(__FILE__, __LINE__, f, "a", a);
 
     mul_96_192_no_low3(&tmp192, a, u);			// tmp192 = (b / 2 ^ (bits_in_f - 1)) * (2 ^ (95 + bits_in_f) / f)     (ignore the floor functions for now)
 
     a.d0 = tmp192.d3;					// a = tmp192 / 2^96, which if we do the math simplifies to the quotient: b / f
     a.d1 = tmp192.d4;
     a.d2 = tmp192.d5;
+    trace_96_96(__FILE__, __LINE__, f, "a", a);
 							// The quotient is off by at most 6.  A full mul_96_192 would add 5 partial results
 							// into tmp192.d2 which could have generated 4 carries into tmp192.d3.
 							// Also, since u was generated with the floor function, it could be low by up to
@@ -214,6 +236,7 @@ Precalculated here since it is the same for all steps in the following loop */
 							// A grand total of up to 6 carries lost.
 
     mul_96(&tmp96, a, f);				// tmp96 = quotient * f, we only compute the low 96-bits here
+    trace_96_96(__FILE__, __LINE__, f, "tmp96", tmp96);
 
     a.d0 = __sub_cc (b.d0, tmp96.d0);			// Compute the remainder
     a.d1 = __subc_cc(b.d1, tmp96.d1);			// we do not need the upper digits of b and tmp96 because the result is 0 after subtraction!
@@ -254,6 +277,7 @@ __device__ static void test_FC96_barrett87(int96 f, int192 b, unsigned int shift
   int96 tmp96;
   float ff;
 
+  trace_96_textmsg(__FILE__, __LINE__, f, "--- barrett87 start ---");
 /*
 ff = f as float, needed in mod_192_96().
 Precalculated here since it is the same for all steps in the following loop */
@@ -269,42 +293,51 @@ Precalculated here since it is the same for all steps in the following loop */
 #else
   div_192_96(&u,tmp192,f,ff,modbasecase_debug);		// u = floor(2^(95 + bits_in_f) / f), giving 96 bits of precision
 #endif
+  trace_96_96(__FILE__, __LINE__, f, "u", u);
 
   a.d0 = __fshift_r(b.d2, b.d3, bit_max64 - 1);		// a = floor(b / 2 ^ (bits_in_f - 1))
   a.d1 = __fshift_r(b.d3, b.d4, bit_max64 - 1);
   a.d2 = __fshift_r(b.d4, b.d5, bit_max64 - 1);
+  trace_96_96(__FILE__, __LINE__, f, "a", a);
 
   mul_96_192_no_low3(&tmp192, a, u);			// tmp192 = (b / 2 ^ (bits_in_f - 1)) * (2 ^ (95 + bits_in_f) / f)     (ignore the floor functions for now)
 
   a.d0 = tmp192.d3;					// a = tmp192 / 2^96, which if we do the math simplifies to the quotient: b / f
   a.d1 = tmp192.d4;
   a.d2 = tmp192.d5;
+  trace_96_96(__FILE__, __LINE__, f, "a", a);
 
   mul_96(&tmp96, a, f);					// tmp96 = quotient * f, we only compute the low 96-bits here
+  trace_96_96(__FILE__, __LINE__, f, "tmp96", tmp96);
 
   a.d0 = __sub_cc (b.d0, tmp96.d0);			// Compute the remainder
   a.d1 = __subc_cc(b.d1, tmp96.d1);			// we do not need the upper digits of b and tmp96 because the result is 0 after subtraction!
   a.d2 = __subc   (b.d2, tmp96.d2);
+  trace_96_96(__FILE__, __LINE__, f, "a", a);
 
 #ifdef CPU_SIEVE
   shifter<<= 32 - shiftcount;
 #endif
   while(shifter)
   {
+    trace_96_textmsg(__FILE__, __LINE__, f, "--- main loop start ---");
 							// On input a is at most 90.807 bits (see end of this loop)
 
     square_96_192(&b, a);				// b = a^2, b is at most 181.614 bits
+    trace_96_192(__FILE__, __LINE__, f, "b", b);
 
 
     a.d0 = __fshift_r(b.d2, b.d3, bit_max64 - 1);	// a = b / (2 ^ (bits_in_f - 1)), a is at most 95.614 bits
     a.d1 = __fshift_r(b.d3, b.d4, bit_max64 - 1);
     a.d2 = __fshift_r(b.d4, b.d5, bit_max64 - 1);
+    trace_96_96(__FILE__, __LINE__, f, "a", a);
     
     mul_96_192_no_low3(&tmp192, a, u);			// tmp192 = (b / 2 ^ (bits_in_f - 1)) * (2 ^ (95 + bits_in_f) / f)     (ignore the floor functions for now)
 
     a.d0 = tmp192.d3;					// a = tmp192 / 2^96, which if we do the math simplifies to the quotient: b / f
     a.d1 = tmp192.d4;
     a.d2 = tmp192.d5;
+    trace_96_96(__FILE__, __LINE__, f, "a", a);
 							// The quotient is off by at most 6.  A full mul_96_192 would add 5 partial results
 							// into tmp192.d2 which could have generated 4 carries into tmp192.d3.
 							// Also, since u was generated with the floor function, it could be low by up to
@@ -315,10 +348,12 @@ Precalculated here since it is the same for all steps in the following loop */
 							// A grand total of up to 6 carries lost.
 
     mul_96(&tmp96, a, f);				// tmp96 = quotient * f, we only compute the low 96-bits here
+    trace_96_96(__FILE__, __LINE__, f, "tmp96", tmp96);
 
     a.d0 = __sub_cc (b.d0, tmp96.d0);			// Compute the remainder
     a.d1 = __subc_cc(b.d1, tmp96.d1);			// we do not need the upper digits of b and tmp96 because the result is 0 after subtraction!
     a.d2 = __subc   (b.d2, tmp96.d2);
+    trace_96_96(__FILE__, __LINE__, f, "a", a);
 							// Since the quotient was up to 6 too small, the remainder has a maximum value of 7*f,
 							// or 87 bits + log2 (7) bits, which is 89.807 bits.  In theory, this kernel can handle
 							// f values up to 2^87.193.
@@ -358,6 +393,7 @@ __device__ static void test_FC96_barrett79(int96 f, int192 b, unsigned int shift
   int96 tmp96;
   float ff;
   
+  trace_96_textmsg(__FILE__, __LINE__, f, "--- barrett79 start ---");
 /*
 ff = f as float, needed in mod_160_96().
 Precalculated here since it is the same for all steps in the following loop */
@@ -370,6 +406,7 @@ Precalculated here since it is the same for all steps in the following loop */
 #else
   inv_160_96(&u,f,ff,modbasecase_debug);		// u = floor(2^160 / f)
 #endif
+  trace_96_96(__FILE__, __LINE__, f, "u", u);
 
   a.d0 = b.d2;						// a = floor(b / 2^64)
   a.d1 = b.d3;
@@ -380,23 +417,28 @@ Precalculated here since it is the same for all steps in the following loop */
   a.d0 = tmp192.d3;					// a = tmp192 / 2^96, which if we do the math simplifies to the quotient: b / f
   a.d1 = tmp192.d4;
   a.d2 = tmp192.d5;
+  trace_96_96(__FILE__, __LINE__, f, "a", a);
 
   mul_96(&tmp96, a, f);					// tmp96 = quotient * f, we only compute the low 96-bits here
+  trace_96_96(__FILE__, __LINE__, f, "tmp96", tmp96);
 
   tmp96.d0 = __sub_cc (b.d0, tmp96.d0);			// Compute the remainder
   tmp96.d1 = __subc_cc(b.d1, tmp96.d1);			// we do not need the upper digits of b and tmp96 because the result is 0 after subtraction!
   tmp96.d2 = __subc   (b.d2, tmp96.d2);
+  trace_96_96(__FILE__, __LINE__, f, "tmp96", tmp96);
 
 #ifdef CPU_SIEVE
   shifter<<= 32 - shiftcount;
 #endif
   while(shifter)
   {
+    trace_96_textmsg(__FILE__, __LINE__, f, "--- main loop start ---");
 #ifndef DEBUG_GPU_MATH
     mod_simple_96(&a, tmp96, f, ff);			// Adjustment.  The code above/below may produce an a that is too large by up to 11 times f.
 #else
     mod_simple_96(&a, tmp96, f, ff, 0, 79 - 64, 10, modbasecase_debug);
 #endif
+    trace_96_96(__FILE__, __LINE__, f, "a", a);
 							// Since mod_simple_96 does not do a complete adjustment we need to allow one bit
 							// for that.  Thus, at this point a can be 80 bits.
 
@@ -407,12 +449,14 @@ Precalculated here since it is the same for all steps in the following loop */
     a.d0 = b.d2;					// a = floor (b / 2^64)
     a.d1 = b.d3;
     a.d2 = b.d4;
+    trace_96_96(__FILE__, __LINE__, f, "a", a);
 
     mul_96_192_no_low3(&tmp192, a, u);			// tmp192 = (b / 2^64) * (2 ^ 160 / f)     (ignore the floor functions for now)
 
     a.d0 = tmp192.d3;					// a = tmp192 / 2^96, which if we do the math simplifies to the quotient: b / f
     a.d1 = tmp192.d4;
     a.d2 = tmp192.d5;
+    trace_96_96(__FILE__, __LINE__, f, "a", a);
 							// The quotient is off by at most 5.  A full mul_96_192 would add 5 partial results
 							// into tmp192.d2 which could have generated 4 carries into tmp192.d3.
 							// Also, since u was generated with the floor function, it could be low by up to
@@ -426,10 +470,12 @@ Precalculated here since it is the same for all steps in the following loop */
 							// only generate 1 carry into tmp192.d3 -- for a total of up to 5 carries lost.
 
     mul_96(&tmp96, a, f);				// tmp96 = quotient * f, we only compute the low 96-bits here
+    trace_96_96(__FILE__, __LINE__, f, "tmp96", tmp96);
 
     tmp96.d0 = __sub_cc (b.d0, tmp96.d0);		// Compute the remainder
     tmp96.d1 = __subc_cc(b.d1, tmp96.d1);		// we do not need the upper digits of b and tmp96 because the result is 0 after subtraction!
     tmp96.d2 = __subc   (b.d2, tmp96.d2);
+    trace_96_96(__FILE__, __LINE__, f, "tmp96", tmp96);
 							// Since the quotient was up to 5 too small, the remainder has a maximum value of 6*f,
 							// or 79 bits + log2 (6) bits, which is 81.585 bits.  In theory, this kernel can handle
 							// f values up to 2^79.415.
@@ -467,6 +513,7 @@ __device__ static void test_FC96_barrett77(int96 f, int192 b, unsigned int shift
   int96 tmp96;
   float ff;
   
+  trace_96_textmsg(__FILE__, __LINE__, f, "--- barrett77 start ---");
 /*
 ff = f as float, needed in mod_160_96().
 Precalculated here since it is the same for all steps in the following loop */
@@ -479,6 +526,7 @@ Precalculated here since it is the same for all steps in the following loop */
 #else
   inv_160_96(&u,f,ff,modbasecase_debug);		// u = floor(2^160 / f)
 #endif
+  trace_96_96(__FILE__, __LINE__, f, "u", u);
 
   a.d0 = b.d2;						// a = floor(b / 2^64)
   a.d1 = b.d3;
@@ -489,12 +537,15 @@ Precalculated here since it is the same for all steps in the following loop */
   a.d0 = tmp192.d3;					// a = tmp192 / 2^96, which if we do the math simplifies to the quotient: b / f
   a.d1 = tmp192.d4;
   a.d2 = tmp192.d5;
+  trace_96_96(__FILE__, __LINE__, f, "a", a);
 
   mul_96(&tmp96, a, f);					// tmp96 = quotient * f, we only compute the low 96-bits here
+  trace_96_96(__FILE__, __LINE__, f, "tmp96", tmp96);
 
   a.d0 = __sub_cc (b.d0, tmp96.d0);			// Compute the remainder
   a.d1 = __subc_cc(b.d1, tmp96.d1);			// we do not need the upper digits of b and tmp96 because the result is 0 after subtraction!
   a.d2 = __subc   (b.d2, tmp96.d2);
+  trace_96_96(__FILE__, __LINE__, f, "a", a);
 
 #ifdef DEBUG_GPU_MATH
   if(f.d2)						// check only when f is >= 2^64 (f <= 2^64 is not supported by this kernel
@@ -508,6 +559,7 @@ Precalculated here since it is the same for all steps in the following loop */
 #endif
   while(shifter)
   {
+    trace_96_textmsg(__FILE__, __LINE__, f, "--- main loop start ---");
 							// On input a is at most 79.322 bits (see end of this loop)
 
     square_96_160(&b, a);				// b = a^2, b is at most 158.644 bits
@@ -517,12 +569,14 @@ Precalculated here since it is the same for all steps in the following loop */
     a.d0 = b.d2;					// a = floor (b / 2^64)
     a.d1 = b.d3;
     a.d2 = b.d4;
+    trace_96_96(__FILE__, __LINE__, f, "a", a);
 
     mul_96_192_no_low3_special(&tmp192, a, u);		// tmp192 = (b / 2^64) * (2 ^ 160 / f)     (ignore the floor functions for now)
 
     a.d0 = tmp192.d3;					// a = tmp192 / 2^96, which if we do the math simplifies to the quotient: b / f
     a.d1 = tmp192.d4;
     a.d2 = tmp192.d5;
+    trace_96_96(__FILE__, __LINE__, f, "a", a);
 							// In the case we care about most (large f values that might cause b to exceed 160 bits),
 						        // the quotient is off by at most 4.  A full mul_96_192 would add 5 partial results
 							// into tmp192.d2, whereas mul_96_192_no_low3_special adds only 2 partial results,
@@ -538,10 +592,12 @@ Precalculated here since it is the same for all steps in the following loop */
 							// only generate only 1 carry into tmp192.d3 -- for a total of up to 4 carries lost.
 
     mul_96(&tmp96, a, f);				// tmp96 = quotient * f, we only compute the low 96-bits here
+    trace_96_96(__FILE__, __LINE__, f, "tmp96", tmp96);
 
     a.d0 = __sub_cc (b.d0, tmp96.d0);			// Compute the remainder
     a.d1 = __subc_cc(b.d1, tmp96.d1);			// we do not need the upper digits of b and tmp96 because the result is 0 after subtraction!
     a.d2 = __subc   (b.d2, tmp96.d2);
+    trace_96_96(__FILE__, __LINE__, f, "a", a);
 							// Since the quotient was up to 4 too small, the remainder has a maximum value of 5*f,
 							// or 77 bits + log2 (5) bits, which is 79.322 bits.  In theory, this kernel can handle
 							// f values up to 2^77.178.
@@ -585,6 +641,7 @@ __device__ static void test_FC96_barrett76(int96 f, int192 b, unsigned int shift
   int96 tmp96;
   float ff;
 
+  trace_96_textmsg(__FILE__, __LINE__, f, "--- barrett76 start ---");
 /*
 ff = f as float, needed in mod_160_96().
 Precalculated here since it is the same for all steps in the following loop */
@@ -597,6 +654,7 @@ Precalculated here since it is the same for all steps in the following loop */
 #else
   inv_160_96(&u,f,ff,modbasecase_debug);		// u = floor(2^160 / f)
 #endif
+  trace_96_96(__FILE__, __LINE__, f, "u", u);
 
   a.d0 = b.d2;						// a = floor(b / 2^64)
   a.d1 = b.d3;
@@ -607,12 +665,15 @@ Precalculated here since it is the same for all steps in the following loop */
   a.d0 = tmp192.d3;					// a = tmp192 / 2^96, which if we do the math simplifies to the quotient: b / f
   a.d1 = tmp192.d4;
   a.d2 = tmp192.d5;
+  trace_96_96(__FILE__, __LINE__, f, "a", a);
 
   mul_96(&tmp96, a, f);					// tmp96 = quotient * f, we only compute the low 96-bits here
+  trace_96_96(__FILE__, __LINE__, f, "tmp96", tmp96);
 
   a.d0 = __sub_cc (b.d0, tmp96.d0);			// Compute the remainder
   a.d1 = __subc_cc(b.d1, tmp96.d1);			// we do not need the upper digits of b and tmp96 because the result is 0 after subtraction!
   a.d2 = __subc   (b.d2, tmp96.d2);
+  trace_96_96(__FILE__, __LINE__, f, "a", a);
 
 #ifdef DEBUG_GPU_MATH
   if(f.d2)						// check only when f is >= 2^64 (f <= 2^64 is not supported by this kernel
@@ -626,6 +687,7 @@ Precalculated here since it is the same for all steps in the following loop */
 #endif
   while(shifter)
   {
+    trace_96_textmsg(__FILE__, __LINE__, f, "--- main loop start ---");
 							// On input a is at most 79.585 bits (see end of this loop)
 
     square_96_160(&b, a);				// b = a^2, b is at most 159.17 bits
@@ -633,12 +695,14 @@ Precalculated here since it is the same for all steps in the following loop */
     a.d0 = b.d2;					// a = floor (b / 2^64)
     a.d1 = b.d3;
     a.d2 = b.d4;
+    trace_96_96(__FILE__, __LINE__, f, "a", a);
 
     mul_96_192_no_low3(&tmp192, a, u);			// tmp192 = (b / 2^64) * (2 ^ 160 / f)     (ignore the floor functions for now)
 
     a.d0 = tmp192.d3;					// a = tmp192 / 2^96, which if we do the math simplifies to the quotient: b / f
     a.d1 = tmp192.d4;
     a.d2 = tmp192.d5;
+    trace_96_96(__FILE__, __LINE__, f, "a", a);
 							// In the case we care about most (large f values that might cause b to exceed 160 bits),
 						        // the quotient is off by at most 5.  A full mul_96_192 would add 5 partial results
 							// into tmp192.d2 which could have generated 4 carries into tmp192.d3.
@@ -653,16 +717,19 @@ Precalculated here since it is the same for all steps in the following loop */
 							// only generate only 1 carry into tmp192.d3 -- for a total of up to 5 carries lost.
 
     mul_96(&tmp96, a, f);				// tmp96 = quotient * f, we only compute the low 96-bits here
+    trace_96_96(__FILE__, __LINE__, f, "tmp96", tmp96);
 
     a.d0 = __sub_cc (b.d0, tmp96.d0);			// Compute the remainder
     a.d1 = __subc_cc(b.d1, tmp96.d1);			// we do not need the upper digits of b and tmp96 because the result is 0 after subtraction!
     a.d2 = __subc   (b.d2, tmp96.d2);
+    trace_96_96(__FILE__, __LINE__, f, "a", a);
 							// Since the quotient was up to 5 too small, the remainder has a maximum value of 6*f,
 							// or 76 bits + log2 (6) bits, which is 78.585 bits.  In theory, this kernel can handle
 							// f values up to 2^76.415.
 
     if(shifter&0x80000000)shl_96(&a);			// "optional multiply by 2" as in Prime95 documentation
 							// At this point a can be 79.585 bits.
+    trace_96_96(__FILE__, __LINE__, f, "a", a);
 
 #ifdef DEBUG_GPU_MATH
     if(f.d2)						// check only when f is >= 2^64 (f <= 2^64 is not supported by this kernel

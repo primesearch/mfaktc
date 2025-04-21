@@ -1,6 +1,6 @@
 /*
 This file is part of mfaktc.
-Copyright (C) 2009, 2010, 2013, 2014  Oliver Weihe (o.weihe@t-online.de)
+Copyright (C) 2009, 2010, 2013, 2014, 2015  Oliver Weihe (o.weihe@t-online.de)
 
 mfaktc is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -22,7 +22,6 @@ __device__ static unsigned int __umul24hi(unsigned int a, unsigned int b)
   asm volatile("mul24.hi.u32 %0, %1, %2;" : "=r" (r) : "r" (a) , "r" (b));
   return r;
 }
-
 
 __device__ static unsigned int __umul32(unsigned int a, unsigned int b)
 {
@@ -162,10 +161,8 @@ On input
 
 0 <= c <= 32
 Return value is bits [c..(32+c)] shifted inplace to the 32bit return value. */
-#if (__CUDA_ARCH__ >= KEPLER_WITH_FUNNELSHIFT) && (CUDART_VERSION >= 5000)
-/* needs CC >= 3.5 and CUDA 5.0
-   needs CC >= 3.2 and CUDA 6.0
-   there is no CC 3.2 in CUDA 5.x so CC >= 3.2 and CUDA >= 5.0 works fine here */
+#if (__CUDA_ARCH__ >= KEPLER_WITH_FUNNELSHIFT)
+/* needs CC >= 3.5 (CC >= 3.2 in CUDA 6.0?) */
   return __funnelshift_r(a, b, c);
 #else
   return (a >> c) + (b << (32 - c));

@@ -77,17 +77,26 @@ DEBUG_GPU_MATH has to be enabled, too. */
 //#define RAW_GPU_BENCH
 
 
-/******************************************************************************
-*******************************************************************************
-*** DO NOT EDIT DEFINES BELOW THIS LINE UNLESS YOU REALLY KNOW WHAT YOU DO! ***
-*** DO NOT EDIT DEFINES BELOW THIS LINE UNLESS YOU REALLY KNOW WHAT YOU DO! ***
-*** DO NOT EDIT DEFINES BELOW THIS LINE UNLESS YOU REALLY KNOW WHAT YOU DO! ***
-*******************************************************************************
-******************************************************************************/
+/*******************************************************************************
+********************************************************************************
+*** DO NOT EDIT DEFINES BELOW THIS LINE UNLESS YOU REALLY KNOW WHAT THEY DO! ***
+*** DO NOT EDIT DEFINES BELOW THIS LINE UNLESS YOU REALLY KNOW WHAT THEY DO! ***
+*** DO NOT EDIT DEFINES BELOW THIS LINE UNLESS YOU REALLY KNOW WHAT THEY DO! ***
+********************************************************************************
+*******************************************************************************/
 
-#define MFAKTC_VERSION "0.24.0-beta.1" /* DO NOT CHANGE! */
-#define MFAKTC_CHECKPOINT_VERSION "0.24" /* DO NOT CHANGE! */
-#define MFAKTC_CHECKSUM_VERSION 1 /* DO NOT CHANGE! */
+/*
+MFAKTC_VERSION sets the version number. You must make sure the version string
+complies with the semantic versioning scheme: https://semver.org
+
+Otherwise, automated builds could fail in GitHub Actions.
+
+Please discuss with the community before making changes to version numbers!
+*/
+
+#define MFAKTC_VERSION "0.24.0-beta.1"
+#define MFAKTC_CHECKPOINT_VERSION "0.24"
+#define MFAKTC_CHECKSUM_VERSION 1
 
 
 

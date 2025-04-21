@@ -85,7 +85,7 @@ DEBUG_GPU_MATH has to be enabled, too. */
 *******************************************************************************
 ******************************************************************************/
 
-#define MFAKTC_VERSION "0.24.0-alpha.3" /* DO NOT CHANGE! */
+#define MFAKTC_VERSION "0.24.0-beta.1" /* DO NOT CHANGE! */
 #define MFAKTC_CHECKPOINT_VERSION "0.24" /* DO NOT CHANGE! */
 #define MFAKTC_CHECKSUM_VERSION 1 /* DO NOT CHANGE! */
 

@@ -1,6 +1,6 @@
 /*
 This file is part of mfaktc.
-Copyright (C) 2009, 2010, 2011, 2012, 2013, 2015, 2019, 2024  Oliver Weihe (o.weihe@t-online.de)
+Copyright (C) 2009-2013, 2015, 2019, 2024  Oliver Weihe (o.weihe@t-online.de)
 
 mfaktc is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -99,7 +99,6 @@ Please discuss with the community before making changes to version numbers!
 #define MFAKTC_CHECKSUM_VERSION 1
 
 
-
 /*
 THREADS_PER_BLOCK has a hardware limit, 512 on GPUs with compute capability
 1.x and 1024 on GPUs with compute capability 2.0.
@@ -135,8 +134,8 @@ when the siever switches between those two code variants. */
 
 /*
 The number of CUDA streams used by mfaktc.
-The actual configuration is done in mfaktc.ini. This ini-file contains
-a small describtion, too
+The actual configuration is done in mfaktc.ini. This INI file contains
+a small description, too
 The following lines define the min, default and max value.
 */
 
@@ -182,8 +181,8 @@ The following lines define the min, default and max value.
 #define GPU_SIEVE_SIZE_DEFAULT            2047 /* Default is a 128M bit sieve */
 #define GPU_SIEVE_SIZE_MAX                2047 /* We've only tested up to 128M bits.  The GPU sieve code may be able to go higher. */
 
-#define GPU_SIEVE_PROCESS_SIZE_MIN           8 /* Processing 8Ki bits in each block is minimum (256 threads * 1 word of 32 bits) */
-#define GPU_SIEVE_PROCESS_SIZE_DEFAULT      16 /* Default is processing 16Ki bits */
+#define GPU_SIEVE_PROCESS_SIZE_MIN           8 /* Processing 8 Kib in each block is minimum (256 threads * 1 word of 32 bits) */
+#define GPU_SIEVE_PROCESS_SIZE_DEFAULT      16 /* Default is processing 16 Kib */
 #define GPU_SIEVE_PROCESS_SIZE_MAX          32 /* Upper limit is 64K, since we store k values as "short".
                                                   Not validated and shared memory might be an issue! */
 

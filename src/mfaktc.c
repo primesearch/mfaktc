@@ -1,6 +1,6 @@
 /*
 This file is part of mfaktc.
-Copyright (C) 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2018, 2019  Oliver Weihe (o.weihe@t-online.de)
+Copyright (C) 2009-2015, 2018, 2019  Oliver Weihe (o.weihe@t-online.de)
 
 mfaktc is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -11,7 +11,7 @@ mfaktc is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
-                                
+
 You should have received a copy of the GNU General Public License
 along with mfaktc.  If not, see <http://www.gnu.org/licenses/>.
 */
@@ -22,7 +22,7 @@ along with mfaktc.  If not, see <http://www.gnu.org/licenses/>.
 #include <unistd.h>
 #endif
 #include <string.h>
-#include <errno.h> 
+#include <errno.h>
 #include <time.h>
 
 #include <cuda.h>
@@ -48,7 +48,7 @@ unsigned long long int calculate_k(unsigned int exp, int bits)
 /* calculates biggest possible k in "2 * exp * k + 1 < 2^bits" */
 {
   unsigned long long int k = 0, tmp_low, tmp_hi;
-  
+
   if((bits > 65) && exp < (1U << (bits - 65))) k = 0; // k would be >= 2^64...
   else if(bits <= 64)
   {
@@ -61,13 +61,13 @@ unsigned long long int calculate_k(unsigned int exp, int bits)
     tmp_hi = 1ULL << (bits - 33);
     tmp_hi--;
     tmp_low = 0xFFFFFFFFULL;
-    
+
     k = tmp_hi / exp;
     tmp_low += (tmp_hi % exp) << 32;
     k <<= 32;
     k += tmp_low / exp;
   }
-  
+
   if(k == 0)k = 1;
   return k;
 }
@@ -114,7 +114,7 @@ k_min *MUST* be aligned in that way that k_min is in class 0!
       ((2 * (exp %  3) * ((k_min + c) %  3)) %  3 !=  2) && \
       ((2 * (exp %  5) * ((k_min + c) %  5)) %  5 !=  4) && \
       ((2 * (exp %  7) * ((k_min + c) %  7)) %  7 !=  6))
-#ifdef MORE_CLASSES        
+#ifdef MORE_CLASSES
   if  ((2 * (exp % 11) * ((k_min + c) % 11)) % 11 != 10 )
 #endif
   {
@@ -152,7 +152,7 @@ return value (mystuff->mode = MODE_SELFTEST_SHORT or MODE_SELFTEST_FULL):
 2 wrong factor returned
 RET_CUDA_ERROR cudaGetLastError() returned an error
 
-other return value 
+other return value
 -1 unknown mode
 */
 {
@@ -164,9 +164,9 @@ other return value
   int factorsfound = 0, numfactors = 0, restart = 0, factorindex = 0;
 
   int retval = 0;
-  
+
   cudaError_t cudaError;
-  
+
   unsigned long long int time_run, time_est;
 
   mystuff->stats.output_counter = 0; /* reset output counter, needed for status headline */
@@ -185,10 +185,10 @@ other return value
     mystuff->addfilestatus = 0;
     timer_init(&timer_last_addfilecheck);
   }
-  
+
   mystuff->stats.class_counter = 0;
   mystuff->stats.bit_level_time = 0;
-  
+
   k_min=calculate_k(mystuff->exponent, mystuff->bit_min);
   k_max=calculate_k(mystuff->exponent, mystuff->bit_max_stage);
 
@@ -196,15 +196,15 @@ other return value
   {
 /* a shortcut for the selftest, bring k_min a k_max "close" to the known factor
    0 <= mystuff->selftestrandomoffset < 25000000, thus k_range must be greater than 25000000 */
-    if(NUM_CLASSES == 420)k_range = 50000000ULL; 
+    if(NUM_CLASSES == 420)k_range = 50000000ULL;
     else                  k_range = 500000000ULL;
 
-/* greatly increased k_range for the -st2 selftest */    
+/* greatly increased k_range for the -st2 selftest */
     if(mystuff->selftestsize == 2) k_range*=100;
 
     tmp = k_hint - (k_hint % k_range) - (2ULL * k_range) - mystuff->selftestrandomoffset;
     if((tmp <= k_hint) && (tmp > k_min)) k_min = tmp; /* check for tmp <= k_hint prevents integer underflow (k_hint < ( k_range + mystuff->selftestrandomoffset) */
-    
+
     tmp += 4ULL * k_range;
     if((tmp >= k_hint) && ((tmp < k_max) || (k_max < k_min))) k_max = tmp; /* check for k_max < k_min enables some selftests where k_max >= 2^64 but the known factor itself has a k < 2^64 */
   }
@@ -264,7 +264,7 @@ see benchmarks in src/kernel_benchmarks.txt */
   else if(kernel == BARRETT87_MUL32_GS) sprintf(mystuff->stats.kernelname, "barrett87_mul32_gs");
   else if(kernel == BARRETT88_MUL32_GS) sprintf(mystuff->stats.kernelname, "barrett88_mul32_gs");
   else if(kernel == BARRETT92_MUL32_GS) sprintf(mystuff->stats.kernelname, "barrett92_mul32_gs");
-  
+
   else                                  sprintf(mystuff->stats.kernelname, "UNKNOWN kernel");
 
   if(mystuff->mode != MODE_SELFTEST_SHORT && mystuff->verbosity >= 1)logprintf(mystuff, "Using GPU kernel \"%s\"\n", mystuff->stats.kernelname);
@@ -289,7 +289,7 @@ see benchmarks in src/kernel_benchmarks.txt */
               print_dez96(mystuff->factors[i], factor);
               logprintf(mystuff, "%s ", factor);
             }
-          }  
+          }
           logprintf(mystuff, "\n");
         }
         else
@@ -347,7 +347,7 @@ see benchmarks in src/kernel_benchmarks.txt */
 	  sieve_init_class(mystuff->exponent, k_min+cur_class, mystuff->sieve_primes);
 	}
         mystuff->stats.class_counter++;
-      
+
              if(kernel == _75BIT_MUL32)       numfactors = tf_class_75          (k_min+cur_class, k_max, mystuff);
         else if(kernel == _95BIT_MUL32)       numfactors = tf_class_95          (k_min+cur_class, k_max, mystuff);
 
@@ -431,7 +431,7 @@ see benchmarks in src/kernel_benchmarks.txt */
   {
     if(mystuff->h_RES[0] == 0)
     {
-      logprintf(mystuff, "ERROR: selftest failed for %s%u\n", NAME_NUMBERS, mystuff->exponent);
+      logprintf(mystuff, "ERROR: self-test failed for %s%u\n", NAME_NUMBERS, mystuff->exponent);
       logprintf(mystuff, "  no factor found\n");
       retval = 1;
     }
@@ -441,11 +441,11 @@ see benchmarks in src/kernel_benchmarks.txt */
 calculate the value of the known factor in f_{hi|med|low} and compare with the
 results from the selftest.
 k_max and k_min are used as 64bit temporary integers here...
-*/    
+*/
       f_hi    = (k_hint >> 63);
       f_med   = (k_hint >> 31) & 0xFFFFFFFFULL;
       f_low   = (k_hint <<  1) & 0xFFFFFFFFULL; /* f_{hi|med|low} = 2 * k_hint */
-      
+
       k_max   = (unsigned long long int)mystuff->exponent * f_low;
       f_low   = (k_max & 0xFFFFFFFFULL) + 1;
       k_min   = (k_max >> 32);
@@ -457,7 +457,7 @@ k_max and k_min are used as 64bit temporary integers here...
       k_min  += (k_max >> 32);
 
       f_hi  = k_min + (mystuff->exponent * f_hi); /* f_{hi|med|low} = 2 * k_hint * mystuff->exponent +1 */
-      
+
       k_min=0; /* using k_min for counting number of matches here */
       for(i=0; ((unsigned int)i < mystuff->h_RES[0]) && (i < 10); i++)
       {
@@ -467,7 +467,7 @@ k_max and k_min are used as 64bit temporary integers here...
       }
       if(k_min != 1) /* the factor should appear ONCE */
       {
-        logprintf(mystuff, "ERROR: selftest failed for %s%u!\n", NAME_NUMBERS, mystuff->exponent);
+        logprintf(mystuff, "ERROR: self-test failed for %s%u!\n", NAME_NUMBERS, mystuff->exponent);
         logprintf(mystuff, "  expected result: %08X %08X %08X\n", f_hi, f_med, f_low);
         for(i=0; ((unsigned int)i < mystuff->h_RES[0]) && (i < 10); i++)
         {
@@ -477,14 +477,14 @@ k_max and k_min are used as 64bit temporary integers here...
       }
       else
       {
-        if(mystuff->mode != MODE_SELFTEST_SHORT)logprintf(mystuff, "selftest for %s%u passed!\n", NAME_NUMBERS, mystuff->exponent);
+        if(mystuff->mode != MODE_SELFTEST_SHORT)logprintf(mystuff, "self-test for %s%u passed!\n", NAME_NUMBERS, mystuff->exponent);
       }
     }
   }
   if(mystuff->mode != MODE_SELFTEST_SHORT)
   {
     time_run = timer_diff(&timer)/1000;
-    
+
     if(restart == 0)logprintf(mystuff, "tf(): total time spent: ");
     else            logprintf(mystuff, "tf(): time spent since restart:   ");
 
@@ -537,9 +537,9 @@ RET_CUDA_ERROR we might have a serios problem (detected by cudaGetLastError())
   int kernel_success[NUM_KERNEL+1], kernel_fail[NUM_KERNEL+1];
 
 #ifdef WAGSTAFF
-  #include "selftest-data-wagstaff.c"  
+  #include "selftest-data-wagstaff.c"
 #else /* Mersennes */
-  #include "selftest-data-mersenne.c"  
+  #include "selftest-data-mersenne.c"
 #endif
 
   int testcases = sizeof(st_data) / sizeof(st_data[0]);
@@ -581,10 +581,10 @@ RET_CUDA_ERROR we might have a serios problem (detected by cudaGetLastError())
       if(kernel_possible(_75BIT_MUL32,       mystuff)) kernels[j++] = _75BIT_MUL32;
       if(kernel_possible(_95BIT_MUL32_GS,    mystuff)) kernels[j++] = _95BIT_MUL32_GS;
       if(kernel_possible(_75BIT_MUL32_GS,    mystuff)) kernels[j++] = _75BIT_MUL32_GS;
-      
+
       if(j > NUM_KERNEL)
       {
-        printf("ERROR: Too many kernels in selftest!\n");
+        printf("ERROR: Too many kernels in self-test!\n");
         exit(1);
       }
 
@@ -597,7 +597,7 @@ RET_CUDA_ERROR we might have a serios problem (detected by cudaGetLastError())
         else if(tf_res == 2)st_wrongfactor++;
         else if(tf_res == RET_CUDA_ERROR)return RET_CUDA_ERROR; /* bail out, we might have a serios problem (detected by cudaGetLastError())... */
         else           st_unknown++;
-        
+
         if(tf_res == 0)kernel_success[kernels[j]]++;
         else           kernel_fail[kernels[j]]++;
       }
@@ -615,11 +615,11 @@ RET_CUDA_ERROR we might have a serios problem (detected by cudaGetLastError())
     index[3]=  70; index[4]=  88; index[5]= 106; /* some factors below 2^75 */
     index[6]=1547; index[7]=1552; index[8]=1556; /* some factors below 2^95 */
 #endif
-        
+
     for(i = 0; i < 9; i++)
     {
       f_class = (int)(st_data[index[i]].k % NUM_CLASSES);
-      
+
       mystuff->exponent           = st_data[index[i]].exp;
       mystuff->bit_min            = st_data[index[i]].bit_min;
       mystuff->bit_max_assignment = mystuff->bit_min + 1;
@@ -645,7 +645,7 @@ RET_CUDA_ERROR we might have a serios problem (detected by cudaGetLastError())
 
       if(j > NUM_KERNEL)
       {
-        printf("ERROR: Too many kernels in selftest!\n");
+        printf("ERROR: Too many kernels in self-test!\n");
         exit(1);
       }
 
@@ -663,9 +663,9 @@ RET_CUDA_ERROR we might have a serios problem (detected by cudaGetLastError())
     }
   }
 
-  logprintf(mystuff, "Selftest statistics\n");
+  logprintf(mystuff, "Self-test statistics\n");
   logprintf(mystuff, "  number of tests           %d\n", num_selftests);
-  logprintf(mystuff, "  successfull tests         %d\n", st_success);
+  logprintf(mystuff, "  successful tests          %d\n", st_success);
   if(st_nofactor > 0)   logprintf(mystuff, "  no factor found           %d\n", st_nofactor);
   if(st_wrongfactor > 0)logprintf(mystuff, "  wrong factor reported     %d\n", st_wrongfactor);
   if(st_unknown > 0)    logprintf(mystuff, "  unknown return value      %d\n", st_unknown);
@@ -703,13 +703,13 @@ RET_CUDA_ERROR we might have a serios problem (detected by cudaGetLastError())
 
   if(st_success == num_selftests)
   {
-    logprintf(mystuff, "selftest PASSED!\n\n");
+    logprintf(mystuff, "self-test PASSED!\n\n");
     retval=0;
   }
   else
   {
-    logprintf(mystuff, "selftest FAILED!\n");
-    logprintf(mystuff, "  random selftest offset was: %d\n\n", mystuff->selftestrandomoffset);
+    logprintf(mystuff, "self-test FAILED!\n");
+    logprintf(mystuff, "  random self-test offset was: %d\n\n", mystuff->selftestrandomoffset);
   }
   return retval;
 }
@@ -719,7 +719,7 @@ void print_last_CUDA_error(mystuff_t *mystuff)
 /* just run cudaGetLastError() and print the error message if its return value is not cudaSuccess */
 {
   cudaError_t cudaError;
-  
+
   cudaError = cudaGetLastError();
   if(cudaError != cudaSuccess)
   {
@@ -767,7 +767,7 @@ int main(int argc, char **argv)
   {
      mystuff.logfileptr = fopen(mystuff.logfile, "a");
   }
-  
+
   while(i < argc)
   {
     if(!strcmp((char*)"-h", argv[i]))
@@ -857,13 +857,13 @@ int main(int argc, char **argv)
         return 1;
       }
       i++;
-      
+
       if(tmp > 3)
       {
         logprintf(&mystuff, "WARNING: maximum verbosity level is 3\n");
         tmp = 3;
       }
-      
+
       if(tmp < 0)
       {
         logprintf(&mystuff, "WARNING: minumum verbosity level is 0\n");
@@ -875,14 +875,14 @@ int main(int argc, char **argv)
     i++;
   }
 
-  logprintf(&mystuff, "mfaktc v%s (%dbit built)\n\n", MFAKTC_VERSION, (int)(sizeof(void*)*8));
+  logprintf(&mystuff, "mfaktc v%s (%d-bit build)\n\n", MFAKTC_VERSION, (int)(sizeof(void*)*8));
 
 /* print current configuration */
-  
-  if(mystuff.verbosity >= 1)logprintf(&mystuff, "Compiletime options\n");
+
+  if(mystuff.verbosity >= 1)logprintf(&mystuff, "Compile-time options\n");
   if(mystuff.verbosity >= 1)logprintf(&mystuff, "  THREADS_PER_BLOCK         %d\n", THREADS_PER_BLOCK);
-  if(mystuff.verbosity >= 1)logprintf(&mystuff, "  SIEVE_SIZE_LIMIT          %dkiB\n", SIEVE_SIZE_LIMIT);
-  if(mystuff.verbosity >= 1)logprintf(&mystuff, "  SIEVE_SIZE                %dbits\n", SIEVE_SIZE);
+  if(mystuff.verbosity >= 1)logprintf(&mystuff, "  SIEVE_SIZE_LIMIT          %d kiB\n", SIEVE_SIZE_LIMIT);
+  if(mystuff.verbosity >= 1)logprintf(&mystuff, "  SIEVE_SIZE                %d bits\n", SIEVE_SIZE);
   if(SIEVE_SIZE <= 0)
   {
     logprintf(&mystuff, "ERROR: SIEVE_SIZE is <= 0, consider to increase SIEVE_SIZE_LIMIT in params.h\n");
@@ -903,7 +903,7 @@ int main(int argc, char **argv)
 #endif
 
 #ifdef WAGSTAFF
-  if(mystuff.verbosity >= 1)logprintf(&mystuff, "  Wagstaff mode             enabled\n");  
+  if(mystuff.verbosity >= 1)logprintf(&mystuff, "  Wagstaff mode             enabled\n");
 #endif
 
 #ifdef USE_DEVICE_PRINTF
@@ -936,9 +936,9 @@ int main(int argc, char **argv)
   if(mystuff.verbosity >= 1)logprintf(&mystuff, "  binary compiled for CUDA  %d.%d\n", CUDART_VERSION/1000, CUDART_VERSION%100);
   cudaRuntimeGetVersion(&rt_ver);
   if(mystuff.verbosity >= 1)logprintf(&mystuff, "  CUDA runtime version      %d.%d\n", rt_ver/1000, rt_ver%100);
-  cudaDriverGetVersion(&drv_ver);  
+  cudaDriverGetVersion(&drv_ver);
   if(mystuff.verbosity >= 1)logprintf(&mystuff, "  CUDA driver version       %d.%d\n", drv_ver/1000, drv_ver%100);
-  
+
   if(drv_ver < CUDART_VERSION)
   {
     logprintf(&mystuff, "ERROR: current CUDA driver version is lower than the CUDA toolkit version used during compile!\n");
@@ -973,10 +973,10 @@ int main(int argc, char **argv)
     logprintf(&mystuff, "  name                      %s\n",deviceinfo.name);
     logprintf(&mystuff, "  compute capability        %d.%d\n",deviceinfo.major,deviceinfo.minor);
     logprintf(&mystuff, "  max threads per block     %d\n",deviceinfo.maxThreadsPerBlock);
-    logprintf(&mystuff, "  max shared memory per MP  %d byte\n", mystuff.max_shared_memory);
+    logprintf(&mystuff, "  max shared memory per MP  %d bytes\n", mystuff.max_shared_memory);
     logprintf(&mystuff, "  number of multiprocessors %d\n", deviceinfo.multiProcessorCount);
-   
-/* map deviceinfo.major + deviceinfo.minor to number of CUDA cores per MP. 
+
+/* map deviceinfo.major + deviceinfo.minor to number of CUDA cores per MP.
    This is just information, I doesn't matter whether it is correct or not */
     i=0;
          if(deviceinfo.major == 1)                          i =   8;
@@ -984,13 +984,13 @@ int main(int argc, char **argv)
     else if(deviceinfo.major == 2 && deviceinfo.minor == 1) i =  48;
     else if(deviceinfo.major == 3)                          i = 192;
     else if(deviceinfo.major == 5)                          i = 128;
-    
+
     if(i > 0)
-    {             
+    {
       logprintf(&mystuff, "  CUDA cores per MP         %d\n", i);
       logprintf(&mystuff, "  CUDA cores - total        %d\n", i * deviceinfo.multiProcessorCount);
     }
-    
+
     logprintf(&mystuff, "  clock rate (CUDA cores)   %dMHz\n", deviceinfo.clockRate / 1000);
     logprintf(&mystuff, "  memory clock rate:        %dMHz\n", deviceinfo.memoryClockRate / 1000);
     logprintf(&mystuff, "  memory bus width:         %d bit\n", deviceinfo.memoryBusWidth);
@@ -1023,7 +1023,7 @@ int main(int argc, char **argv)
   while( (i * 2) <= mystuff.threads_per_grid_max) i = i * 2;
   mystuff.threads_per_grid = i;
   if(mystuff.verbosity >= 1)logprintf(&mystuff, "  threads per grid          %d\n", mystuff.threads_per_grid);
-  
+
   if(mystuff.threads_per_grid % THREADS_PER_BLOCK)
   {
     logprintf(&mystuff, "ERROR: mystuff.threads_per_grid is _NOT_ a multiple of THREADS_PER_BLOCK\n");
@@ -1033,8 +1033,8 @@ int main(int argc, char **argv)
 
   srandom(time(NULL));
   mystuff.selftestrandomoffset = random() % 25000000;
-  if(mystuff.verbosity >= 2)logprintf(&mystuff, "  random selftest offset    %d\n", mystuff.selftestrandomoffset);
-  
+  if(mystuff.verbosity >= 2)logprintf(&mystuff, "  random self-test offset    %d\n", mystuff.selftestrandomoffset);
+
   for(i=0;i<mystuff.num_streams;i++)
   {
     if( cudaStreamCreate(&(mystuff.stream[i])) != cudaSuccess)
@@ -1045,7 +1045,7 @@ int main(int argc, char **argv)
       return 1;
     }
   }
-/* Allocate some memory arrays */  
+/* Allocate some memory arrays */
   for(i=0;i<(mystuff.num_streams + mystuff.cpu_streams);i++)
   {
     if( cudaHostAlloc((void**)&(mystuff.h_ktab[i]), mystuff.threads_per_grid * sizeof(int), 0) != cudaSuccess )
@@ -1095,12 +1095,12 @@ int main(int argc, char **argv)
     close_log(&mystuff);
     return 1;
   }
-#endif  
+#endif
 
   if(check_subcc_bug(&mystuff) != 0) return 1; /* subcc bug detected */
 
   get_CUDA_arch(&mystuff);
-  
+
   sieve_init();
   if(mystuff.gpu_sieving)gpusieve_init(&mystuff);
 
@@ -1110,16 +1110,16 @@ int main(int argc, char **argv)
   if(mystuff.mode == MODE_NORMAL)
   {
 
-/* before we start real work run a small selftest */  
+/* before we start real work run a small selftest */
     mystuff.mode = MODE_SELFTEST_SHORT;
-    logprintf(&mystuff, "running a simple selftest...\n");
+    logprintf(&mystuff, "running a simple self-test...\n");
     if(selftest(&mystuff, 1) != 0)return 1; /* selftest failed :( */
     mystuff.mode = MODE_NORMAL;
     mystuff.h_RES[0] = 0;
 
 /* signal handler blablabla */
     register_signal_handler(&mystuff);
-    
+
     if(use_worktodo && mystuff.addfiledelay != 0)
     {
       if(process_add_file(mystuff.workfile, mystuff.addfile, &(mystuff.addfilestatus), mystuff.verbosity) != OK)
@@ -1181,8 +1181,8 @@ int main(int argc, char **argv)
 //          tmp = tf(&mystuff, 0, 0, BARRETT88_MUL32_GS);
 //          tmp = tf(&mystuff, 0, 0, BARRETT92_MUL32);
 //          tmp = tf(&mystuff, 0, 0, BARRETT92_MUL32_GS);
-          
-          
+
+
           if(tmp == RET_CUDA_ERROR) return 1; /* bail out, we might have a serios problem (detected by cudaGetLastError())... */
 
           if(tmp != RET_QUIT)
@@ -1227,7 +1227,7 @@ int main(int argc, char **argv)
 #ifdef DEBUG_GPU_MATH
   cudaFree(mystuff.d_modbasecase_debug);
   cudaFree(mystuff.h_modbasecase_debug);
-#endif  
+#endif
   cudaFree(mystuff.d_RES);
   cudaFree(mystuff.h_RES);
   for(i=0;i<(mystuff.num_streams + mystuff.cpu_streams);i++)cudaFreeHost(mystuff.h_ktab[i]);

@@ -12,7 +12,7 @@ mfaktc is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
-                                
+
 You should have received a copy of the GNU General Public License
 along with mfaktc.  If not, see <http://www.gnu.org/licenses/>.
 */
@@ -56,7 +56,7 @@ int my_read_string(char *inifile, char *name, char *string, unsigned int len)
   unsigned int idx = strlen(name);
 
   if(len > 250) len = 250;
-  
+
   in = fopen(inifile, "r");
   if(!in)return 1;
   while(fgets(buf, 250, in) && !found)
@@ -72,7 +72,7 @@ int my_read_string(char *inifile, char *name, char *string, unsigned int len)
       }
       string[found] = '\0';
     }
-  }  
+  }
   fclose(in);
   in = NULL;
   if(found >= 1)return 0;
@@ -112,7 +112,7 @@ int read_config(mystuff_t *mystuff)
   if(mystuff->verbosity >= 1)logprintf(mystuff, "  SievePrimes               %d\n",i);
   mystuff->sieve_primes = i;
 
-/*****************************************************************************/  
+/*****************************************************************************/
 
   if(my_read_int("mfaktc.ini", "SievePrimesAdjust", &i))
   {
@@ -163,7 +163,7 @@ int read_config(mystuff_t *mystuff)
   if(mystuff->verbosity >= 1)logprintf(mystuff, "  SievePrimesMax            %d\n",i);
   mystuff->sieve_primes_max = i;
 
-/*****************************************************************************/  
+/*****************************************************************************/
 
   if(my_read_int("mfaktc.ini", "NumStreams", &i))
   {
@@ -249,7 +249,7 @@ int read_config(mystuff_t *mystuff)
       i = 1;
     }
   }
-  
+
   mystuff->gpu_sieving = i;
 
   if(mystuff->gpu_sieving) {
@@ -299,7 +299,7 @@ int read_config(mystuff_t *mystuff)
 	i = GPU_SIEVE_SIZE_MIN;
       }
     }
-    if(mystuff->verbosity >= 1)logprintf(mystuff, "  GPUSieveSize              %dMi bits\n",i);
+    if(mystuff->verbosity >= 1)logprintf(mystuff, "  GPUSieveSize              %d Mib\n",i);
     mystuff->gpu_sieve_size = i * 1024 * 1024;
 
 /*****************************************************************************/
@@ -334,7 +334,7 @@ int read_config(mystuff_t *mystuff)
         i = GPU_SIEVE_PROCESS_SIZE_DEFAULT;
       }
     }
-    if(mystuff->verbosity >= 1)logprintf(mystuff, "  GPUSieveProcessSize       %dKi bits\n",i);
+    if(mystuff->verbosity >= 1)logprintf(mystuff, "  GPUSieveProcessSize       %d Kib\n",i);
     mystuff->gpu_sieve_processing_size = i * 1024;
   }
 
@@ -366,12 +366,12 @@ int read_config(mystuff_t *mystuff)
   }
   if(i > 900)
   {
-    logprintf(mystuff, "WARNING: Maximum value for CheckpointDelay is 900s\n");
+    logprintf(mystuff, "WARNING: CheckpointDelay cannot exceed 900 s\n");
     i = 900;
   }
   if(i < 0)
   {
-    logprintf(mystuff, "WARNING: Minimum value for CheckpointDelay is 0s\n");
+    logprintf(mystuff, "WARNING: CheckpointDelay must be at least 0 s\n");
     i = 0;
   }
   if(mystuff->verbosity >= 1)logprintf(mystuff, "  CheckpointDelay           %ds\n", i);
@@ -386,12 +386,12 @@ int read_config(mystuff_t *mystuff)
   }
   if(i > 3600)
   {
-    logprintf(mystuff, "WARNING: Maximum value for WorkFileAddDelay is 3600s\n");
+    logprintf(mystuff, "WARNING: WorkFileAddDelay cannot 3600 s\n");
     i = 3600;
   }
   if(i != 0 && i < 30)
   {
-    logprintf(mystuff, "WARNING: Minimum value for WorkFileAddDelay is 30s\n");
+    logprintf(mystuff, "WARNING: WorkFileAddDelay must be at least 30 s\n");
     i = 30;
   }
   if(mystuff->verbosity >= 1)
@@ -435,7 +435,7 @@ int read_config(mystuff_t *mystuff)
   if(mystuff->verbosity >= 1)
   {
          if(i == 0)logprintf(mystuff, "  StopAfterFactor           disabled\n");
-    else if(i == 1)logprintf(mystuff, "  StopAfterFactor           bitlevel\n");
+    else if(i == 1)logprintf(mystuff, "  StopAfterFactor           bit level\n");
     else if(i == 2)logprintf(mystuff, "  StopAfterFactor           class\n");
   }
   mystuff->stopafterfactor = i;
@@ -509,7 +509,7 @@ int read_config(mystuff_t *mystuff)
     mystuff->ComputerID[0]='\0';
   }
   else
-  {   
+  {
     if(mystuff->verbosity >= 1)logprintf(mystuff, "  ComputerID                %s\n", mystuff->ComputerID);
   }
 

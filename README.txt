@@ -252,7 +252,7 @@ A note on extending assignments:
 ---
 
     You must use mfaktc 0.24.0 or above starting in 2026 as the CRC32 checksums
-    will be needed to validate results.
+    will be used to validate results.
 
     Once you have your assignments, create an empty file called worktodo.txt
     and copy all the "Factor=..." lines into that file. Start mfaktc, sit back
@@ -303,9 +303,9 @@ Submitting results:
   file. Smaller grids should have higher responsiveness at the cost of slightly
   lower speed. Performance-wise, this is not recommended on GPUs which can
   handle more than 100 million candidates per second.
-- the debug options CHECKS_MODBASECASE and USE_DEVICE_PRINTF might report 'qi'
-  values that are too high while using the Barrett kernels. They are caused by
-  factor candidates out of the specified range.
+- the debug option CHECKS_MODBASECASE might report 'qi' values that are too
+  high while using the Barrett kernels; this is caused by factor candidates out
+  of the specified range.
 
 
 ##################

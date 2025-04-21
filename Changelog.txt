@@ -11,6 +11,7 @@ new features:
 other changes:
 - dropped support for compute capability 1.x and 32-bit builds
 - replaced deprecated cudaThreadSynchronize() with cudaDeviceSynchronize()
+- removed the debug option "USE_DEVICE_PRINTF"
 
 version 0.23.3
 ==============================

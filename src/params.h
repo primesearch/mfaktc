@@ -89,7 +89,7 @@ DEBUG_GPU_MATH has to be enabled, too. */
 MFAKTC_VERSION sets the version number. You must make sure the version string
 complies with the semantic versioning scheme: https://semver.org
 
-Otherwise, automated builds could fail in GitHub Actions.
+Otherwise, the automated builds could fail in GitHub Actions.
 
 Please discuss with the community before making changes to version numbers!
 */

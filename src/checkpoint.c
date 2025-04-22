@@ -26,6 +26,7 @@ along with mfaktc.  If not, see <http://www.gnu.org/licenses/>.
 #include "my_types.h"
 #include "output.h"
 #include "crc.h"
+#include "compatibility.h"
 
 void checkpoint_write(unsigned int exp, int bit_min, int bit_max, int cur_class, int num_factors, int96 factors[MAX_FACTORS_PER_JOB], unsigned long long int bit_level_time)
 /*

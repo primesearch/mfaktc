@@ -11,7 +11,7 @@ mfaktc is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
-                                
+
 You should have received a copy of the GNU General Public License
 along with mfaktc.  If not, see <http://www.gnu.org/licenses/>.
 */
@@ -26,7 +26,7 @@ along with mfaktc.  If not, see <http://www.gnu.org/licenses/>.
   #define PRId64 "lld"
   #define PRIu64 "llu"
   #define PRIx64 "llx"
-  
+
   #define strncasecmp _strnicmp
 #else
   #define PRId64 "Ld"
@@ -38,7 +38,7 @@ along with mfaktc.  If not, see <http://www.gnu.org/licenses/>.
 #ifdef _MSC_VER
   #define my_usleep(A) Sleep((A) / 1000)
   #define srandom(A) srand(A)
-  #define random(A) rand(A)
+  #define random() rand()
 #else
   #define my_usleep(A) usleep(A)
 #endif

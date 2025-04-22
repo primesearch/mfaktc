@@ -10,12 +10,13 @@ case "${1}" in
 esac
 
 (
-# need to define CUDA Runtime version during CPP runs because we ignore
+# need to define CUDA runtime version during cpp runs because we ignore
 # system includes.
 
-# special code for mfaktc.c, it includes either selftest-data-mersenne.c or
-# selftest-data-wagstaff.c, depending if mfaktc is configured for Mersennes
-# or Wagstaff numbers in params.h. For simplicity we just add both files.
+# special code for mfaktc.c that includes either selftest-data-mersenne.c or
+# selftest-data-wagstaff.c, depending on whether mfaktc is configured for
+# Mersenne or Wagstaff numbers in params.h. For simplicity's sake, we just add
+# both files.
 cpp -D CUDART_VERSION=6050 -include selftest-data-mersenne.c -include \
     selftest-data-wagstaff.c -MM mfaktc.c
 echo
@@ -28,6 +29,6 @@ do
   echo
 done
 
-# special case for 75bit kernels
+# special case for 75-bit kernels
 cpp -D CUDART_VERSION=6050 -MM tf_96bit.cu -MT tf_75bit.o
-) | sed s@\.o\:@\.${OBJ}\:@ 
+) | sed s@\.o:@\.${OBJ}:@

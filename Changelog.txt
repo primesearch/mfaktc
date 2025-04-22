@@ -2,13 +2,33 @@
 version 0.24
 ==============================
 - merge 0.22 and 0.23 together
-- add JSON CRC-32 checksum to json output
+
+new features:
+- CRC32 checksums in JSON output to reduce invalid results
+- improved performance on Pascal devices
+- improved checkpoint compatibility between versions
+  - file names now contain metadata
+
+bug fixes:
+- fixed typos and formatting in output
+- fix some compilation warnings
+
+build:
+- made the build scripts more robust
+
+other changes:
+- dropped support for compute capability 1.x and 32-bit builds
+- replaced deprecated cudaThreadSynchronize() with cudaDeviceSynchronize()
+- removed the debug option "USE_DEVICE_PRINTF"
 
 version 0.23.3
 ==============================
 bug fixes:
 - self-tests could fail on Blackwell devices due to a "random offset" error
   (thanks to Dmitry Bolshakov)
+
+build:
+- updated CUDA version to 12.8.1 in GitHub Actions
 
 version 0.23.2
 ==============================
@@ -61,11 +81,12 @@ version 0.22
 new features:
 - CRC32 checksums to reduce invalid results
 - improved performance on Pascal devices
-- metadata in checkpoint file names
+- improved checkpoint compatibility between versions
+  - file names now contain metadata
 
 other changes:
-- drop support for compute capability 1.x and 32-bit builds
-- replace deprecated cudaThreadSynchronize() calls
+- dropped support for compute capability 1.x and 32-bit builds
+- replaced deprecated cudaThreadSynchronize() with cudaDeviceSynchronize()
 
 version 0.21 (2015-02-17)
 ==============================

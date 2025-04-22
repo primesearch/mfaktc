@@ -11,7 +11,7 @@ mfaktc is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
-                                
+
 You should have received a copy of the GNU General Public License
 along with mfaktc.  If not, see <http://www.gnu.org/licenses/>.
 */
@@ -32,47 +32,47 @@ void checkpoint_write(unsigned int exp, int bit_min, int bit_max, int cur_class,
 checkpoint_write() writes the checkpoint file.
 */
 {
-  FILE *f;
-  const int MAX_FACTOR_BUFFER_LENGTH = MAX_FACTORS_PER_JOB * MAX_DEZ_96_STRING_LENGTH;
-  const int MAX_BUFFER_LENGTH = MAX_FACTOR_BUFFER_LENGTH + 100;
-  const int MAX_CHECKPOINT_FILENAME_LENGTH = 40;
-  char buffer[MAX_BUFFER_LENGTH], filename[MAX_CHECKPOINT_FILENAME_LENGTH], factors_buffer[MAX_FACTOR_BUFFER_LENGTH];
-  unsigned int i, factors_buffer_length, N;
-  
-  snprintf(filename, MAX_CHECKPOINT_FILENAME_LENGTH, "%s%u_%d-%d_%d.ckp", NAME_NUMBERS, exp, bit_min, bit_max, NUM_CLASSES);
-  if (factors[0].d0 || factors[0].d1 || factors[0].d2)
-  {
-      i = 0;
-      char factor[MAX_DEZ_96_STRING_LENGTH];
-      print_dez96(factors[i++], factor);
-      factors_buffer_length = sprintf(factors_buffer, factor);
-      for (; i < MAX_FACTORS_PER_JOB; i++)
-      {
-          if (factors[i].d0 || factors[i].d1 || factors[i].d2)
-          {
-              print_dez96(factors[i], factor);
-              factors_buffer_length += sprintf(factors_buffer + factors_buffer_length, ",%s", factor);
-          }
-      }
-  }
-  else
-  {
-      sprintf(factors_buffer, "0");
-  }
-  
-  f=fopen(filename, "w");
-  if(f==NULL)
-  {
-    printf("WARNING, could not write checkpoint file \"%s\"\n", filename);
-  }
-  else
-  {
-    sprintf(buffer,"%s%u %d %d %d %s: %d %d %s %llu", NAME_NUMBERS, exp, bit_min, bit_max, NUM_CLASSES, MFAKTC_CHECKPOINT_VERSION, cur_class, num_factors, strlen(factors_buffer) ? factors_buffer : "0", bit_level_time);
-    i = crc32_checksum(buffer,strlen(buffer));
-    fprintf(f,"%s%u %d %d %d %s: %d %d %s %llu %08X", NAME_NUMBERS, exp, bit_min, bit_max, NUM_CLASSES, MFAKTC_CHECKPOINT_VERSION, cur_class, num_factors, strlen(factors_buffer) ? factors_buffer : "0", bit_level_time, i);
-    fclose(f);
-    f = NULL;
-  }
+    FILE* f;
+    const int MAX_FACTOR_BUFFER_LENGTH = MAX_FACTORS_PER_JOB * MAX_DEZ_96_STRING_LENGTH;
+    const int MAX_BUFFER_LENGTH = MAX_FACTOR_BUFFER_LENGTH + 100;
+    const int MAX_CHECKPOINT_FILENAME_LENGTH = 40;
+    char buffer[MAX_BUFFER_LENGTH], filename[MAX_CHECKPOINT_FILENAME_LENGTH], factors_buffer[MAX_FACTOR_BUFFER_LENGTH];
+    unsigned int i, factors_buffer_length;
+
+    snprintf(filename, MAX_CHECKPOINT_FILENAME_LENGTH, "%s%u_%d-%d_%d.ckp", NAME_NUMBERS, exp, bit_min, bit_max, NUM_CLASSES);
+    if (factors[0].d0 || factors[0].d1 || factors[0].d2)
+    {
+        i = 0;
+        char factor[MAX_DEZ_96_STRING_LENGTH];
+        print_dez96(factors[i++], factor);
+        factors_buffer_length = sprintf(factors_buffer, "%s", factor);
+        for (; i < MAX_FACTORS_PER_JOB; i++)
+        {
+            if (factors[i].d0 || factors[i].d1 || factors[i].d2)
+            {
+                print_dez96(factors[i], factor);
+                factors_buffer_length += sprintf(factors_buffer + factors_buffer_length, ",%s", factor);
+            }
+        }
+    }
+    else
+    {
+        sprintf(factors_buffer, "0");
+    }
+
+    f = fopen(filename, "w");
+    if (f == NULL)
+    {
+        printf("WARNING, could not write checkpoint file \"%s\"\n", filename);
+    }
+    else
+    {
+        sprintf(buffer, "%s%u %d %d %d %s: %d %d %s %llu", NAME_NUMBERS, exp, bit_min, bit_max, NUM_CLASSES, MFAKTC_CHECKPOINT_VERSION, cur_class, num_factors, strlen(factors_buffer) ? factors_buffer : "0", bit_level_time);
+        i = crc32_checksum(buffer, strlen(buffer));
+        fprintf(f, "%s%u %d %d %d %s: %d %d %s %llu %08X", NAME_NUMBERS, exp, bit_min, bit_max, NUM_CLASSES, MFAKTC_CHECKPOINT_VERSION, cur_class, num_factors, strlen(factors_buffer) ? factors_buffer : "0", bit_level_time, i);
+        fclose(f);
+        f = NULL;
+    }
 }
 
 
@@ -90,14 +90,14 @@ returns 0 otherwise
   FILE *f;
   int ret = 0, i, chksum;
   char buffer[600], buffer2[600], *ptr, filename[40], factors_buffer[500];
-  
+
   for(i = 0; i < 600; i++)buffer[i] = 0;
 
   *cur_class = -1;
   *num_factors = 0;
-  
+
   sprintf(filename, "%s%u_%d-%d_%d.ckp", NAME_NUMBERS, exp, bit_min, bit_max, NUM_CLASSES);
-  
+
   f=fopen(filename, "r");
   if(f==NULL)
   {
@@ -168,7 +168,7 @@ tries to delete the checkpoint file
 {
   char filename[40];
   sprintf(filename, "%s%u_%d-%d_%d.ckp", NAME_NUMBERS, exp, bit_min, bit_max, NUM_CLASSES);
-  
+
   if(remove(filename))
   {
     if(errno != ENOENT) /* ENOENT = "No such file or directory" -> there was no checkpoint file */

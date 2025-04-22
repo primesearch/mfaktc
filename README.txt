@@ -46,16 +46,12 @@ https://mersenne.org/various/math.php#trial_factoring
 # 1 Supported hardware #
 ########################
 
-mfaktc should run on all CUDA-capable Nvidia GPUs with Compute Capability 1.1
-and above. To my knowledge, the only GPU with Compute Capability 1.0 is the G80
-chip in the GeForce 8800 Ultra / GTX / GTS 640 / GTS 320 and their Quadro and
-Tesla variants.
+mfaktc should run on all CUDA-capable Nvidia GPUs with Compute Capability 2.0
+and above. Please note version 0.24.0 drops support for older GPUs. To run
+mfaktc on those devices, use the '0.23' branch.
 
 For AMD GPUs, there is an OpenCL port of mfaktc by Bertram Franz called mfakto:
 https://github.com/primesearch/mfakto
-
-Important note: mfaktc will no longer support compute capability 1.x devices
-in version 0.24 onwards.
 
 
 #################
@@ -77,17 +73,14 @@ Some compile-time settings in the file src/params.h can be changed:
 - the last part contains defines which should *not* be changed unless you
   fully understand them. It is possible to easily screw something up.
 
-Be aware that 32-bit applications are not supported in CUDA Toolkit 12.2 and
-later. You will need to use an older CUDA Toolkit to build mfaktc for 32 bits.
-See this thread for details:
+Be aware that 32-bit builds are not supported in version 0.24.0 onwards, and in
+CUDA Toolkit 12.2 and later. You will need to use the '0.23' branch and an
+older CUDA Toolkit to build mfaktc for 32 bits. See this thread for details:
 https://forums.developer.nvidia.com/t/whats-the-last-version-of-the-cuda-toolkit-to-support-32-bit-applications/323106/4
 
 In any case, a 64-bit build is preferred except on some old low-end GPUs.
 Testing on an Intel Core i7 CPU has shown that the performance-critical CPU
 code runs about 33% faster compared to 32 bits.
-
-Important note: mfaktc will no longer officially support 32-bit builds in
-version 0.24 onwards.
 
 #############
 # 2.1 Linux #
@@ -258,6 +251,9 @@ A note on extending assignments:
 
 ---
 
+    You must use mfaktc 0.24.0 or above starting in 2026 as the CRC32 checksums
+    will be used to validate results.
+
     Once you have your assignments, create an empty file called worktodo.txt
     and copy all the "Factor=..." lines into that file. Start mfaktc, sit back
     and let it do its job. Running mfaktc is also a great way to stress test
@@ -276,16 +272,15 @@ Submitting results:
 
     Step 1) log in to the GIMPS website with your username and password
     Step 2) on the menu bar, select Manual Testing > Results
-    Step 3) upload the results.json.txt file produced by mfaktc. You may
-            archive or delete the file after it has been processed.
+    Step 3) upload the results.json.txt file produced by mfaktc. Do not submit
+            the results.txt file as it is no longer accepted by the PrimeNet
+            server. You may archive or delete the results.json.txt file after
+            it has been processed.
 
     To prevent abuse, admin approval is required for manual submissions. You
     can request approval by contacting George Woltman at woltman@alum.mit.edu
     or posting on the GIMPS forum:
     https://mersenneforum.org/forumdisplay.php?f=38
-
-    Important note: the results.txt file is deprecated and will no longer be
-    accepted from 2025 onwards.
 
 ##################
 # 5 Known issues #
@@ -308,9 +303,9 @@ Submitting results:
   file. Smaller grids should have higher responsiveness at the cost of slightly
   lower speed. Performance-wise, this is not recommended on GPUs which can
   handle more than 100 million candidates per second.
-- the debug options CHECKS_MODBASECASE and USE_DEVICE_PRINTF might report 'qi'
-  values that are too high while using the Barrett kernels. They are caused by
-  factor candidates out of the specified range.
+- the debug option CHECKS_MODBASECASE might report 'qi' values that are too
+  high while using the Barrett kernels; this is caused by factor candidates out
+  of the specified range.
 
 
 ##################
@@ -358,23 +353,24 @@ A: Yes. In most cases, this is required to make full use of a GPU when sieving
    You will need a separate directory for each mfaktc instance.
 
 Q: Are checkpoint files compatible between different mfaktc versions?
-A: Save files are compatible between 32-bit and 64-bit executables. mfaktc can
-   also load a checkpoint from either a Linux or Windows version on either OS.
-   However, the executable and checkpoint file must have the same version
-   number. Complete any active assignments before you upgrade.
+A: Save files are compatible between different platforms and architectures. For
+   example, the 32-bit Windows version can read a checkpoint from 64-bit Linux
+   and vice versa. mfaktc 0.24.0 also introduces a new common format that is
+   intended to provide long-term compatibility between versions.
+
+   However, mfaktc 0.23.x and below can only load checkpoints with the same
+   version number as the executable. Complete any active assignments before you
+   upgrade.
 
 Q: What do the version numbers mean?
-A: Stable releases are usually named 0.x where "x" is incremented for each
-   release. Some versions include a patch such as a bug fix or other small
-   change. You can see in the change log that mfaktc 0.13p1 is one such
-   example. Such releases are intended for general use. Please note that patch
-   releases after 0.16p1 use the major.minor.patch naming scheme.
+A: mfaktc 0.23.0 and above use the semantic versioning scheme. You can learn
+   more about semantic versioning here: https://semver.org
 
    You may come across pre-release versions that are not publicly available.
-   Such versions usually *not* intended for productive usage; sometimes they
-   have the computational code disabled or don't even compile. Please don't use
-   them for production work as they have usually had minimal to zero QA and may
-   contain critical issues.
+   Such versions are *not* intended for general use; sometimes they have the
+   computational code disabled or don't even compile. Please don't use them for
+   production work as they have usually had minimal to zero QA and may contain
+   critical issues.
 
 
 ###########

@@ -37,9 +37,9 @@ export GSORT='/usr/bin/sort'
 
 CUDA_VERSION_FULL="$(echo "$1" | head -n1 | grep -Eom1 -e '^[1-9]([0-9])?\.[0-9]{1,2}(\.[0-9]{1,3})?$')"
 declare -a CUDA_VERSION
-CUDA_VERSION=( $(echo "$CUDA_VERSION_FULL" | tr '.' ' ') )
+IFS=" " read -r -a CUDA_VERSION <<< "$(echo "$CUDA_VERSION_FULL" | tr '.' ' ')"
 if [[ -z "${CUDA_VERSION[*]}" ]]; then
-  echo "ERROR! Can't parse CUDA version $1" >&2
+  echo "Error: Could not parse CUDA version $1" >&2
   exit 2
 fi
 
@@ -51,14 +51,14 @@ echo -e "CUDA_VER_MAJOR=${CUDA_VER_MAJOR}\nCUDA_VER_MINOR=${CUDA_VER_MINOR}" > "
 # CUDA supports the --list-gpu-arch flag from 11.0.0 onwards.
 # For older CUDA versions, use grep to parse the supported architectures from
 # the output of --help
-[ $CUDA_VER -gt 110 ] && NVCC_OPTS='--list-gpu-arch' || NVCC_OPTS='--help'
+[ "$CUDA_VER" -gt 110 ] && NVCC_OPTS='--list-gpu-arch' || NVCC_OPTS='--help'
 NVCC_REGEX='compute_[1-9][0-9]{1,2}'
 # CUDA 11.0.x is a special case. Its --help output lists compute_32 and higher,
 # but only compute capability 3.5 and later are supported.
-[ $CUDA_VER -eq 110 ] && NVCC_REGEX='compute_(3[5-9]|[4-9][0-9])'
+[ "$CUDA_VER" -eq 110 ] && NVCC_REGEX='compute_(3[5-9]|[4-9][0-9])'
 
 declare -a CC_LIST
-CC_LIST=( $(nvcc $NVCC_OPTS | grep -Eoe "$NVCC_REGEX" | cut -d '_' -f2 | $GSORT -un | xargs) )
+IFS=" " read -r -a CC_LIST <<< "$(nvcc "$NVCC_OPTS" | grep -Eoe "$NVCC_REGEX" | cut -d '_' -f2 | $GSORT -un | xargs)"
 if [ ${#CC_LIST[*]} -eq 0 ]; then
   echo "Error: could not parse list of supported compute capabilities" >&2
   exit 3
@@ -75,11 +75,11 @@ for CC in "${CC_LIST[@]}"; do
   sed -i "/^NVCCFLAGS = .*\$/a NVCCFLAGS += --generate-code arch=compute_${CC},code=sm_${CC}" src/Makefile src/Makefile.win
 done
 
-if [ $CUDA_VER -ge 110 ]; then
+if [ "$CUDA_VER" -ge 110 ]; then
   echo 'Adding NVCCFLAGS to allow unsupported MSVC versions...'
   sed -i '/^NVCCFLAGS = .*/a NVCCFLAGS += -allow-unsupported-compiler -D_ALLOW_COMPILER_AND_STL_VERSION_MISMATCH' src/Makefile.win
 fi
-if [ $CUDA_VER -lt 120 ]; then
+if [ "$CUDA_VER" -lt 120 ]; then
   echo "Adding libraries to LDFLAGS to support static build on older Ubuntu versions..."
   sed -i -E 's/^(LDFLAGS = .*? -lcudart_static) (.*)/\1 -ldl -lrt -lpthread \2/' src/Makefile
 fi
@@ -94,6 +94,7 @@ elif [[ -x "$(command -v powershell.exe)" ]]; then
   COMPILER_VER="${CC_VSPROD}, $(echo "$CC_VSINFO" | grep InstallationVersion | cut -d':' -f2 | xargs)"
 else
   COMPILER_VER="$(gcc --version | head -n1)"
+  # shellcheck source=/dev/null
   source /etc/os-release
   OS_VER="${PRETTY_NAME}"
   OS_TYPE="linux64"
@@ -106,8 +107,8 @@ fi
 
 NVCC_VER="$(nvcc --version | tail -n1 | sed -E 's/^Build //')"
 
-# Version from src/params.h
-# Match semver: https://semver.org/#is-there-a-suggested-regular-expression-regex-to-check-a-semver-string
+# get mfaktc version from src/params.h
+# match SemVer and GIMPS version strings: https://regex101.com/r/m38d3i/2
 MFAKTC_VER="$(LC_ALL=en_US.utf8 grep -iPo '#define[\s\t]+MFAKTC_VERSION[\s\t]+"v?\d+(?:\.\d+(?:\.\d+)?(?:-\d+)?|\b)(?:-?(?:alpha|beta|pre)\.?(?:\d+)?\b)?' src/params.h | cut -d '"' -f 2)"
 
 # Git-formatted version

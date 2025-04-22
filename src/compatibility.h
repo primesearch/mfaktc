@@ -42,3 +42,39 @@ along with mfaktc.  If not, see <http://www.gnu.org/licenses/>.
 #else
   #define my_usleep(A) usleep(A)
 #endif
+
+/* snprintf for VS 2005-2013 https://stackoverflow.com/a/8712996 */
+#if defined(_MSC_VER) && _MSC_VER < 1900
+
+#if !(defined(_INC_STDARG) || defined(_STDARG_H))
+#include <stdarg.h>
+#endif
+
+#define snprintf c99_snprintf
+#define vsnprintf c99_vsnprintf
+
+__inline int c99_vsnprintf(char *outBuf, size_t size, const char *format, va_list ap)
+{
+    int count = -1;
+
+    if (size != 0)
+        count = _vsnprintf_s(outBuf, size, _TRUNCATE, format, ap);
+    if (count == -1)
+        count = _vscprintf(format, ap);
+
+    return count;
+}
+
+__inline int c99_snprintf(char *outBuf, size_t size, const char *format, ...)
+{
+    int count;
+    va_list ap;
+
+    va_start(ap, format);
+    count = c99_vsnprintf(outBuf, size, format, ap);
+    va_end(ap);
+
+    return count;
+}
+
+#endif

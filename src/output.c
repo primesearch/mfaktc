@@ -20,7 +20,6 @@ along with mfaktc.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <stdio.h>
 #include <stdarg.h>
-#include <stdbool.h>
 #include <string.h>
 #include <stdlib.h>
 #include <math.h>
@@ -32,6 +31,15 @@ along with mfaktc.  If not, see <http://www.gnu.org/licenses/>.
 #include "output.h"
 #include "compatibility.h"
 #include "crc.h"
+
+/* Visual C++ introduced stdbool support in VS 2013 */
+#if defined(_MSC_VER) && _MSC_VER < 1800
+#define bool int
+#define true 1
+#define false 0
+#else
+#include <stdbool.h>
+#endif
 
 
 void print_help(char *string)

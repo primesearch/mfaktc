@@ -6,7 +6,8 @@ version 0.24
 new features:
 - CRC32 checksums in JSON output to reduce invalid results
 - improved performance on Pascal devices
-- metadata in checkpoint file names
+- improved checkpoint compatibility between versions
+  - file names now contain metadata
 
 bug fixes:
 - fixed typos and formatting in output
@@ -80,7 +81,8 @@ version 0.22
 new features:
 - CRC32 checksums to reduce invalid results
 - improved performance on Pascal devices
-- metadata in checkpoint file names
+- improved checkpoint compatibility between versions
+  - file names now contain metadata
 
 other changes:
 - dropped support for compute capability 1.x and 32-bit builds

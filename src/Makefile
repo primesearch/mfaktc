@@ -10,7 +10,7 @@ CFLAGS_EXTRA_SIEVE = -funroll-all-loops
 
 # compiler settings for .cu files (GPU)
 NVCC = nvcc
-NVCCFLAGS = $(CUDA_INCLUDE) --ptxas-options=-v
+NVCCFLAGS = $(CUDA_INCLUDE) --ptxas-options=-v -Wno-deprecated-gpu-targets
 
 # generate code for various compute capabilities
 # don't try "arch=compute_1x,code=sm_1x". WON'T WORK! Stay with mfaktc 0.21 for CC 1.1, 1.2 and 1.3 GPUs.

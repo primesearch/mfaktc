@@ -8,6 +8,10 @@ new features:
 - improved performance on Pascal devices
 - metadata in checkpoint file names
 
+bug fixes:
+- fixed typos and formatting in output
+- fix some compilation warnings
+
 other changes:
 - dropped support for compute capability 1.x and 32-bit builds
 - replaced deprecated cudaThreadSynchronize() with cudaDeviceSynchronize()

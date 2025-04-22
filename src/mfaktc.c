@@ -495,17 +495,23 @@ k_max and k_min are used as 64bit temporary integers here...
     time_est = (time_run * 960ULL ) / (unsigned long long int)(960-restart);
 #endif
 
-    if(time_est > 86400000ULL)logprintf(mystuff, "%" PRIu64 "d ",   time_run / 86400000ULL);
-    if(time_est > 3600000ULL) logprintf(mystuff, "%2" PRIu64 "h ", (time_run /  3600000ULL) % 24ULL);
-    if(time_est > 60000ULL)   logprintf(mystuff, "%2" PRIu64 "m ", (time_run /    60000ULL) % 60ULL);
-                              logprintf(mystuff, "%2" PRIu64 ".%03" PRIu64 "s\n", (time_run / 1000ULL) % 60ULL, time_run % 1000ULL);
-    if(restart != 0)
+    if (time_est > 86400000ULL) {
+        logprintf(mystuff, "%" PRIu64 "d ", time_run / 86400000ULL);
+    }
+    if (time_est > 3600000ULL) {
+        logprintf(mystuff, "%2" PRIu64 "h ", (time_run / 3600000ULL) % 24ULL);
+    }
+    if (time_est > 60000ULL) {
+        logprintf(mystuff, "%2" PRIu64 "m ", (time_run / 60000ULL) % 60ULL);
+    }
+    logprintf(mystuff, "%2" PRIu64 ".%03" PRIu64 "s\n", (time_run / 1000ULL) % 60ULL, time_run % 1000ULL);
+    if (restart != 0)
     {
-      logprintf(mystuff, "      estimated total time spent: ");
-      if(time_est > 86400000ULL)logprintf(mystuff, "%" PRIu64 "d ",   time_est / 86400000ULL);
-      if(time_est > 3600000ULL) logprintf(mystuff, "%2" PRIu64 "h ", (time_est /  3600000ULL) % 24ULL);
-      if(time_est > 60000ULL)   logprintf(mystuff, "%2" PRIu64 "m ", (time_est /    60000ULL) % 60ULL);
-                                logprintf(mystuff, "%2" PRIu64 ".%03" PRIu64 "s\n", (time_est / 1000ULL) % 60ULL, time_est % 1000ULL);
+        logprintf(mystuff, "      estimated total time spent: ");
+        if (time_est > 86400000ULL)logprintf(mystuff, "%" PRIu64 "d ", time_est / 86400000ULL);
+        if (time_est > 3600000ULL) logprintf(mystuff, "%2" PRIu64 "h ", (time_est / 3600000ULL) % 24ULL);
+        if (time_est > 60000ULL)   logprintf(mystuff, "%2" PRIu64 "m ", (time_est / 60000ULL) % 60ULL);
+        logprintf(mystuff, "%2" PRIu64 ".%03" PRIu64 "s\n", (time_est / 1000ULL) % 60ULL, time_est % 1000ULL);
     }
     logprintf(mystuff, "\n");
   }
@@ -991,44 +997,44 @@ int main(int argc, char **argv)
       logprintf(&mystuff, "  CUDA cores - total        %d\n", i * deviceinfo.multiProcessorCount);
     }
 
-    logprintf(&mystuff, "  clock rate (CUDA cores)   %dMHz\n", deviceinfo.clockRate / 1000);
-    logprintf(&mystuff, "  memory clock rate:        %dMHz\n", deviceinfo.memoryClockRate / 1000);
+    logprintf(&mystuff, "  clock rate (CUDA cores)   %d MHz\n", deviceinfo.clockRate / 1000);
+    logprintf(&mystuff, "  memory clock rate:        %d MHz\n", deviceinfo.memoryClockRate / 1000);
     logprintf(&mystuff, "  memory bus width:         %d bit\n", deviceinfo.memoryBusWidth);
   }
 
-  if(mystuff.compcapa_major == 1) // CC 1.x
+  if (mystuff.compcapa_major == 1) // CC 1.x
   {
 
-    logprintf(&mystuff, "\n\n\nSorry, devices with compute capability 1.%d are not supported!\n", mystuff.compcapa_minor);
-    if(mystuff.compcapa_minor > 0) // CC 1.1 to CC 1.3, CC 1.0 was NEVER supported by mfaktc.
-    {
-      logprintf(&mystuff, "  Last version supporting compute capability 1.1, 1.2 and 1.3 is mfaktc 0.21!\n");
-    }
-    close_log(&mystuff);
-    return 1;
+      logprintf(&mystuff, "\n\n\nSorry, devices with compute capability 1.%d are not supported!\n", mystuff.compcapa_minor);
+      if (mystuff.compcapa_minor > 0) // CC 1.1 to CC 1.3, CC 1.0 was NEVER supported by mfaktc.
+      {
+          logprintf(&mystuff, "  Last version supporting compute capability 1.1, 1.2 and 1.3 is mfaktc 0.23.3.\n");
+      }
+      close_log(&mystuff);
+      return 1;
   }
 
-  if(THREADS_PER_BLOCK > deviceinfo.maxThreadsPerBlock)
+  if (THREADS_PER_BLOCK > deviceinfo.maxThreadsPerBlock)
   {
-    logprintf(&mystuff, "\nERROR: THREADS_PER_BLOCK > deviceinfo.maxThreadsPerBlock\n");
-    close_log(&mystuff);
-    return 1;
+      logprintf(&mystuff, "\nERROR: THREADS_PER_BLOCK > deviceinfo.maxThreadsPerBlock\n");
+      close_log(&mystuff);
+      return 1;
   }
 
   // Don't do a CPU spin loop waiting for the GPU
   cudaSetDeviceFlags(cudaDeviceBlockingSync);
 
-  if(mystuff.verbosity >= 1)logprintf(&mystuff, "\nAutomatic parameters\n");
+  if (mystuff.verbosity >= 1)logprintf(&mystuff, "\nAutomatic parameters\n");
   i = THREADS_PER_BLOCK * deviceinfo.multiProcessorCount;
-  while( (i * 2) <= mystuff.threads_per_grid_max) i = i * 2;
+  while ((i * 2) <= mystuff.threads_per_grid_max) i = i * 2;
   mystuff.threads_per_grid = i;
-  if(mystuff.verbosity >= 1)logprintf(&mystuff, "  threads per grid          %d\n", mystuff.threads_per_grid);
+  if (mystuff.verbosity >= 1)logprintf(&mystuff, "  threads per grid          %d\n", mystuff.threads_per_grid);
 
-  if(mystuff.threads_per_grid % THREADS_PER_BLOCK)
+  if (mystuff.threads_per_grid % THREADS_PER_BLOCK)
   {
-    logprintf(&mystuff, "ERROR: mystuff.threads_per_grid is _NOT_ a multiple of THREADS_PER_BLOCK\n");
-    close_log(&mystuff);
-    return 1;
+      logprintf(&mystuff, "ERROR: mystuff.threads_per_grid is _NOT_ a multiple of THREADS_PER_BLOCK\n");
+      close_log(&mystuff);
+      return 1;
   }
 
   srandom(time(NULL));

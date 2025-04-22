@@ -56,7 +56,6 @@ void print_help(char *string)
 }
 
 
-
 void logprintf(mystuff_t* mystuff, const char* fmt, ...)
 {
     va_list args;
@@ -66,25 +65,27 @@ void logprintf(mystuff_t* mystuff, const char* fmt, ...)
     va_end(args);
 
     if (mystuff->logging == 1 && mystuff->logfileptr != NULL && len > 0)
-      if (mystuff->printmode == 1) {
-        char* buffer = (char*)malloc(len + 1);
-        va_start(args, fmt);
-        vsnprintf(buffer, len + 1, fmt, args);
-        va_end(args);
+    {
+        if (mystuff->printmode == 1) {
+            char* buffer = (char*)malloc(len + 1);
+            va_start(args, fmt);
+            vsnprintf(buffer, len + 1, fmt, args);
+            va_end(args);
 
-        // Replace to CR to LF if it's last char in the string when writing to logfile
-        if (buffer[len - 1] == '\r')
-          buffer[len - 1] = '\n';
+            // Replace to CR to LF if it's last char in the string when writing to logfile
+            if (buffer[len - 1] == '\r')
+                buffer[len - 1] = '\n';
 
-        fprintf(mystuff->logfileptr, "%s", buffer);
-        free(buffer);
-      }
-      else
-      {
-        va_start(args, fmt);
-        vfprintf(mystuff->logfileptr, fmt, args);
-        va_end(args);
-      }
+            fprintf(mystuff->logfileptr, "%s", buffer);
+            free(buffer);
+        }
+        else
+        {
+            va_start(args, fmt);
+            vfprintf(mystuff->logfileptr, fmt, args);
+            va_end(args);
+        }
+    }
 }
 
 
@@ -441,8 +442,8 @@ void print_result_line(mystuff_t *mystuff, int factorsfound)
   char UID[110]; /* 50 (V5UserID) + 50 (ComputerID) + 8 + spare */
   int string_length = 0, factors_list_length = 0, factors_quote_list_length = 0, checksum, json_checksum;
   char aidjson[MAX_LINE_LENGTH+11];
-  char userjson[61]; /* 50 (V5UserID) + 11 spare */
-  char computerjson[65];  /* 50 (ComputerID) + 15 spare */
+  char userjson[62]; /* 50 (V5UserID) + 11 spare + null character */
+  char computerjson[66];  /* 50 (ComputerID) + 15 spare + null character */
   char factorjson[513];
   char factors_list[500];
   char factors_quote_list[500];
@@ -471,12 +472,12 @@ void print_result_line(mystuff_t *mystuff, int factorsfound)
       aidjson[0] = 0;
 
   if (mystuff->V5UserID[0])
-      sprintf(userjson, ", \"user\":\"%s\"", mystuff->V5UserID);
+      snprintf(userjson, sizeof(userjson), ", \"user\":\"%s\"", mystuff->V5UserID);
   else
       userjson[0] = 0;
 
   if (mystuff->ComputerID[0])
-      sprintf(computerjson, ", \"computer\":\"%s\"", mystuff->ComputerID);
+      snprintf(computerjson, sizeof(computerjson), ", \"computer\":\"%s\"", mystuff->ComputerID);
   else
       computerjson[0] = 0;
 

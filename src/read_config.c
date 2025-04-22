@@ -374,14 +374,14 @@ int read_config(mystuff_t *mystuff)
     logprintf(mystuff, "WARNING: CheckpointDelay must be at least 0 s\n");
     i = 0;
   }
-  if(mystuff->verbosity >= 1)logprintf(mystuff, "  CheckpointDelay           %ds\n", i);
+  if(mystuff->verbosity >= 1)logprintf(mystuff, "  CheckpointDelay           %d s\n", i);
   mystuff->checkpointdelay = i;
 
 /*****************************************************************************/
 
   if(my_read_int("mfaktc.ini", "WorkFileAddDelay", &i))
   {
-    logprintf(mystuff, "WARNING: Cannot read WorkFileAddDelay from mfaktc.ini, set to 600s by default\n");
+    logprintf(mystuff, "WARNING: Cannot read WorkFileAddDelay from mfaktc.ini, set to 600 s by default\n");
     i = 600;
   }
   if(i > 3600)
@@ -396,7 +396,7 @@ int read_config(mystuff_t *mystuff)
   }
   if(mystuff->verbosity >= 1)
   {
-    if(i > 0)logprintf(mystuff, "  WorkFileAddDelay          %ds\n", i);
+    if(i > 0)logprintf(mystuff, "  WorkFileAddDelay          %d s\n", i);
     else     logprintf(mystuff, "  WorkFileAddDelay          disabled\n");
   }
   mystuff->addfiledelay = i;

@@ -1,7 +1,7 @@
 CC = cl
 CFLAGS = /Ox /Oy /W2 /fp:fast /I"$(CUDA_PATH)\include" /I"$(CUDA_PATH)\include\cudart" /nologo
 
-NVCCFLAGS = -m64 --ptxas-options=-v
+NVCCFLAGS = -m64 --ptxas-options=-v -Wno-deprecated-gpu-targets
 CUFLAGS = -DWIN64 -Xcompiler "/EHsc /W3 /nologo /Ox" $(NVCCFLAGS)
 
 ############################################################

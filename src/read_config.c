@@ -386,7 +386,7 @@ int read_config(mystuff_t *mystuff)
   }
   if(i > 3600)
   {
-    logprintf(mystuff, "WARNING: WorkFileAddDelay cannot 3600 s\n");
+    logprintf(mystuff, "WARNING: WorkFileAddDelay cannot exceed 3600 s\n");
     i = 3600;
   }
   if(i != 0 && i < 30)

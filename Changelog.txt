@@ -12,6 +12,9 @@ bug fixes:
 - fixed typos and formatting in output
 - fix some compilation warnings
 
+build:
+- made the build scripts more robust
+
 other changes:
 - dropped support for compute capability 1.x and 32-bit builds
 - replaced deprecated cudaThreadSynchronize() with cudaDeviceSynchronize()

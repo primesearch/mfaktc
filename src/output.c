@@ -491,7 +491,7 @@ void print_result_line(mystuff_t *mystuff, int factorsfound)
       }
       char factor[MAX_DEZ_96_STRING_LENGTH];
       print_dez96(mystuff->factors[i++], factor);
-      factors_list_length = sprintf(factors_list, factor);
+      factors_list_length = sprintf(factors_list, "%s", factor);
       factors_quote_list_length = sprintf(factors_quote_list, "\"%s\"", factor);
       for (; i < MAX_FACTORS_PER_JOB; i++)
       {

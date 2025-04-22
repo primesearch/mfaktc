@@ -11,7 +11,7 @@ mfaktc is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
-                                
+
 You should have received a copy of the GNU General Public License
 along with mfaktc.  If not, see <http://www.gnu.org/licenses/>.
 */
@@ -45,7 +45,7 @@ checkpoint_write() writes the checkpoint file.
         i = 0;
         char factor[MAX_DEZ_96_STRING_LENGTH];
         print_dez96(factors[i++], factor);
-        factors_buffer_length = sprintf(factors_buffer, factor);
+        factors_buffer_length = sprintf(factors_buffer, "%s", factor);
         for (; i < MAX_FACTORS_PER_JOB; i++)
         {
             if (factors[i].d0 || factors[i].d1 || factors[i].d2)
@@ -90,14 +90,14 @@ returns 0 otherwise
   FILE *f;
   int ret = 0, i, chksum;
   char buffer[600], buffer2[600], *ptr, filename[40], factors_buffer[500];
-  
+
   for(i = 0; i < 600; i++)buffer[i] = 0;
 
   *cur_class = -1;
   *num_factors = 0;
-  
+
   sprintf(filename, "%s%u_%d-%d_%d.ckp", NAME_NUMBERS, exp, bit_min, bit_max, NUM_CLASSES);
-  
+
   f=fopen(filename, "r");
   if(f==NULL)
   {
@@ -168,7 +168,7 @@ tries to delete the checkpoint file
 {
   char filename[40];
   sprintf(filename, "%s%u_%d-%d_%d.ckp", NAME_NUMBERS, exp, bit_min, bit_max, NUM_CLASSES);
-  
+
   if(remove(filename))
   {
     if(errno != ENOENT) /* ENOENT = "No such file or directory" -> there was no checkpoint file */

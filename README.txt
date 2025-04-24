@@ -385,7 +385,7 @@ ongoing improvements
 - try to use double precision for the long integer divisions
   - unsure, may or may not be useful
 
-not planned for a specific release; no particular order!
+requested features; no particular order and not planned for a specific release
 - JSON output for Wagstaff numbers https://www.mersenneforum.org/showpost.php?p=662680&postcount=3769
 - factors-meta.<factor>.timestamp https://www.mersenneforum.org/showpost.php?p=662603&postcount=3750
 - factors-meta.<factor>.class https://www.mersenneforum.org/showpost.php?p=662720&postcount=3781
@@ -395,4 +395,4 @@ not planned for a specific release; no particular order!
 - catch HUP https://www.mersenneforum.org/showpost.php?p=662777&postcount=3815
 - non-prime exponents https://www.mersenneforum.org/showpost.php?p=663442&postcount=3873
 - TF10G support https://www.mersenneforum.org/showpost.php?p=663442&postcount=3873
-- Remove CPU sieving support https://www.mersenneforum.org/showpost.php?p=663517&postcount=3894
+- drop CPU sieving support https://www.mersenneforum.org/showpost.php?p=663517&postcount=3894

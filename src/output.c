@@ -452,19 +452,19 @@ void print_result_line(mystuff_t *mystuff, int factorsfound)
   char aidjson[MAX_LINE_LENGTH+11];
   char userjson[62]; /* 50 (V5UserID) + 11 spare + null character */
   char computerjson[66];  /* 50 (ComputerID) + 15 spare + null character */
-  char factorjson[514];
+  char factorjson[513];
   char factors_list[500];
   char factors_quote_list[500];
   char osjson[200];
   char details[50];
   char txtstring[200];
-  char json_checksum_string[800];
+  char json_checksum_string[200];
   char timestamp[50];
 
   FILE *txtresultfile=NULL;
 
 #ifndef WAGSTAFF
-  char jsonstring[1500];
+  char jsonstring[1100];
   FILE *jsonresultfile=NULL;
 #endif
 
@@ -518,12 +518,10 @@ void print_result_line(mystuff_t *mystuff, int factorsfound)
       factors_quote_list[0] = 0;
   }
 
-  if (factors_quote_list[0]) {
-      snprintf(factorjson, sizeof(factorjson), ", \"factors\":[%s]", factors_quote_list);
-  }
-  else {
+  if (factors_quote_list[0])
+      sprintf(factorjson, ", \"factors\":[%s]", factors_quote_list);
+  else
       factorjson[0] = 0;
-  }
 
   getOSJSON(osjson);
   get_utc_timestamp(timestamp);
@@ -558,10 +556,10 @@ void print_result_line(mystuff_t *mystuff, int factorsfound)
   checksum = crc32_checksum(txtstring, string_length);
   sprintf(txtstring + string_length, " %08X", checksum);
 #ifndef WAGSTAFF
-  snprintf(json_checksum_string, sizeof(json_checksum_string), "%u;TF;%s;;%2d;%2d;%u;;;mfaktc;%s;%s;%s;%s;%s;%s",
+  sprintf(json_checksum_string, "%u;TF;%s;;%2d;%2d;%u;;;mfaktc;%s;%s;%s;%s;%s;%s",
       mystuff->exponent, factors_list, mystuff->bit_min, mystuff->bit_max_stage, !partialresult, MFAKTC_VERSION, mystuff->stats.kernelname, details, getOS(), getArchitecture(), timestamp);
   json_checksum = crc32_checksum(json_checksum_string, strlen(json_checksum_string));
-  snprintf(jsonstring, sizeof(jsonstring), "{\"exponent\":%u, \"worktype\":\"TF\", \"status\":\"%s\", \"bitlo\":%2d, \"bithi\":%2d, \"rangecomplete\":%s%s, \"program\":{\"name\":\"mfaktc\", \"version\":\"%s\", \"subversion\":\"%s\", \"details\":\"%s\"}, \"timestamp\":\"%s\"%s%s%s%s, \"checksum\":{\"version\":%u, \"checksum\":\"%08X\"}}",
+  sprintf(jsonstring, "{\"exponent\":%u, \"worktype\":\"TF\", \"status\":\"%s\", \"bitlo\":%2d, \"bithi\":%2d, \"rangecomplete\":%s%s, \"program\":{\"name\":\"mfaktc\", \"version\":\"%s\", \"subversion\":\"%s\", \"details\":\"%s\"}, \"timestamp\":\"%s\"%s%s%s%s, \"checksum\":{\"version\":%u, \"checksum\":\"%08X\"}}",
       mystuff->exponent, factorsfound > 0 ? "F" : "NF", mystuff->bit_min, mystuff->bit_max_stage, partialresult ? "false" : "true", factorjson, MFAKTC_VERSION, mystuff->stats.kernelname, details, timestamp, userjson, computerjson, aidjson, osjson, MFAKTC_CHECKSUM_VERSION, json_checksum);
 #endif
   if(mystuff->mode != MODE_SELFTEST_SHORT)

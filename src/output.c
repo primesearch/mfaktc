@@ -556,7 +556,7 @@ void print_result_line(mystuff_t *mystuff, int factorsfound)
   checksum = crc32_checksum(txtstring, string_length);
   sprintf(txtstring + string_length, " %08X", checksum);
 #ifndef WAGSTAFF
-  sprintf(json_checksum_string, "%u;TF;%s;;%2d;%2d;%u;;;mfaktc;%s;%s;%s;%s;%s;%s",
+  sprintf(json_checksum_string, "%u;TF;%s;;%d;%d;%u;;;mfaktc;%s;%s;%s;%s;%s;%s",
       mystuff->exponent, factors_list, mystuff->bit_min, mystuff->bit_max_stage, !partialresult, MFAKTC_VERSION, mystuff->stats.kernelname, details, getOS(), getArchitecture(), timestamp);
   json_checksum = crc32_checksum(json_checksum_string, strlen(json_checksum_string));
   sprintf(jsonstring, "{\"exponent\":%u, \"worktype\":\"TF\", \"status\":\"%s\", \"bitlo\":%2d, \"bithi\":%2d, \"rangecomplete\":%s%s, \"program\":{\"name\":\"mfaktc\", \"version\":\"%s\", \"subversion\":\"%s\", \"details\":\"%s\"}, \"timestamp\":\"%s\"%s%s%s%s, \"checksum\":{\"version\":%u, \"checksum\":\"%08X\"}}",

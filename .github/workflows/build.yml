@@ -307,6 +307,7 @@ jobs:
             printf '%s\n' ${{ env.base_name }}.zip | sort -Vr
             echo 'EOF'
           } > $GITHUB_OUTPUT
+          ( echo "${{ github.ref_name }}" | grep -qsP "v?\d+(?:\.\d+(?:\.\d+)?(?:-\d+)?|\b)(-(?:alpha|beta|pre))" && echo "PRERELEASE=true" || echo "PRERELEASE=false" ) >> $GITHUB_OUTPUT
 
       - name: Create and upload release package
         uses: softprops/action-gh-release@v2.2.1
@@ -315,6 +316,7 @@ jobs:
           files: |
             ${{ steps.makeinfo.outputs.RELEASE_FILES }}
           preserve_order: true
+          prerelease: ${{ steps.makeinfo.outputs.PRERELEASE }}
           generate_release_notes: true
           body_path: RELEASE_NOTES.txt
           make_latest: true

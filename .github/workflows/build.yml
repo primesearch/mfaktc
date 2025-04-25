@@ -208,6 +208,7 @@ jobs:
           cuda: ${{ matrix.sys.cuda_version }}
           sub-packages: ${{ startsWith(matrix.sys.cuda_version, '8.') && '[]' || '[ "nvcc", "cudart" ]' }}
           use-local-cache: false
+          use-github-cache: false
 
       - name: Configure path to CUDA
         shell: powershell

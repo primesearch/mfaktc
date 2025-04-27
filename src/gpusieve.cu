@@ -58,8 +58,11 @@ const uint32 primesHandledWithSpecialCode = 50;		// Count of primes handled with
 							// Primes 11 through 509 are handled specially
 #endif
 
-// the maximum number of threads per SM is not the same for all architectures
-#if __CUDA_ARCH__ == 750
+// the maximum number of threads per SM is not the same for all architectures,
+// see https://en.wikipedia.org/wiki/CUDA#Technical_specifications for details
+#if __CUDA_ARCH__ == TESLA || __CUDA_ARCH__ == 110
+const uint32 min_blocks_per_mp = 3;
+#elif  __CUDA_ARCH__ == 120 || __CUDA_ARCH__ == 130 || __CUDA_ARCH__ == TURING
 const uint32 min_blocks_per_mp = 4;
 #else
 const uint32 min_blocks_per_mp = 6;

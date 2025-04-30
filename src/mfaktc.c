@@ -999,7 +999,7 @@ int main(int argc, char **argv)
 
     logprintf(&mystuff, "  clock rate (CUDA cores)   %d MHz\n", deviceinfo.clockRate / 1000);
     logprintf(&mystuff, "  memory clock rate:        %d MHz\n", deviceinfo.memoryClockRate / 1000);
-    logprintf(&mystuff, "  memory bus width:         %d bit\n", deviceinfo.memoryBusWidth);
+    logprintf(&mystuff, "  memory bus width:         %d bits\n", deviceinfo.memoryBusWidth);
   }
 
   if (mystuff.compcapa_major == 1) // CC 1.x

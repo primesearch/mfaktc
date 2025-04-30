@@ -6,10 +6,10 @@ Thanks go to Ben Buhrow for his erato.cu program and to Rocke Verser for his gpu
 See (http://www.mersenneforum.org/showthread.php?t=11900) for Ben's initial work.
 
 You are free to use this code as you wish; I take no reponsibility for
-any such action.  Optionally, please be nice and tell me if you find this 
-source to be useful, or add an acknowledgement within your work. Again optionally, 
-if you add to the functionality present here please consider making those 
-additions public too, so that others may benefit from your work.	
+any such action.  Optionally, please be nice and tell me if you find this
+source to be useful, or add an acknowledgement within your work. Again optionally,
+if you add to the functionality present here please consider making those
+additions public too, so that others may benefit from your work.
 */
 
 #include <stdio.h>
@@ -56,6 +56,16 @@ const uint32 primesHandledWithSpecialCode = 50;		// Count of primes handled with
 							// Primes 11 through 251 are handled specially
 //const uint32 primesHandledWithSpecialCode = 93;	// Count of primes handled with inline code (not using primes array)
 							// Primes 11 through 509 are handled specially
+#endif
+
+// the maximum number of threads per SM is not the same for all architectures,
+// see https://en.wikipedia.org/wiki/CUDA#Technical_specifications for details
+#if __CUDA_ARCH__ == TESLA || __CUDA_ARCH__ == 110
+#define MIN_BLOCKS_PER_MP 3
+#elif  __CUDA_ARCH__ == 120 || __CUDA_ARCH__ == 130 || __CUDA_ARCH__ == TURING
+#define MIN_BLOCKS_PER_MP 4
+#else
+#define MIN_BLOCKS_PER_MP 6
 #endif
 
 // Various useful constants
@@ -264,17 +274,17 @@ __device__ __inline static void bitOrSometimesIffy (uint8 *locsieve, uint32 bclr
 // OK as it will just cost us some extra testing of candidates which is cheaper than the cost of using
 // atomic operations.
 
-/* 
+/*
 	Expect as input a set of primes to sieve with, their inverses, and the first bit to clear.
 
-	Each block on the gpu sieves a different segment of the big bit array.  Each thread within each block 
+	Each block on the gpu sieves a different segment of the big bit array.  Each thread within each block
 	simultaneously sieves a small set of primes, marking composites within shared memory.  There is no memory
 	contention between threads because the marking process is write only.  Because each thread
 	block starts at a different part of the big bit array, a small amount of computation must
 	be done for each prime prior to sieving to figure out the first bit to clear.
 */
 
-__global__ static void __launch_bounds__(256,6) SegSieve (uint8 *big_bit_array_dev, uint8 *pinfo_dev, uint32 maxp)
+__global__ static void __launch_bounds__(THREADS_PER_BLOCK, MIN_BLOCKS_PER_MP) SegSieve (uint8 *big_bit_array_dev, uint8 *pinfo_dev, uint32 maxp)
 {
 	__shared__ uint8 locsieve[block_size_in_bytes];
 	uint32 block_start = blockIdx.x * block_size;
@@ -1135,7 +1145,7 @@ __device__ unsigned int modularinverse (uint32 n, uint32 orig_d)
 
 // Calculate the modular inverses used in computing initial bit-to-clear values
 
-__global__ static void __launch_bounds__(256,6) CalcModularInverses (uint32 exponent, int *calc_info)
+__global__ static void __launch_bounds__(THREADS_PER_BLOCK, MIN_BLOCKS_PER_MP) CalcModularInverses (uint32 exponent, int *calc_info)
 {
 	uint32	index;		// Index for prime and modinv data in calc_info
 	uint32	prime;		// The prime to work on
@@ -1166,7 +1176,7 @@ __global__ static void __launch_bounds__(256,6) CalcModularInverses (uint32 expo
 
 // Calculate the initial bit-to-clear values
 
-__global__ static void __launch_bounds__(256,6) CalcBitToClear (uint32 exponent, int96 k_base, int *calc_info, uint8 *pinfo_dev)
+__global__ static void __launch_bounds__(THREADS_PER_BLOCK, MIN_BLOCKS_PER_MP) CalcBitToClear (uint32 exponent, int96 k_base, int *calc_info, uint8 *pinfo_dev)
 {
 	uint32	index;		// Index for prime and modinv data in calc_info
 	uint32	mask;		// Mask that tells us what bits must be preserved in pinfo_dev when setting bit-to-clear
@@ -1234,7 +1244,7 @@ __global__ static void __launch_bounds__(256,6) CalcBitToClear (uint32 exponent,
 	else {
 		*pinfo32 = (*pinfo32 & mask) + bit_to_clear;
 	}
-}	
+}
 
 //
 // Sieve initialization done on the CPU
@@ -1312,7 +1322,7 @@ static	int	gpusieve_initialized = 0;
 	// Quick hack to eliminate sieve time from GPU-code benchmarks.  Can also be used
 	// to isolate a bug by eliminating the GPU sieving code as a possible cause.
 	checkCudaErrors (cudaMemset (mystuff->d_bitarray, 0xFF, mystuff->gpu_sieve_size / 8));
-#endif  
+#endif
 
 #undef pinfo32
 #define pinfo32		((uint32 *) pinfo)
@@ -1621,7 +1631,7 @@ static uint32	last_exponent_initialized = 0;
 	// Quick hack (leave bit array set to all ones) to eliminate sieve time from GPU-code benchmarks.
 	// Can also be used to isolate a bug by eliminating the GPU sieving code as a possible cause.
 	return;
-#endif  
+#endif
 
 	// If we've already initialized this exponent, return
 	if (mystuff->exponent == last_exponent_initialized) return;
@@ -1643,7 +1653,7 @@ void gpusieve_init_class (mystuff_t *mystuff, unsigned long long k_min)
 	// Quick hack (leave bit array set to all ones) to eliminate sieve time from GPU-code benchmarks.
 	// Can also be used to isolate a bug by eliminating the GPU sieving code as a possible cause.
 	return;
-#endif  
+#endif
 
 	k_base.d0 =  (int) (k_min & 0xFFFFFFFF);
 	k_base.d1 =  (int) (k_min >> 32);
@@ -1665,7 +1675,7 @@ void gpusieve (mystuff_t *mystuff, unsigned long long num_k_remaining)
 	// Quick hack (leave bit array set to all ones) to eliminate sieve time from GPU-code benchmarks.
 	// Can also be used to isolate a bug by eliminating the GPU sieving code as a possible cause.
 	return;
-#endif  
+#endif
 
 	// Sieve at most 128 million k values.
 	if ((unsigned long long) mystuff->gpu_sieve_size < num_k_remaining)

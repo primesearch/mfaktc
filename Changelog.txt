@@ -12,6 +12,8 @@ new features:
 bug fixes:
 - fixed typos and formatting in output
 - fix some compilation warnings
+- the maximum number of threads per SM should no longer exceed the limit for
+  certain architectures
 
 build:
 - made the build scripts more robust

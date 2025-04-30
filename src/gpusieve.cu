@@ -61,11 +61,11 @@ const uint32 primesHandledWithSpecialCode = 50;		// Count of primes handled with
 // the maximum number of threads per SM is not the same for all architectures,
 // see https://en.wikipedia.org/wiki/CUDA#Technical_specifications for details
 #if __CUDA_ARCH__ == TESLA || __CUDA_ARCH__ == 110
-const uint32 min_blocks_per_mp = 3;
+#define MIN_BLOCKS_PER_MP 3
 #elif  __CUDA_ARCH__ == 120 || __CUDA_ARCH__ == 130 || __CUDA_ARCH__ == TURING
-const uint32 min_blocks_per_mp = 4;
+#define MIN_BLOCKS_PER_MP 4
 #else
-const uint32 min_blocks_per_mp = 6;
+#define MIN_BLOCKS_PER_MP 6
 #endif
 
 // Various useful constants
@@ -284,7 +284,7 @@ __device__ __inline static void bitOrSometimesIffy (uint8 *locsieve, uint32 bclr
 	be done for each prime prior to sieving to figure out the first bit to clear.
 */
 
-__global__ static void __launch_bounds__(256, min_blocks_per_mp) SegSieve (uint8 *big_bit_array_dev, uint8 *pinfo_dev, uint32 maxp)
+__global__ static void __launch_bounds__(THREADS_PER_BLOCK, MIN_BLOCKS_PER_MP) SegSieve (uint8 *big_bit_array_dev, uint8 *pinfo_dev, uint32 maxp)
 {
 	__shared__ uint8 locsieve[block_size_in_bytes];
 	uint32 block_start = blockIdx.x * block_size;
@@ -1145,7 +1145,7 @@ __device__ unsigned int modularinverse (uint32 n, uint32 orig_d)
 
 // Calculate the modular inverses used in computing initial bit-to-clear values
 
-__global__ static void __launch_bounds__(256, min_blocks_per_mp) CalcModularInverses (uint32 exponent, int *calc_info)
+__global__ static void __launch_bounds__(THREADS_PER_BLOCK, MIN_BLOCKS_PER_MP) CalcModularInverses (uint32 exponent, int *calc_info)
 {
 	uint32	index;		// Index for prime and modinv data in calc_info
 	uint32	prime;		// The prime to work on
@@ -1176,7 +1176,7 @@ __global__ static void __launch_bounds__(256, min_blocks_per_mp) CalcModularInve
 
 // Calculate the initial bit-to-clear values
 
-__global__ static void __launch_bounds__(256, min_blocks_per_mp) CalcBitToClear (uint32 exponent, int96 k_base, int *calc_info, uint8 *pinfo_dev)
+__global__ static void __launch_bounds__(THREADS_PER_BLOCK, MIN_BLOCKS_PER_MP) CalcBitToClear (uint32 exponent, int96 k_base, int *calc_info, uint8 *pinfo_dev)
 {
 	uint32	index;		// Index for prime and modinv data in calc_info
 	uint32	mask;		// Mask that tells us what bits must be preserved in pinfo_dev when setting bit-to-clear

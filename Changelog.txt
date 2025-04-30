@@ -14,6 +14,7 @@ bug fixes:
 - fix some compilation warnings
 - the maximum number of threads per SM should no longer exceed the limit for
   certain architectures
+- CUDA versions are now correctly detected
 
 build:
 - made the build scripts more robust

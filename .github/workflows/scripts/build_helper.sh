@@ -39,23 +39,26 @@ CUDA_VERSION_FULL="$(echo "$1" | head -n1 | grep -Eom1 -e '^[1-9]([0-9])?\.[0-9]
 declare -a CUDA_VERSION
 IFS=" " read -r -a CUDA_VERSION <<< "$(echo "$CUDA_VERSION_FULL" | tr '.' ' ')"
 if [[ -z "${CUDA_VERSION[*]}" ]]; then
-  echo "Error: Could not parse CUDA version $1" >&2
+  echo "Error: unexpected CUDA version $1" >&2
   exit 2
 fi
 
 CUDA_VER_MAJOR=${CUDA_VERSION[0]}
 CUDA_VER_MINOR=${CUDA_VERSION[1]}
-CUDA_VER="${CUDA_VER_MAJOR}${CUDA_VER_MINOR}"
 echo -e "CUDA_VER_MAJOR=${CUDA_VER_MAJOR}\nCUDA_VER_MINOR=${CUDA_VER_MINOR}" > "$0.out"
+
+# Format CUDA_VER as single integer with both major and minor (inc. leading zero) versions.
+# Used for simple comparison of CUDA versions internally in this script.
+printf -v CUDA_VER %d%02d "${CUDA_VER_MAJOR}" "${CUDA_VER_MINOR}";
 
 # CUDA supports the --list-gpu-arch flag from 11.0.0 onwards.
 # For older CUDA versions, use grep to parse the supported architectures from
 # the output of --help
-[ "$CUDA_VER" -gt 110 ] && NVCC_OPTS='--list-gpu-arch' || NVCC_OPTS='--help'
+[ "$CUDA_VER" -gt 1100 ] && NVCC_OPTS='--list-gpu-arch' || NVCC_OPTS='--help'
 NVCC_REGEX='compute_[1-9][0-9]{1,2}'
 # CUDA 11.0.x is a special case. Its --help output lists compute_32 and higher,
 # but only compute capability 3.5 and later are supported.
-[ "$CUDA_VER" -eq 110 ] && NVCC_REGEX='compute_(3[5-9]|[4-9][0-9])'
+[ "$CUDA_VER" -eq 1100 ] && NVCC_REGEX='compute_(3[5-9]|[4-9][0-9])'
 
 declare -a CC_LIST
 IFS=" " read -r -a CC_LIST <<< "$(nvcc "$NVCC_OPTS" | grep -Eoe "$NVCC_REGEX" | cut -d '_' -f2 | $GSORT -un | xargs)"
@@ -75,11 +78,11 @@ for CC in "${CC_LIST[@]}"; do
   sed -i "/^NVCCFLAGS = .*\$/a NVCCFLAGS += --generate-code arch=compute_${CC},code=sm_${CC}" src/Makefile src/Makefile.win
 done
 
-if [ "$CUDA_VER" -ge 110 ]; then
+if [ "$CUDA_VER" -ge 1100 ]; then
   echo 'Adding NVCCFLAGS to allow unsupported MSVC versions...'
   sed -i '/^NVCCFLAGS = .*/a NVCCFLAGS += -allow-unsupported-compiler -D_ALLOW_COMPILER_AND_STL_VERSION_MISMATCH' src/Makefile.win
 fi
-if [ "$CUDA_VER" -lt 120 ]; then
+if [ "$CUDA_VER" -lt 1200 ]; then
   echo "Adding libraries to LDFLAGS to support static build on older Ubuntu versions..."
   sed -i -E 's/^(LDFLAGS = .*? -lcudart_static) (.*)/\1 -ldl -lrt -lpthread \2/' src/Makefile
 fi

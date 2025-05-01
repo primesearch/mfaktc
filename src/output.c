@@ -452,19 +452,19 @@ void print_result_line(mystuff_t *mystuff, int factorsfound)
   char aidjson[MAX_LINE_LENGTH+11];
   char userjson[62]; /* 50 (V5UserID) + 11 spare + null character */
   char computerjson[66];  /* 50 (ComputerID) + 15 spare + null character */
-  char factorjson[513];
+  char factorjson[514];
   char factors_list[500];
   char factors_quote_list[500];
   char osjson[200];
   char details[50];
   char txtstring[200];
-  char json_checksum_string[200];
+  char json_checksum_string[750];
   char timestamp[50];
 
   FILE *txtresultfile=NULL;
 
 #ifndef WAGSTAFF
-  char jsonstring[1100];
+  char jsonstring[1350];
   FILE *jsonresultfile=NULL;
 #endif
 
@@ -519,9 +519,10 @@ void print_result_line(mystuff_t *mystuff, int factorsfound)
   }
 
   if (factors_quote_list[0])
-      sprintf(factorjson, ", \"factors\":[%s]", factors_quote_list);
-  else
+      snprintf(factorjson, sizeof(factorjson), ", \"factors\":[%s]", factors_quote_list);
+  else {
       factorjson[0] = 0;
+  }
 
   getOSJSON(osjson);
   get_utc_timestamp(timestamp);
@@ -549,17 +550,21 @@ void print_result_line(mystuff_t *mystuff, int factorsfound)
     string_length = sprintf(txtstring, "no factor for %s%u from 2^%d to 2^%d", NAME_NUMBERS, mystuff->exponent, mystuff->bit_min, mystuff->bit_max_stage);
   }
 
-  sprintf(details, "CUDA %d.%d arch %d.%d", mystuff->cuda_toolkit / 1000, mystuff->cuda_toolkit % 100, mystuff->cuda_arch / 100, mystuff->cuda_arch % 100);
+  int cuda_major = mystuff->cuda_toolkit / 1000;
+  int cuda_minor = (mystuff->cuda_toolkit % 1000) / 10;
+  int arch_major = mystuff->cuda_arch / 100;
+  int arch_minor = (mystuff->cuda_arch % 100) / 10;
+  sprintf(details, "CUDA %d.%d arch %d.%d", cuda_major, cuda_minor, arch_major, arch_minor);
 
   string_length += sprintf(txtstring + string_length, " [mfaktc %s %s %s]", MFAKTC_VERSION, mystuff->stats.kernelname, details);
 
   checksum = crc32_checksum(txtstring, string_length);
   sprintf(txtstring + string_length, " %08X", checksum);
 #ifndef WAGSTAFF
-  sprintf(json_checksum_string, "%u;TF;%s;;%d;%d;%u;;;mfaktc;%s;%s;%s;%s;%s;%s",
+  snprintf(json_checksum_string, sizeof(json_checksum_string), "%u;TF;%s;;%d;%d;%u;;;mfaktc;%s;%s;%s;%s;%s;%s",
       mystuff->exponent, factors_list, mystuff->bit_min, mystuff->bit_max_stage, !partialresult, MFAKTC_VERSION, mystuff->stats.kernelname, details, getOS(), getArchitecture(), timestamp);
   json_checksum = crc32_checksum(json_checksum_string, strlen(json_checksum_string));
-  sprintf(jsonstring, "{\"exponent\":%u, \"worktype\":\"TF\", \"status\":\"%s\", \"bitlo\":%2d, \"bithi\":%2d, \"rangecomplete\":%s%s, \"program\":{\"name\":\"mfaktc\", \"version\":\"%s\", \"subversion\":\"%s\", \"details\":\"%s\"}, \"timestamp\":\"%s\"%s%s%s%s, \"checksum\":{\"version\":%u, \"checksum\":\"%08X\"}}",
+  snprintf(jsonstring, sizeof(jsonstring), "{\"exponent\":%u, \"worktype\":\"TF\", \"status\":\"%s\", \"bitlo\":%2d, \"bithi\":%2d, \"rangecomplete\":%s%s, \"program\":{\"name\":\"mfaktc\", \"version\":\"%s\", \"subversion\":\"%s\", \"details\":\"%s\"}, \"timestamp\":\"%s\"%s%s%s%s, \"checksum\":{\"version\":%u, \"checksum\":\"%08X\"}}",
       mystuff->exponent, factorsfound > 0 ? "F" : "NF", mystuff->bit_min, mystuff->bit_max_stage, partialresult ? "false" : "true", factorjson, MFAKTC_VERSION, mystuff->stats.kernelname, details, timestamp, userjson, computerjson, aidjson, osjson, MFAKTC_CHECKSUM_VERSION, json_checksum);
 #endif
   if(mystuff->mode != MODE_SELFTEST_SHORT)
@@ -580,57 +585,65 @@ void print_result_line(mystuff_t *mystuff, int factorsfound)
 }
 
 
-void print_factor(mystuff_t *mystuff, int factor_number, char *factor)
+void print_factor(mystuff_t* mystuff, int factor_number, char* factor)
 {
-  char UID[110]; /* 50 (V5UserID) + 50 (ComputerID) + 8 + spare */
-  char string[200];
-  int max_class_counter, string_length = 0, checksum;
-  FILE *resultfile = NULL;
+    char UID[110]; /* 50 (V5UserID) + 50 (ComputerID) + 8 + spare */
+    char string[200];
+    int max_class_counter, string_length = 0, checksum;
+    FILE* resultfile = NULL;
 
 #ifndef MORE_CLASSES
-  max_class_counter = 96;
+    max_class_counter = 96;
 #else
-  max_class_counter = 960;
+    max_class_counter = 960;
 #endif
 
-  if(mystuff->V5UserID[0] && mystuff->ComputerID[0])
-    sprintf(UID, "UID: %s/%s, ", mystuff->V5UserID, mystuff->ComputerID);
-  else
-    UID[0]=0;
+    if (mystuff->V5UserID[0] && mystuff->ComputerID[0])
+        sprintf(UID, "UID: %s/%s, ", mystuff->V5UserID, mystuff->ComputerID);
+    else
+        UID[0] = 0;
 
 
-  if(mystuff->mode == MODE_NORMAL)
-  {
-    resultfile = fopen(mystuff->resultfile, "a");
-    if(mystuff->print_timestamp == 1 && factor_number == 0)print_timestamp(resultfile);
-  }
-
-  if(factor_number < 10)
-  {
-    string_length = sprintf(string, "%s%u has a factor: %s [TF:%d:%d%s:mfaktc %s %s CUDA %d.%d arch %d.%d]", NAME_NUMBERS, mystuff->exponent, factor, \
-                            mystuff->bit_min, mystuff->bit_max_stage, ((mystuff->stopafterfactor == 2) && (mystuff->stats.class_counter <  max_class_counter)) ? "*" : "" , \
-                            MFAKTC_VERSION, mystuff->stats.kernelname, mystuff->cuda_toolkit / 1000, mystuff->cuda_toolkit % 100, mystuff->cuda_arch / 100, mystuff->cuda_arch % 100);
-
-    checksum = crc32_checksum(string, string_length);
-    sprintf(string + string_length, " %08X", checksum);
-
-    if(mystuff->mode != MODE_SELFTEST_SHORT)
+    if (mystuff->mode == MODE_NORMAL)
     {
-      if(mystuff->printmode == 1 && factor_number == 0)printf("\n");
-      printf("%s\n", string);
+        resultfile = fopen(mystuff->resultfile, "a");
+        if (mystuff->print_timestamp == 1 && factor_number == 0)print_timestamp(resultfile);
     }
-    if(mystuff->mode == MODE_NORMAL)
-    {
-      fprintf(resultfile, "%s%s\n", UID, string);
-    }
-  }
-  else /* factor_number >= 10 */
-  {
-    if(mystuff->mode != MODE_SELFTEST_SHORT)      printf("%s%u: %d additional factors not shown\n",      NAME_NUMBERS, mystuff->exponent, factor_number-10);
-    if(mystuff->mode == MODE_NORMAL)fprintf(resultfile,"%s%s%u: %d additional factors not shown\n", UID, NAME_NUMBERS, mystuff->exponent, factor_number-10);
-  }
 
-  if(mystuff->mode == MODE_NORMAL)fclose(resultfile);
+    if (factor_number < 10)
+    {
+        int cuda_major = mystuff->cuda_toolkit / 1000;
+        int cuda_minor = (mystuff->cuda_toolkit % 1000) / 10;
+        int arch_major = mystuff->cuda_arch / 100;
+        int arch_minor = (mystuff->cuda_arch % 100) / 10;
+        string_length = sprintf(string, "%s%u has a factor: %s [TF:%d:%d%s:mfaktc %s %s CUDA %d.%d arch %d.%d]", NAME_NUMBERS, mystuff->exponent, factor, \
+            mystuff->bit_min, mystuff->bit_max_stage, ((mystuff->stopafterfactor == 2) && (mystuff->stats.class_counter < max_class_counter)) ? "*" : "", \
+            MFAKTC_VERSION, mystuff->stats.kernelname, cuda_major, cuda_minor, arch_major, arch_minor);
+
+        checksum = crc32_checksum(string, string_length);
+        sprintf(string + string_length, " %08X", checksum);
+
+        if (mystuff->mode != MODE_SELFTEST_SHORT)
+        {
+            if (mystuff->printmode == 1 && factor_number == 0) {
+                printf("\n");
+            }
+            printf("%s\n", string);
+        }
+        if (mystuff->mode == MODE_NORMAL)
+        {
+            fprintf(resultfile, "%s%s\n", UID, string);
+        }
+    }
+    else /* factor_number >= 10 */
+    {
+        if (mystuff->mode != MODE_SELFTEST_SHORT)      printf("%s%u: %d additional factors not shown\n", NAME_NUMBERS, mystuff->exponent, factor_number - 10);
+        if (mystuff->mode == MODE_NORMAL)fprintf(resultfile, "%s%s%u: %d additional factors not shown\n", UID, NAME_NUMBERS, mystuff->exponent, factor_number - 10);
+    }
+
+    if (mystuff->mode == MODE_NORMAL) {
+        fclose(resultfile);
+    }
 }
 
 

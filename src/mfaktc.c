@@ -938,33 +938,41 @@ int main(int argc, char **argv)
   read_config(&mystuff);
 
   int drv_ver, rt_ver;
-  if(mystuff.verbosity >= 1)logprintf(&mystuff, "\nCUDA version info\n");
-  if(mystuff.verbosity >= 1)logprintf(&mystuff, "  binary compiled for CUDA  %d.%d\n", CUDART_VERSION/1000, CUDART_VERSION%100);
   cudaRuntimeGetVersion(&rt_ver);
-  if(mystuff.verbosity >= 1)logprintf(&mystuff, "  CUDA runtime version      %d.%d\n", rt_ver/1000, rt_ver%100);
   cudaDriverGetVersion(&drv_ver);
-  if(mystuff.verbosity >= 1)logprintf(&mystuff, "  CUDA driver version       %d.%d\n", drv_ver/1000, drv_ver%100);
-
-  if(drv_ver < CUDART_VERSION)
-  {
-    logprintf(&mystuff, "ERROR: current CUDA driver version is lower than the CUDA toolkit version used during compile!\n");
-    logprintf(&mystuff, "       Please update your graphics driver.\n");
-    close_log(&mystuff);
-    return 1;
-  }
-  if(rt_ver != CUDART_VERSION)
-  {
-    logprintf(&mystuff, "ERROR: CUDA runtime version must match the CUDA toolkit version used during compile!\n");
-    close_log(&mystuff);
-    return 1;
+  if (mystuff.verbosity >= 1) {
+      int binary_major = CUDART_VERSION / 1000;
+      int binary_minor = (CUDART_VERSION % 1000) / 10;
+      int runtime_major = rt_ver / 1000;
+      int runtime_minor = (rt_ver % 1000) / 10;
+      int driver_major = drv_ver / 1000;
+      int driver_minor = (drv_ver % 1000) / 10;
+      logprintf(&mystuff, "\nCUDA version info\n");
+      logprintf(&mystuff, "  binary compiled for CUDA  %d.%d\n", binary_major, binary_minor);
+      logprintf(&mystuff, "  CUDA runtime version      %d.%d\n", runtime_major, runtime_minor);
+      logprintf(&mystuff, "  CUDA driver version       %d.%d\n", driver_major, driver_minor);
   }
 
-  if(cudaSetDevice(devicenumber)!=cudaSuccess)
+  if (drv_ver < CUDART_VERSION)
   {
-    logprintf(&mystuff, "cudaSetDevice(%d) failed\n",devicenumber);
-    print_last_CUDA_error(&mystuff);
-    close_log(&mystuff);
-    return 1;
+      logprintf(&mystuff, "ERROR: current CUDA driver version is lower than the CUDA toolkit version used during compile!\n");
+      logprintf(&mystuff, "       Please update your graphics driver.\n");
+      close_log(&mystuff);
+      return 1;
+  }
+  if (rt_ver != CUDART_VERSION)
+  {
+      logprintf(&mystuff, "ERROR: CUDA runtime version must match the CUDA toolkit version used during compile!\n");
+      close_log(&mystuff);
+      return 1;
+  }
+
+  if (cudaSetDevice(devicenumber) != cudaSuccess)
+  {
+      logprintf(&mystuff, "cudaSetDevice(%d) failed\n", devicenumber);
+      print_last_CUDA_error(&mystuff);
+      close_log(&mystuff);
+      return 1;
   }
 
   cudaGetDeviceProperties(&deviceinfo, devicenumber);
@@ -973,14 +981,14 @@ int main(int argc, char **argv)
 
   mystuff.max_shared_memory = (int)deviceinfo.sharedMemPerMultiprocessor;
 
-  if(mystuff.verbosity >= 1)
+  if (mystuff.verbosity >= 1)
   {
-    logprintf(&mystuff, "\nCUDA device info\n");
-    logprintf(&mystuff, "  name                      %s\n",deviceinfo.name);
-    logprintf(&mystuff, "  compute capability        %d.%d\n",deviceinfo.major,deviceinfo.minor);
-    logprintf(&mystuff, "  max threads per block     %d\n",deviceinfo.maxThreadsPerBlock);
-    logprintf(&mystuff, "  max shared memory per MP  %d bytes\n", mystuff.max_shared_memory);
-    logprintf(&mystuff, "  number of multiprocessors %d\n", deviceinfo.multiProcessorCount);
+      logprintf(&mystuff, "\nCUDA device info\n");
+      logprintf(&mystuff, "  name                      %s\n", deviceinfo.name);
+      logprintf(&mystuff, "  compute capability        %d.%d\n", deviceinfo.major, deviceinfo.minor);
+      logprintf(&mystuff, "  max threads per block     %d\n", deviceinfo.maxThreadsPerBlock);
+      logprintf(&mystuff, "  max shared memory per MP  %d bytes\n", mystuff.max_shared_memory);
+      logprintf(&mystuff, "  number of multiprocessors %d\n", deviceinfo.multiProcessorCount);
 
 /* map deviceinfo.major + deviceinfo.minor to number of CUDA cores per MP.
    This is just information, I doesn't matter whether it is correct or not */

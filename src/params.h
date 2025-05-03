@@ -1,6 +1,6 @@
 /*
 This file is part of mfaktc.
-Copyright (C) 2009, 2010, 2011, 2012, 2013  Oliver Weihe (o.weihe@t-online.de)
+Copyright (C) 2009-2013  Oliver Weihe (o.weihe@t-online.de)
 
 mfaktc is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -80,7 +80,16 @@ code path */
 ********************************************************************************
 *******************************************************************************/
 
-#define MFAKTC_VERSION "0.23.3" /* Do not change without consensus! */
+/*
+ MFAKTC_VERSION sets the version number. You must make sure the version string
+ complies with the semantic versioning scheme: https://semver.org
+
+ Otherwise, the automated builds could fail in GitHub Actions.
+
+ Please discuss with the community before making changes to version numbers!
+ */
+
+#define MFAKTC_VERSION "0.23.3"
 
 
 /*
@@ -118,8 +127,8 @@ when the siever switches between those two code variants. */
 
 /*
 The number of CUDA streams used by mfaktc.
-The actual configuration is done in mfaktc.ini. This ini-file contains
-a small describtion, too
+The actual configuration is done in mfaktc.ini. This INI file contains
+a small description, too
 The following lines define the min, default and max value.
 */
 

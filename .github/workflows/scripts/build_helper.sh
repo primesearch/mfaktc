@@ -110,8 +110,8 @@ fi
 
 NVCC_VER="$(nvcc --version | tail -n1 | sed -E 's/^Build //')"
 
-# Version from src/params.h
-# Match semver: https://semver.org/#is-there-a-suggested-regular-expression-regex-to-check-a-semver-string
+# get mfaktc version from src/params.h
+# match SemVer and GIMPS version strings: https://regex101.com/r/m38d3i/2
 MFAKTC_VER="$(LC_ALL=en_US.utf8 grep -iPo '#define[\s\t]+MFAKTC_VERSION[\s\t]+"v?\d+(?:\.\d+(?:\.\d+)?(?:-\d+)?|\b)(?:-?(?:alpha|beta|pre)\.?(?:\d+)?\b)?' src/params.h | cut -d '"' -f 2)"
 
 # Git-formatted version

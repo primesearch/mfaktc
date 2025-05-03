@@ -11,7 +11,7 @@ mfaktc is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
-                                
+
 You should have received a copy of the GNU General Public License
 along with mfaktc.  If not, see <http://www.gnu.org/licenses/>.
 */
@@ -73,17 +73,17 @@ typedef struct
   unsigned int *d_ktab[NUM_STREAMS_MAX];
   unsigned int *h_RES;
   unsigned int *d_RES;
-  
+
   unsigned int exponent;               /* the exponent we're currently working on */
   int bit_min;                         /* where do we start TFing */
   int bit_max_assignment;              /* the upper size of factors we're searching for */
   int bit_max_stage;                   /* as above, but only for the current stage */
-  
+
   int sieve_primes;                    /* the actual number of odd primes using for sieving */
   int sieve_primes_adjust;             /* allow automated adjustment of sieve_primes? */
   int sieve_primes_upper_limit;        /* the upper limit of sieve_primes for the current exponent */
   int sieve_primes_min, sieve_primes_max; /* user configureable sieve_primes min/max */
-  
+
   char workfile[51];                   /* allow filenames up to 50 chars... */
   char addfile[51];                    /* allow filenames up to 50 chars... */
   char resultfile[51];                 /* allow filenames up to 50 chars... */
@@ -91,14 +91,14 @@ typedef struct
   char logfile[51];                    /* allow filenames up to 50 chars... */
   FILE* logfileptr;
   int num_streams, cpu_streams;
-  
+
   int compcapa_major;                  /* compute capability major */
   int compcapa_minor;                  /* compute capability minor */
   int max_shared_memory;               /* maximum size of shared memory per multiprocessor (in byte) */
-  
+
   int checkpoints, checkpointdelay, mode, stages, stopafterfactor;
   int threads_per_grid_max, threads_per_grid;
-  
+
   int addfiledelay, addfilestatus;     /* status: -1: timer not initialized
                                                    0: last check didn't found an addfile
                                                    1: last check found an addfile */
@@ -106,7 +106,7 @@ typedef struct
 #ifdef DEBUG_GPU_MATH
   unsigned int *d_modbasecase_debug;
   unsigned int *h_modbasecase_debug;
-#endif  
+#endif
 
   int gpu_sieving;			/* TRUE if we're letting the GPU do the sieving */
   int gpu_sieve_size;			/* Size (in bits) of the GPU sieve.  Default is 128M bits. */
@@ -119,23 +119,23 @@ typedef struct
 
   int printmode;
   int allowsleep;
-  
+
   int print_timestamp;
-  
+
   int quit;
   int verbosity;                       /* 0 = reduced number of screen printfs, 1 = default, >= 2 = some additional printfs */
   int logging;                       /* 0 = logging disabled (default), 1 = logging enabled */
-  
+
   int selftestsize;
   int selftestrandomoffset;
-  
+
   stats_t stats;                       /* stuff for statistics, etc. */
-  
+
   char V5UserID[51];                   /* primenet V5UserID and ComputerID */
   char ComputerID[51];                 /* currently only used for screen/result output */
   char assignment_key[MAX_LINE_LENGTH + 1]; /* the assignment ID */
   char factors_string[500];            /* store factors in global state */
-  
+
 }mystuff_t;                            /* FIXME: propper name needed */
 
 
@@ -178,3 +178,7 @@ enum MODES
 #define FERMI  200
 #define KEPLER 300
 #define KEPLER_WITH_FUNNELSHIFT 320
+#define MAXWELL 500
+#define COMPUTE_CAPABILITY_PASCAL 600
+#define VOLTA 700
+#define TURING 750

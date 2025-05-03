@@ -1,6 +1,6 @@
 /*
 This file is part of mfaktc.
-Copyright (C) 2009, 2010, 2011, 2012, 2013, 2014  Oliver Weihe (o.weihe@t-online.de)
+Copyright (C) 2009-2014  Oliver Weihe (o.weihe@t-online.de)
                                                   Bertram Franz (bertramf@gmx.net)
 
 mfaktc is free software: you can redistribute it and/or modify
@@ -12,7 +12,7 @@ mfaktc is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
-                                
+
 You should have received a copy of the GNU General Public License
 along with mfaktc.  If not, see <http://www.gnu.org/licenses/>.
 */
@@ -43,7 +43,7 @@ along with mfaktc.  If not, see <http://www.gnu.org/licenses/>.
 
 void print_help(char *string)
 {
-  printf("mfaktc v%s Copyright (C) 2009, 2010, 2011, 2012, 2013, 2014, 2015  Oliver Weihe (o.weihe@t-online.de)\n", MFAKTC_VERSION);
+  printf("mfaktc v%s Copyright (C) 2009-2015  Oliver Weihe (o.weihe@t-online.de)\n", MFAKTC_VERSION);
   printf("This program comes with ABSOLUTELY NO WARRANTY; for details see COPYING.\n");
   printf("This is free software, and you are welcome to redistribute it\n");
   printf("under certain conditions; see COPYING for details.\n\n\n");
@@ -53,9 +53,9 @@ void print_help(char *string)
   printf("  -d <device number>     specify the device number used by this program\n");
   printf("  -tf <exp> <min> <max>  trial factor %s<exp> from 2^<min> to 2^<max> and exit\n", NAME_NUMBERS);
   printf("                         instead of parsing the worktodo file\n");
-  printf("  -st                    run builtin selftest and exit\n");
-  printf("  -st2                   same as -st but extended range for k_min/m_max\n");
-  printf("  -v <number>            set verbosity (min = 0, default = 1, more = 2, max/debug = 3)\n");
+  printf("  -st                    run built-in self-test and exit\n");
+  printf("  -st2                   same as -st but extended range for k_min and k_max\n");
+  printf("  -v <number>            set verbosity (min = 0, default = 1, more = 2, max = 3)\n");
   printf("\n");
   printf("options for debuging purposes\n");
   printf("  --timertest            run test of timer functions and exit\n");
@@ -117,7 +117,7 @@ void print_dez72(int72 a, char *buf)
   tmp.d2 =                 a.d2 >> 16;
   tmp.d1 = (a.d2 << 16) + (a.d1 >>  8);
   tmp.d0 = (a.d1 << 24) +  a.d0;
-  
+
   print_dez192(tmp, buf);
 }
 
@@ -132,7 +132,7 @@ void print_dez144(int144 a, char *buf)
   tmp.d2 = (a.d3 <<  8) + (a.d2 >> 16);
   tmp.d1 = (a.d2 << 16) + (a.d1 >>  8);
   tmp.d0 = (a.d1 << 24) +  a.d0;
-  
+
   print_dez192(tmp, buf);
 }
 
@@ -157,7 +157,7 @@ void print_dez192(int192 a, char *buf)
   char digit[58];
   int digits=0,carry,i=0;
   long long int tmp;
-  
+
   while((a.d0!=0 || a.d1!=0 || a.d2!=0 || a.d3!=0 || a.d4!=0 || a.d5!=0) && digits<58)
   {
                                                    carry = a.d5%10; a.d5 /= 10;
@@ -201,10 +201,10 @@ void print_status_line(mystuff_t *mystuff)
   struct tm *tm_now = NULL;
   int time_read = 0;
   double val;
-                        
+
 
   if(mystuff->mode == MODE_SELFTEST_SHORT) return; /* no output during short selftest */
-  
+
 #ifdef MORE_CLASSES
   max_class_number = 960;
 #else
@@ -218,7 +218,7 @@ void print_status_line(mystuff_t *mystuff)
     mystuff->stats.output_counter = 20;
   }
   if(mystuff->printmode == 0)mystuff->stats.output_counter--;
-  
+
   while(mystuff->stats.progressformat[i] && i < 250)
   {
     if(mystuff->stats.progressformat[i] != '%')
@@ -300,7 +300,7 @@ void print_status_line(mystuff_t *mystuff)
           val = (double)mystuff->stats.grid_count * mystuff->gpu_sieve_processing_size / ((double)mystuff->stats.class_time * 1000.0);
 	else						// CPU sieving
           val = (double)mystuff->threads_per_grid * (double)mystuff->stats.grid_count / ((double)mystuff->stats.class_time * 1000.0);
-        
+
         if(val <= 999.99f) index += sprintf(buffer + index, "%6.2f", val);
         else               index += sprintf(buffer + index, "%6.1f", val);
       }
@@ -379,8 +379,8 @@ void print_status_line(mystuff_t *mystuff)
       index = 0;
     }
   }
-  
-  
+
+
   if(mystuff->mode == MODE_NORMAL)
   {
     if(mystuff->printmode == 1)index += sprintf(buffer + index, "\r");
@@ -441,15 +441,15 @@ void print_result_line(mystuff_t *mystuff, int factorsfound)
   char osjson[200];
   char txtstring[200];
   char timestamp[50];
-  
+
   FILE *txtresultfile=NULL;
 
 #ifndef WAGSTAFF
   char jsonstring[1350];
   FILE *jsonresultfile=NULL;
 #endif
-   
-  
+
+
   if(mystuff->V5UserID[0] && mystuff->ComputerID[0])
     sprintf(UID, "UID: %s/%s, ", mystuff->V5UserID, mystuff->ComputerID);
   else
@@ -477,7 +477,7 @@ void print_result_line(mystuff_t *mystuff, int factorsfound)
 
   getOSJSON(osjson);
   get_utc_timestamp(timestamp);
-    
+
   if(mystuff->mode == MODE_NORMAL)
   {
     txtresultfile = fopen(mystuff->resultfile, "a");
@@ -493,7 +493,7 @@ void print_result_line(mystuff_t *mystuff, int factorsfound)
 #endif
   if (factorsfound)
   {
-    sprintf(txtstring, "found %d factor%s for %s%u from 2^%2d to 2^%2d %s[mfaktc %s %s]", 
+    sprintf(txtstring, "found %d factor%s for %s%u from 2^%2d to 2^%2d %s[mfaktc %s %s]",
         factorsfound, (factorsfound > 1) ? "s" : "", NAME_NUMBERS, mystuff->exponent, mystuff->bit_min, mystuff->bit_max_stage, partialresult ? "(partially tested) " : "", MFAKTC_VERSION, mystuff->stats.kernelname);
   }
   else
@@ -531,7 +531,7 @@ void print_factor(mystuff_t *mystuff, int factor_number, char *factor)
     sprintf(UID, "UID: %s/%s, ", mystuff->V5UserID, mystuff->ComputerID);
   else
     UID[0]=0;
-    
+
 
   if(mystuff->mode == MODE_NORMAL)
   {
@@ -548,9 +548,9 @@ void print_factor(mystuff_t *mystuff, int factor_number, char *factor)
     }
     if(mystuff->mode == MODE_NORMAL)
     {
-#ifndef MORE_CLASSES      
+#ifndef MORE_CLASSES
       fprintf(resultfile, "%s%s%u has a factor: %s [TF:%d:%d%s:mfaktc %s %s]\n", UID, NAME_NUMBERS, mystuff->exponent, factor, mystuff->bit_min, mystuff->bit_max_stage, ((mystuff->stopafterfactor == 2) && (mystuff->stats.class_counter <  96)) ? "*" : "" , MFAKTC_VERSION, mystuff->stats.kernelname);
-#else      
+#else
       fprintf(resultfile, "%s%s%u has a factor: %s [TF:%d:%d%s:mfaktc %s %s]\n", UID, NAME_NUMBERS, mystuff->exponent, factor, mystuff->bit_min, mystuff->bit_max_stage, ((mystuff->stopafterfactor == 2) && (mystuff->stats.class_counter < 960)) ? "*" : "" , MFAKTC_VERSION, mystuff->stats.kernelname);
 #endif
     }
@@ -568,7 +568,7 @@ void print_factor(mystuff_t *mystuff, int factor_number, char *factor)
 double primenet_ghzdays(unsigned int exp, int bit_min, int bit_max)
 /* estimate the GHZ-days for the current job
 GHz-days = <magic constant> * pow(2, $bitlevel - 48) * 1680 / $exponent
-      
+
 magic constant is 0.016968 for TF to 65-bit and above
 magic constant is 0.017832 for 63-and 64-bit
 magic constant is 0.011160 for 62-bit and below

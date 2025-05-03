@@ -1597,7 +1597,7 @@ static uint32	last_exponent_initialized = 0;
 
 	// Calculate the modular inverses that will be used by each class to calculate initial bit-to-clear for each prime
 	CalcModularInverses<<<primes_per_thread+1, threadsPerBlock>>>(mystuff->exponent, (int *)mystuff->d_calc_bit_to_clear_info);
-	cudaThreadSynchronize ();
+	cudaDeviceSynchronize();
 }
 
 
@@ -1619,7 +1619,7 @@ void gpusieve_init_class (mystuff_t *mystuff, unsigned long long k_min)
 
 	// Calculate the initial bit-to-clear for each prime
 	CalcBitToClear<<<primes_per_thread+1, threadsPerBlock>>>(mystuff->exponent, k_base, (int *)mystuff->d_calc_bit_to_clear_info, (uint8 *)mystuff->d_sieve_info);
-	cudaThreadSynchronize ();
+	cudaDeviceSynchronize();
 }
 
 
@@ -1643,6 +1643,6 @@ void gpusieve (mystuff_t *mystuff, unsigned long long num_k_remaining)
 
 	// Do some sieving on the GPU!
 	SegSieve<<<(sieve_size + block_size - 1) / block_size, threadsPerBlock>>>((uint8 *)mystuff->d_bitarray, (uint8 *)mystuff->d_sieve_info, primes_per_thread);
-	cudaThreadSynchronize ();
+	cudaDeviceSynchronize();
 }
 

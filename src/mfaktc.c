@@ -397,7 +397,7 @@ see benchmarks in src/kernel_benchmarks.txt */
               factor.d0 = mystuff->h_RES[i * 3 + 3];
               print_dez96(factor, factorstring);
               sprintf(temp_factors_string, mystuff->factors_string[0] ? "%s,\"%s\"" : "%s\"%s\"", mystuff->factors_string, factorstring);
-              sprintf(mystuff->factors_string, temp_factors_string);
+              sprintf(mystuff->factors_string, "%s", temp_factors_string);
             }
           }
           if(mystuff->checkpoints == 1)
@@ -509,17 +509,29 @@ k_max and k_min are used as 64bit temporary integers here...
     time_est = (time_run * 960ULL ) / (unsigned long long int)(960-restart);
 #endif
 
-    if(time_est > 86400000ULL)logprintf(mystuff, "%" PRIu64 "d ",   time_run / 86400000ULL);
-    if(time_est > 3600000ULL) logprintf(mystuff, "%2" PRIu64 "h ", (time_run /  3600000ULL) % 24ULL);
-    if(time_est > 60000ULL)   logprintf(mystuff, "%2" PRIu64 "m ", (time_run /    60000ULL) % 60ULL);
-                              logprintf(mystuff, "%2" PRIu64 ".%03" PRIu64 "s\n", (time_run / 1000ULL) % 60ULL, time_run % 1000ULL);
-    if(restart != 0)
+    if (time_est > 86400000ULL) {
+        logprintf(mystuff, "%" PRIu64 "d ", time_run / 86400000ULL);
+    }
+    if (time_est > 3600000ULL) {
+        logprintf(mystuff, "%2" PRIu64 "h ", (time_run / 3600000ULL) % 24ULL);
+    }
+    if (time_est > 60000ULL) {
+        logprintf(mystuff, "%2" PRIu64 "m ", (time_run / 60000ULL) % 60ULL);
+    }
+    logprintf(mystuff, "%2" PRIu64 ".%03" PRIu64 "s\n", (time_run / 1000ULL) % 60ULL, time_run % 1000ULL);
+    if (restart != 0)
     {
-      logprintf(mystuff, "      estimated total time spent: ");
-      if(time_est > 86400000ULL)logprintf(mystuff, "%" PRIu64 "d ",   time_est / 86400000ULL);
-      if(time_est > 3600000ULL) logprintf(mystuff, "%2" PRIu64 "h ", (time_est /  3600000ULL) % 24ULL);
-      if(time_est > 60000ULL)   logprintf(mystuff, "%2" PRIu64 "m ", (time_est /    60000ULL) % 60ULL);
-                                logprintf(mystuff, "%2" PRIu64 ".%03" PRIu64 "s\n", (time_est / 1000ULL) % 60ULL, time_est % 1000ULL);
+        logprintf(mystuff, "      estimated total time spent: ");
+        if (time_est > 86400000ULL) {
+            logprintf(mystuff, "%" PRIu64 "d ", time_est / 86400000ULL);
+        }
+        if (time_est > 3600000ULL) {
+            logprintf(mystuff, "%2" PRIu64 "h ", (time_est / 3600000ULL) % 24ULL);
+        }
+        if (time_est > 60000ULL) {
+            logprintf(mystuff, "%2" PRIu64 "m ", (time_est / 60000ULL) % 60ULL);
+        }
+        logprintf(mystuff, "%2" PRIu64 ".%03" PRIu64 "s\n", (time_est / 1000ULL) % 60ULL, time_est % 1000ULL);
     }
     logprintf(mystuff, "\n");
   }

@@ -1281,7 +1281,7 @@ static	int	gpusieve_initialized = 0;
 	gpusieve_initialized = 1;
 
 	// Prefer 48KB shared memory
-	cudaThreadSetCacheConfig(cudaFuncCachePreferShared);
+	cudaDeviceSetCacheConfig(cudaFuncCachePreferShared);
 
 	// Allocate the big sieve array (default is 128M bits)
 	checkCudaErrors (cudaMalloc ((void**) &mystuff->d_bitarray, mystuff->gpu_sieve_size / 8));

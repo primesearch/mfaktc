@@ -885,7 +885,7 @@ int main(int argc, char **argv)
 
       if(tmp < 0)
       {
-        logprintf(&mystuff, "WARNING: minumum verbosity level is 0\n");
+        logprintf(&mystuff, "WARNING: minimum verbosity level is 0\n");
         tmp = 0;
       }
 
@@ -943,36 +943,46 @@ int main(int argc, char **argv)
 
   read_config(&mystuff);
 
-  int drv_ver, rt_ver;
-  if(mystuff.verbosity >= 1)logprintf(&mystuff, "\nCUDA version info\n");
-  if(mystuff.verbosity >= 1)logprintf(&mystuff, "  binary compiled for CUDA  %d.%d\n", CUDART_VERSION/1000, CUDART_VERSION%100);
-#if CUDART_VERSION >= 2020
-  cudaRuntimeGetVersion(&rt_ver);
-  if(mystuff.verbosity >= 1)logprintf(&mystuff, "  CUDA runtime version      %d.%d\n", rt_ver/1000, rt_ver%100);
-  cudaDriverGetVersion(&drv_ver);
-  if(mystuff.verbosity >= 1)logprintf(&mystuff, "  CUDA driver version       %d.%d\n", drv_ver/1000, drv_ver%100);
-
-  if(drv_ver < CUDART_VERSION)
-  {
-    logprintf(&mystuff, "ERROR: current CUDA driver version is lower than the CUDA toolkit version used during compile!\n");
-    logprintf(&mystuff, "       Please update your graphics driver.\n");
-    close_log(&mystuff);
-    return 1;
+  if (mystuff.verbosity >= 1) {
+      int binary_major = CUDART_VERSION / 1000;
+      int binary_minor = (CUDART_VERSION % 1000) / 10;
+      logprintf(&mystuff, "\nCUDA version info\n");
+      logprintf(&mystuff, "  binary compiled for CUDA  %d.%d\n", binary_major, binary_minor);
   }
-  if(rt_ver != CUDART_VERSION)
+#if CUDART_VERSION >= 2020
+  int drv_ver = 0, rt_ver = 0;
+  cudaRuntimeGetVersion(&rt_ver);
+  cudaDriverGetVersion(&drv_ver);
+  if (mystuff.verbosity >= 1) {
+      int runtime_major = rt_ver / 1000;
+      int runtime_minor = (rt_ver % 1000) / 10;
+      int driver_major = drv_ver / 1000;
+      int driver_minor = (drv_ver % 1000) / 10;
+      logprintf(&mystuff, "  CUDA runtime version      %d.%d\n", runtime_major, runtime_minor);
+      logprintf(&mystuff, "  CUDA driver version       %d.%d\n", driver_major, driver_minor);
+  }
+
+  if (drv_ver < CUDART_VERSION)
   {
-    logprintf(&mystuff, "ERROR: CUDA runtime version must match the CUDA toolkit version used during compile!\n");
-    close_log(&mystuff);
-    return 1;
+      logprintf(&mystuff, "ERROR: current CUDA driver version is lower than the CUDA toolkit version used during compile!\n");
+      logprintf(&mystuff, "       Please update your graphics driver.\n");
+      close_log(&mystuff);
+      return 1;
+  }
+  if (rt_ver != CUDART_VERSION)
+  {
+      logprintf(&mystuff, "ERROR: CUDA runtime version must match the CUDA toolkit version used during compile!\n");
+      close_log(&mystuff);
+      return 1;
   }
 #endif
 
-  if(cudaSetDevice(devicenumber)!=cudaSuccess)
+  if (cudaSetDevice(devicenumber) != cudaSuccess)
   {
-    logprintf(&mystuff, "cudaSetDevice(%d) failed\n",devicenumber);
-    print_last_CUDA_error(&mystuff);
-    close_log(&mystuff);
-    return 1;
+      logprintf(&mystuff, "cudaSetDevice(%d) failed\n", devicenumber);
+      print_last_CUDA_error(&mystuff);
+      close_log(&mystuff);
+      return 1;
   }
 
   cudaGetDeviceProperties(&deviceinfo, devicenumber);

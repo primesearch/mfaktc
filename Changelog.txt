@@ -1,3 +1,20 @@
+version 0.23.4
+==============================
+- includes changes backported from mfaktc 0.24.0
+
+bug fixes:
+- fixed typos and formatting in output
+- fix some compilation warnings
+- the maximum number of threads per SM should no longer exceed the limit for
+  certain architectures
+- CUDA versions are now correctly detected
+
+build:
+- made the build helper script more robust
+
+other changes:
+- replaced deprecated CUDA function calls
+
 version 0.23.3
 ==============================
 bug fixes:

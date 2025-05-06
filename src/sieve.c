@@ -182,322 +182,322 @@ smaller ints */
 
 void sieve_init_class(unsigned int exp, unsigned long long int k_start, int sieve_limit)
 {
-  int i,j,k,p;
-  int ii,jj;
+    int i, j, k, p;
+    int ii, jj;
 
-/* copy <sieve_limit> primes from prime_base[] to primes[] excluding the
-prime which equals the exponent itself. Because factors are
-2 * k * <exp> + 1 it is not a good idea to use <exp> for sieving.
-Additionally primes which are potential factors of M<exp> are removed. It
-would be sufficient add an initial offset for those primes but removing them
-allows to find composite factors. */
-  i = 0; j = 0;
-  while(i < sieve_limit)
-  {
-    if(j >= (SIEVE_PRIMES_MAX + SIEVE_PRIMES_EXTRA))
+    /* copy <sieve_limit> primes from prime_base[] to primes[] excluding the
+    prime which equals the exponent itself. Because factors are
+    2 * k * <exp> + 1 it is not a good idea to use <exp> for sieving.
+    Additionally primes which are potential factors of M<exp> are removed. It
+    would be sufficient add an initial offset for those primes but removing them
+    allows to find composite factors. */
+    i = 0; j = 0;
+    while (i < sieve_limit)
     {
-      printf("ERROR: SIEVE_PRIMES_EXTRA is too small, contact the author!\n");
-      exit(1);
+        if (j >= (SIEVE_PRIMES_MAX + SIEVE_PRIMES_EXTRA))
+        {
+            printf("ERROR: SIEVE_PRIMES_EXTRA is too small, contact the author!\n");
+            exit(1);
+        }
+        if ((unsigned int)prime_base[j] != exp && \
+            ((unsigned long long int)(prime_base[j]) % (2ULL * (unsigned long long int)exp) != 1ULL || prime_base[j] % 8 == 3 || prime_base[j] % 8 == 5))
+        {
+            primes[i++] = prime_base[j];
+        }
+        j++;
     }
-    if((prime_base[j] != exp) && \
-       (((unsigned long long int)(prime_base[j]) % (2ULL * (unsigned long long int)exp) != 1ULL) || (prime_base[j] % 8 == 3) || (prime_base[j] % 8 == 5)))
-    {
-      primes[i++] = prime_base[j];
-    }
-    j++;
-  }
 
 #ifdef MORE_CLASSES  
-  for(i=4;i<sieve_limit;i++)
+    for (i = 4; i < sieve_limit; i++)
 #else
-  for(i=3;i<sieve_limit;i++)
+    for (i = 3; i < sieve_limit; i++)
 #endif  
-  {
-    p=primes[i];  
-    k=0;
-// oldest version, explains what happens here a little bit */    
-//    while((2 * (exp%p) * ((k_start+k*NUM_CLASSES)%p)) %p != (p-1))k++;
-
-
-/* second version, expensive mod is avoided as much as possible, but it is
-still a brute force trail&error method */
-/*    ii=(2 * (exp%p) * (k_start%p))%p;
-    jj=(2 * (exp%p) * (NUM_CLASSES%p))%p;
-    while(ii != (p-1))
     {
-      ii+=jj;
-      if(ii>=p)ii-=p;
-      k++;
+        p = primes[i];
+        k = 0;
+        // oldest version, explains what happens here a little bit */    
+        //    while((2 * (exp%p) * ((k_start+k*NUM_CLASSES)%p)) %p != (p-1))k++;
+
+
+        /* second version, expensive mod is avoided as much as possible, but it is
+        still a brute force trail&error method */
+        /*    ii=(2 * (exp%p) * (k_start%p))%p;
+            jj=(2 * (exp%p) * (NUM_CLASSES%p))%p;
+            while(ii != (p-1))
+            {
+              ii+=jj;
+              if(ii>=p)ii-=p;
+              k++;
+            }
+            k_init[i]=k;*/
+
+            /* third version using a modified euclidean algorithm */
+        ii = (2ULL * (exp % p) * (k_start % p)) % p;
+        jj = (2ULL * (exp % p) * (NUM_CLASSES % p)) % p;
+
+        k = sieve_euclid_modified(jj, p, p - (1 + ii));
+        k_init[i] = k;
+
+        // error checking
+        unsigned long long int check;
+        check = k_start + (unsigned long long int) k * NUM_CLASSES;
+        check %= p;
+        check *= exp;
+        check <<= 1;
+        check %= p;
+        if (k < 0 || k >= p || check != (unsigned long long int)(p - 1))
+        {
+            printf("calculation of k_init[%d] failed!\n", i);
+            printf("  k_start= %" PRIu64 "\n", k_start);
+            printf("  exp= %u\n", exp);
+            printf("  ii= %d\n", ii);
+            printf("  jj= %d\n", jj);
+            printf("  k= %d\n", k);
+            printf("  p= %d\n", p);
+            printf("  check= %" PRId64 "\n", check);
+        }
     }
-    k_init[i]=k;*/
 
-/* third version using a modified euclidean algorithm */
-    ii=(2ULL * (exp%p) * (k_start%p))%p;
-    jj=(2ULL * (exp%p) * (NUM_CLASSES%p))%p;
-
-    k = sieve_euclid_modified(jj, p, p-(1+ii));
-    k_init[i]=k;
-
-// error checking
-    unsigned long long int check;
-    check = k_start + (unsigned long long int) k * NUM_CLASSES;
-    check %= p;
-    check *= exp;
-    check <<= 1;
-    check %= p;
-    if(k < 0 || k >= p || check != (p-1))
-    {
-      printf("calculation of k_init[%d] failed!\n",i);
-      printf("  k_start= %" PRIu64 "\n",k_start);
-      printf("  exp= %u\n",exp);
-      printf("  ii= %d\n",ii);
-      printf("  jj= %d\n",jj);
-      printf("  k= %d\n",k);
-      printf("  p= %d\n",p);
-      printf("  check= %" PRId64 "\n",check);
-    }
-  }
-  
-  for(i=0;i<SIEVE_SIZE;i++)sieve_set_bit(sieve_base,i);
+    for (i = 0; i < SIEVE_SIZE; i++)sieve_set_bit(sieve_base, i);
 
 #ifdef MORE_CLASSES
-/* presieve 13, 17, 19 and 23 in sieve_base */
-  for(i=4;i<=7;i++)
+    /* presieve 13, 17, 19 and 23 in sieve_base */
+    for (i = 4; i <= 7; i++)
 #else  
-/* presieve 11, 13, 17 and 19 in sieve_base */
-  for(i=3;i<=6;i++)
+    /* presieve 11, 13, 17 and 19 in sieve_base */
+    for (i = 3; i <= 6; i++)
 #endif
-  {
-    j=k_init[i];
-    p=primes[i];
-    while(j<SIEVE_SIZE)
     {
-//if((2 * (exp%p) * ((k_start+j*NUM_CLASSES)%p)) %p != (p-1))printf("EEEK: sieve: p=%d j=%d k=%" PRIu64 "\n",p,j,k_start+j*NUM_CLASSES);
-      sieve_clear_bit(sieve_base,j);
-      j+=p;
+        j = k_init[i];
+        p = primes[i];
+        while (j < SIEVE_SIZE)
+        {
+            //if((2 * (exp%p) * ((k_start+j*NUM_CLASSES)%p)) %p != (p-1))printf("EEEK: sieve: p=%d j=%d k=%" PRIu64 "\n",p,j,k_start+j*NUM_CLASSES);
+            sieve_clear_bit(sieve_base, j);
+            j += p;
+        }
+        //    k_init[i]=j-SIEVE_SIZE;
     }
-//    k_init[i]=j-SIEVE_SIZE;
-  }
-  last_sieve = SIEVE_SIZE;
+    last_sieve = SIEVE_SIZE;
 }
 
 
-void sieve_candidates(int ktab_size, unsigned int *ktab, int sieve_limit)
+void sieve_candidates(int ktab_size, unsigned int* ktab, int sieve_limit)
 {
-  int i=-1,ii,j,k=0,p,c=0,ic;
-  unsigned int s,sieve_table_8,*sieve_table_;
-  unsigned int mask; //, index, index_max;
-  unsigned int *ptr, *ptr_max;
+    int i = -1, ii, j, k = 0, p, c = 0, ic;
+    unsigned int s, sieve_table_8, * sieve_table_;
+    unsigned int mask; //, index, index_max;
+    unsigned int* ptr, * ptr_max;
 
 #ifdef RAW_GPU_BENCH
-//  quick hack to "speed up the siever", used for GPU-code benchmarks  
-  for(i=0;i<ktab_size;i++)ktab[i]=i;
-  return;
+    //  quick hack to "speed up the siever", used for GPU-code benchmarks  
+    for (i = 0; i < ktab_size; i++)ktab[i] = i;
+    return;
 #endif  
 
-  if(last_sieve < SIEVE_SIZE)
-  {
-    i=last_sieve;
-    c=-i;
-    goto _ugly_goto_in_siever;
-  }
+    if (last_sieve < SIEVE_SIZE)
+    {
+        i = last_sieve;
+        c = -i;
+        goto _ugly_goto_in_siever;
+    }
 
-  while(k<ktab_size)
-  {
-//printf("sieve_candidates(): main loop start\n");
-    memcpy(sieve, sieve_base, ((SIEVE_SIZE-1)>>3)+1);
+    while (k < ktab_size)
+    {
+        //printf("sieve_candidates(): main loop start\n");
+        memcpy(sieve, sieve_base, ((SIEVE_SIZE - 1) >> 3) + 1);
 
-/*
-The first few primes in the sieve have their own code. Since they are small
-they have many iterations in the inner loop. At the cost of some
-initialisation we can avoid calls to sieve_clear_bit() which calculates
-chunk and bit position in chunk on each call.
-Every 32 iterations they hit the same bit position so we can make use of
-this behaviour and precompute them. :)
-*/
+        /*
+        The first few primes in the sieve have their own code. Since they are small
+        they have many iterations in the inner loop. At the cost of some
+        initialisation we can avoid calls to sieve_clear_bit() which calculates
+        chunk and bit position in chunk on each call.
+        Every 32 iterations they hit the same bit position so we can make use of
+        this behaviour and precompute them. :)
+        */
 #ifdef MORE_CLASSES
-    for(i=7;i<SIEVE_SPLIT;i++)
+        for (i = 7; i < SIEVE_SPLIT; i++)
 #else
-    for(i=6;i<SIEVE_SPLIT;i++)
+        for (i = 6; i < SIEVE_SPLIT; i++)
 #endif
-    {
-      j=k_init[i];
-      p=primes[i];
-//printf("sieve: %d\n",p);
-      for(ii=0; ii<32; ii++)
-      {
-        mask = mask0[j & 0x1F];
-/*
-        index = j >> 5;
-        index_max = SIEVE_SIZE >> 5;
-        if(index_max + (j & 0x1F) < SIEVE_SIZE)index_max++;
-        while(index < index_max)
         {
-          sieve[index] &= mask;
-          index += p;
-        }
-        j+=p;
-      }
-      j = (index<<5) + ((j-p) & 0x1F);
-      while(j>=SIEVE_SIZE)j-=p;
-      j+=p;
-      k_init[i]=j-SIEVE_SIZE;*/
+            j = k_init[i];
+            p = primes[i];
+            //printf("sieve: %d\n",p);
+            for (ii = 0; ii < 32; ii++)
+            {
+                mask = mask0[j & 0x1F];
+                /*
+                        index = j >> 5;
+                        index_max = SIEVE_SIZE >> 5;
+                        if(index_max + (j & 0x1F) < SIEVE_SIZE)index_max++;
+                        while(index < index_max)
+                        {
+                          sieve[index] &= mask;
+                          index += p;
+                        }
+                        j+=p;
+                      }
+                      j = (index<<5) + ((j-p) & 0x1F);
+                      while(j>=SIEVE_SIZE)j-=p;
+                      j+=p;
+                      k_init[i]=j-SIEVE_SIZE;*/
 
-        ptr = &(sieve[j>>5]);
-        ptr_max = &(sieve[SIEVE_SIZE >> 5]);
-        if( (j & 0x1F) < (SIEVE_SIZE & 0x1F))ptr_max++;
-        while(ptr < ptr_max) /* inner loop, lets kick out some bits! */
+                ptr = &(sieve[j >> 5]);
+                ptr_max = &(sieve[SIEVE_SIZE >> 5]);
+                if ((j & 0x1F) < (SIEVE_SIZE & 0x1F))ptr_max++;
+                while (ptr < ptr_max) /* inner loop, lets kick out some bits! */
+                {
+                    *ptr &= mask;
+                    ptr += p;
+                }
+                j += p;
+            }
+            j = ((int)(ptr - sieve) << 5) + ((j - p) & 0x1F); /* D'oh! Pointer arithmetic... but it is faster! */
+            j -= SIEVE_SIZE;
+            k_init[i] = j % p;
+        }
+
+        for (i = SIEVE_SPLIT; i < sieve_limit; i++)
         {
-          *ptr &= mask;
-          ptr += p;
+            j = k_init[i];
+            p = primes[i];
+            //printf("sieve: %d\n",p);
+            while (j < SIEVE_SIZE)
+            {
+                sieve_clear_bit(sieve, j);
+                j += p;
+            }
+            k_init[i] = j - SIEVE_SIZE;
         }
-        j+=p;
-      }
-      j = ((int)(ptr - sieve)<<5) + ((j-p) & 0x1F); /* D'oh! Pointer arithmetic... but it is faster! */
-      j -= SIEVE_SIZE;
-      k_init[i] = j % p;
-    }
 
-    for(i=SIEVE_SPLIT;i<sieve_limit;i++)
-    {
-      j=k_init[i];
-      p=primes[i];
-//printf("sieve: %d\n",p);
-      while(j<SIEVE_SIZE)
-      {
-        sieve_clear_bit(sieve,j);
-        j+=p;
-      }
-      k_init[i]=j-SIEVE_SIZE;
-    }
-    
-/*
-we have finished sieving and now we need to translate the remaining bits in
-the sieve to the correspondic k_tab offsets
-*/    
+        /*
+        we have finished sieving and now we need to translate the remaining bits in
+        the sieve to the correspondic k_tab offsets
+        */
 
-/* part one of the loop:
-Get the bits out of the sieve until i is a multiple of 32
-this is going to fail if ktab has less than 32 elements! */
-    for(i=0;(i<SIEVE_SIZE) && (i&0x1F);i++)
-    {
-_ugly_goto_in_siever:
-      if(sieve_get_bit(sieve,i))
-      {
-        ktab[k++]=i+c;
-        if(k >= ktab_size)
+        /* part one of the loop:
+        Get the bits out of the sieve until i is a multiple of 32
+        this is going to fail if ktab has less than 32 elements! */
+        for (i = 0; (i < SIEVE_SIZE) && (i & 0x1F); i++)
         {
-          last_sieve=i+1;
-          return;
+        _ugly_goto_in_siever:
+            if (sieve_get_bit(sieve, i))
+            {
+                ktab[k++] = i + c;
+                if (k >= ktab_size)
+                {
+                    last_sieve = i + 1;
+                    return;
+                }
+            }
         }
-      }
-    }
-/* part two of the loop:
-Get the bits out of the sieve until
-a) we're close the end of the sieve
-or
-b) ktab is nearly filled up */
-    for(;i<(SIEVE_SIZE&0xFFFFFFE0) && k<(ktab_size-33);i+=32)	// thirty-three!!!
-    {
-      ic=i+c;
-      s=sieve[i>>5];
-//#define SIEVER_OLD_METHOD
+        /* part two of the loop:
+        Get the bits out of the sieve until
+        a) we're close the end of the sieve
+        or
+        b) ktab is nearly filled up */
+        for (; i < (int)(SIEVE_SIZE & 0xFFFFFFE0) && k < (ktab_size - 33); i += 32)	// thirty-three!!!
+        {
+            ic = i + c;
+            s = sieve[i >> 5];
+            //#define SIEVER_OLD_METHOD
 #ifdef SIEVER_OLD_METHOD
-      sieve_table_=sieve_table[ s     &0xFF];
-      for(p=0;p<sieve_table_[8];p++) ktab[k++]=ic   +sieve_table_[p];
-      
-      sieve_table_=sieve_table[(s>>8 )&0xFF];
-      for(p=0;p<sieve_table_[8];p++) ktab[k++]=ic +8+sieve_table_[p];
-      
-      sieve_table_=sieve_table[(s>>16)&0xFF];
-      for(p=0;p<sieve_table_[8];p++) ktab[k++]=ic+16+sieve_table_[p];
-      
-      sieve_table_=sieve_table[ s>>24      ];
-      for(p=0;p<sieve_table_[8];p++) ktab[k++]=ic+24+sieve_table_[p];
+            sieve_table_ = sieve_table[s & 0xFF];
+            for (p = 0; p < sieve_table_[8]; p++) ktab[k++] = ic + sieve_table_[p];
+
+            sieve_table_ = sieve_table[(s >> 8) & 0xFF];
+            for (p = 0; p < sieve_table_[8]; p++) ktab[k++] = ic + 8 + sieve_table_[p];
+
+            sieve_table_ = sieve_table[(s >> 16) & 0xFF];
+            for (p = 0; p < sieve_table_[8]; p++) ktab[k++] = ic + 16 + sieve_table_[p];
+
+            sieve_table_ = sieve_table[s >> 24];
+            for (p = 0; p < sieve_table_[8]; p++) ktab[k++] = ic + 24 + sieve_table_[p];
 
 #else // not SIEVER_OLD_METHOD
-      sieve_table_=sieve_table[ s     &0xFF];
-      sieve_table_8=sieve_table_[8];
-      ktab[k  ]=ic+sieve_table_[0];
-      ktab[k+1]=ic+sieve_table_[1];
-      ktab[k+2]=ic+sieve_table_[2];
-      ktab[k+3]=ic+sieve_table_[3];
-      if(sieve_table_8>4)
-      {
-        ktab[k+4]=ic+sieve_table_[4];
-        ktab[k+5]=ic+sieve_table_[5];
-        ktab[k+6]=ic+sieve_table_[6];
-        ktab[k+7]=ic+sieve_table_[7];
-      }
-      k+=sieve_table_8;
-      
-      sieve_table_=sieve_table[(s>>8 )&0xFF];
-      sieve_table_8=sieve_table_[8];
-      ic+=8;
-      ktab[k  ]=ic+sieve_table_[0];
-      ktab[k+1]=ic+sieve_table_[1];
-      ktab[k+2]=ic+sieve_table_[2];
-      ktab[k+3]=ic+sieve_table_[3];
-      if(sieve_table_8>4)
-      {
-        ktab[k+4]=ic+sieve_table_[4];
-        ktab[k+5]=ic+sieve_table_[5];
-        ktab[k+6]=ic+sieve_table_[6];
-        ktab[k+7]=ic+sieve_table_[7];
-      }
-      k+=sieve_table_8;
-      
-      sieve_table_=sieve_table[(s>>16)&0xFF];
-      sieve_table_8=sieve_table_[8];
-      ic+=8;
-      ktab[k  ]=ic+sieve_table_[0];
-      ktab[k+1]=ic+sieve_table_[1];
-      ktab[k+2]=ic+sieve_table_[2];
-      ktab[k+3]=ic+sieve_table_[3];
-      if(sieve_table_8>4)
-      {
-        ktab[k+4]=ic+sieve_table_[4];
-        ktab[k+5]=ic+sieve_table_[5];
-        ktab[k+6]=ic+sieve_table_[6];
-        ktab[k+7]=ic+sieve_table_[7];
-      }
-      k+=sieve_table_8;
-      
-      sieve_table_=sieve_table[ s>>24      ];
-      sieve_table_8=sieve_table_[8];
-      ic+=8;
-      ktab[k  ]=ic+sieve_table_[0];
-      ktab[k+1]=ic+sieve_table_[1];
-      ktab[k+2]=ic+sieve_table_[2];
-      ktab[k+3]=ic+sieve_table_[3];
-      if(sieve_table_8>4)
-      {
-        ktab[k+4]=ic+sieve_table_[4];
-        ktab[k+5]=ic+sieve_table_[5];
-        ktab[k+6]=ic+sieve_table_[6];
-        ktab[k+7]=ic+sieve_table_[7];
-      }
-      k+=sieve_table_8;
+            sieve_table_ = sieve_table[s & 0xFF];
+            sieve_table_8 = sieve_table_[8];
+            ktab[k] = ic + sieve_table_[0];
+            ktab[k + 1] = ic + sieve_table_[1];
+            ktab[k + 2] = ic + sieve_table_[2];
+            ktab[k + 3] = ic + sieve_table_[3];
+            if (sieve_table_8 > 4)
+            {
+                ktab[k + 4] = ic + sieve_table_[4];
+                ktab[k + 5] = ic + sieve_table_[5];
+                ktab[k + 6] = ic + sieve_table_[6];
+                ktab[k + 7] = ic + sieve_table_[7];
+            }
+            k += sieve_table_8;
+
+            sieve_table_ = sieve_table[(s >> 8) & 0xFF];
+            sieve_table_8 = sieve_table_[8];
+            ic += 8;
+            ktab[k] = ic + sieve_table_[0];
+            ktab[k + 1] = ic + sieve_table_[1];
+            ktab[k + 2] = ic + sieve_table_[2];
+            ktab[k + 3] = ic + sieve_table_[3];
+            if (sieve_table_8 > 4)
+            {
+                ktab[k + 4] = ic + sieve_table_[4];
+                ktab[k + 5] = ic + sieve_table_[5];
+                ktab[k + 6] = ic + sieve_table_[6];
+                ktab[k + 7] = ic + sieve_table_[7];
+            }
+            k += sieve_table_8;
+
+            sieve_table_ = sieve_table[(s >> 16) & 0xFF];
+            sieve_table_8 = sieve_table_[8];
+            ic += 8;
+            ktab[k] = ic + sieve_table_[0];
+            ktab[k + 1] = ic + sieve_table_[1];
+            ktab[k + 2] = ic + sieve_table_[2];
+            ktab[k + 3] = ic + sieve_table_[3];
+            if (sieve_table_8 > 4)
+            {
+                ktab[k + 4] = ic + sieve_table_[4];
+                ktab[k + 5] = ic + sieve_table_[5];
+                ktab[k + 6] = ic + sieve_table_[6];
+                ktab[k + 7] = ic + sieve_table_[7];
+            }
+            k += sieve_table_8;
+
+            sieve_table_ = sieve_table[s >> 24];
+            sieve_table_8 = sieve_table_[8];
+            ic += 8;
+            ktab[k] = ic + sieve_table_[0];
+            ktab[k + 1] = ic + sieve_table_[1];
+            ktab[k + 2] = ic + sieve_table_[2];
+            ktab[k + 3] = ic + sieve_table_[3];
+            if (sieve_table_8 > 4)
+            {
+                ktab[k + 4] = ic + sieve_table_[4];
+                ktab[k + 5] = ic + sieve_table_[5];
+                ktab[k + 6] = ic + sieve_table_[6];
+                ktab[k + 7] = ic + sieve_table_[7];
+            }
+            k += sieve_table_8;
 #endif      
-    }
-/* part three of the loop:
-Get the bits out of the sieve until
-a) sieve ends
-or
-b) ktab is full */    
-    for(;i<SIEVE_SIZE;i++)
-    {
-      if(sieve_get_bit(sieve,i))
-      {
-        ktab[k++]=i+c;
-        if(k >= ktab_size)
-        {
-          last_sieve=i+1;
-          return;
         }
-      }
+        /* part three of the loop:
+        Get the bits out of the sieve until
+        a) sieve ends
+        or
+        b) ktab is full */
+        for (; i < SIEVE_SIZE; i++)
+        {
+            if (sieve_get_bit(sieve, i))
+            {
+                ktab[k++] = i + c;
+                if (k >= ktab_size)
+                {
+                    last_sieve = i + 1;
+                    return;
+                }
+            }
+        }
+        c += SIEVE_SIZE;
     }
-    c+=SIEVE_SIZE;
-  }
-  last_sieve=i;
+    last_sieve = i;
 }

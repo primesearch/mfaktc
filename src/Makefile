@@ -10,14 +10,14 @@ CFLAGS_EXTRA_SIEVE = -funroll-all-loops
 
 # compiler settings for .cu files (GPU)
 NVCC = nvcc
-NVCCFLAGS = $(CUDA_INCLUDE) --ptxas-options=-v
+NVCCFLAGS = $(CUDA_INCLUDE) --ptxas-options=-v -Wno-deprecated-gpu-targets
 
-# generate code for various compute capabilities
-# NVCCFLAGS += --generate-code arch=compute_11,code=sm_11 # CC 1.1, 1.2 and 1.3 GPUs will use this code (1.0 is not possible for mfaktc)
-# NVCCFLAGS += --generate-code arch=compute_20,code=sm_20 # CC 2.x GPUs will use this code, one code fits all!
-# NVCCFLAGS += --generate-code arch=compute_30,code=sm_30 # all CC 3.x GPUs _COULD_ use this code
-# NVCCFLAGS += --generate-code arch=compute_35,code=sm_35 # but CC 3.2 _CAN_ use funnel shift which is useful for mfaktc
-NVCCFLAGS += --generate-code arch=compute_50,code=sm_50 # CC 5.x GPUs will use this code
+# generate code for supported compute capabilities
+# NVCCFLAGS += --generate-code arch=compute_11,code=sm_11 # mfaktc cannot use 1.0 but supports 1.1 and above
+# NVCCFLAGS += --generate-code arch=compute_20,code=sm_20 # Fermi GPUs
+# NVCCFLAGS += --generate-code arch=compute_30,code=sm_30 # early Kepler GPUs
+# NVCCFLAGS += --generate-code arch=compute_35,code=sm_35 # later Kepler GPUs; funnel shift added in 3.2
+NVCCFLAGS += --generate-code arch=compute_50,code=sm_50 # Maxwell GPUs
 NVCCFLAGS += --generate-code arch=compute_60,code=sm_60
 NVCCFLAGS += --generate-code arch=compute_61,code=sm_61
 NVCCFLAGS += --generate-code arch=compute_62,code=sm_62
@@ -31,7 +31,7 @@ NVCCFLAGS += --generate-code arch=compute_89,code=sm_89
 NVCCFLAGS += --generate-code arch=compute_90,code=sm_90
 NVCCFLAGS += --generate-code arch=compute_120,code=sm_120
 
-# pass some options to the C host compiler (e.g. gcc on Linux)
+# pass some options to the C host compiler
 NVCCFLAGS += --compiler-options=-Wall
 
 # Linker

@@ -51,6 +51,7 @@ jobs:
         sys:
           # Specified version combination must exist as CUDA container image from Nvidia: nvcr.io/nvidia/cuda:${{ matrix.sys.cuda_version }}-devel-${{ matrix.sys.ct_os }}
           # Available versions can be found here: https://catalog.ngc.nvidia.com/orgs/nvidia/containers/cuda/tags (note that only Ubuntu distros are supported by this action)
+          - { cuda_version: '12.9.0', ct_os: 'ubuntu24.04' }
           - { cuda_version: '12.8.1', ct_os: 'ubuntu24.04' }
           # - { cuda_version: '12.8.0', ct_os: 'ubuntu24.04' }
           - { cuda_version: '12.6.3', ct_os: 'ubuntu22.04' }
@@ -172,6 +173,7 @@ jobs:
         # Available versions can be viewed at the Jimver/cuda-toolkit action sources:
         # https://github.com/Jimver/cuda-toolkit/blob/v0.2.21/src/links/windows-links.ts
         sys:
+          - { cuda_version: '12.9.0', os: 'windows-2022' }
           - { cuda_version: '12.8.1', os: 'windows-2022' }
           - { cuda_version: '12.6.3', os: 'windows-2022' }
           - { cuda_version: '12.5.1', os: 'windows-2022' }
@@ -203,7 +205,7 @@ jobs:
 
       - name: Install CUDA Toolkit
         id: cuda-toolkit
-        uses: Jimver/cuda-toolkit@v0.2.22
+        uses: Jimver/cuda-toolkit@v0.2.24
         with:
           cuda: ${{ matrix.sys.cuda_version }}
           sub-packages: ${{ startsWith(matrix.sys.cuda_version, '8.') && '[]' || '[ "nvcc", "cudart" ]' }}

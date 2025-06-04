@@ -45,14 +45,17 @@ along with mfaktc.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "gpusieve_helper.cu"
 
-
 #define KERNEL_MIN_BLOCKS 2
 
 __global__ void
 #ifndef DEBUG_GPU_MATH
-__launch_bounds__(THREADS_PER_BLOCK, KERNEL_MIN_BLOCKS) mfaktc_barrett92_gs(unsigned int exp, int96 k_base, unsigned int *bit_array, unsigned int bits_to_process, int shiftcount, int192 b_preinit, unsigned int *RES, int bit_max64)
+__launch_bounds__(THREADS_PER_BLOCK, KERNEL_MIN_BLOCKS)
+    mfaktc_barrett92_gs(unsigned int exp, int96 k_base, unsigned int *bit_array, unsigned int bits_to_process, int shiftcount,
+                        int192 b_preinit, unsigned int *RES, int bit_max64)
 #else
-__launch_bounds__(THREADS_PER_BLOCK, KERNEL_MIN_BLOCKS) mfaktc_barrett92_gs(unsigned int exp, int96 k_base, unsigned int *bit_array, unsigned int bits_to_process, int shiftcount, int192 b_preinit, unsigned int *RES, int bit_max64, unsigned int *modbasecase_debug)
+__launch_bounds__(THREADS_PER_BLOCK, KERNEL_MIN_BLOCKS)
+    mfaktc_barrett92_gs(unsigned int exp, int96 k_base, unsigned int *bit_array, unsigned int bits_to_process, int shiftcount,
+                        int192 b_preinit, unsigned int *RES, int bit_max64, unsigned int *modbasecase_debug)
 #endif
 /*
 computes 2^exp mod f
@@ -61,41 +64,44 @@ a is precomputed on host ONCE.
 bit_max64 is the number of bits in the factor (minus 64)
 */
 {
-  int96 f, f_base;
-  int i, initial_shifter_value, total_bit_count, k_delta;
-  extern __shared__ unsigned short k_deltas[];		// Write bits to test here.  Launching program must estimate
-							// how much shared memory to allocate based on number of primes sieved.
+    int96 f, f_base;
+    int i, initial_shifter_value, total_bit_count, k_delta;
+    extern __shared__ unsigned short k_deltas[]; // Write bits to test here.  Launching program must estimate
+    // how much shared memory to allocate based on number of primes sieved.
 
-  create_k_deltas(bit_array, bits_to_process, &total_bit_count, k_deltas);
-  create_fbase96(&f_base, k_base, exp, bits_to_process);
+    create_k_deltas(bit_array, bits_to_process, &total_bit_count, k_deltas);
+    create_fbase96(&f_base, k_base, exp, bits_to_process);
 
-  initial_shifter_value = exp << (32 - shiftcount);	// Initial shifter value
+    initial_shifter_value = exp << (32 - shiftcount); // Initial shifter value
 
-// Loop til the k values written to shared memory are exhausted
-  for (i = threadIdx.x; i < total_bit_count; i += THREADS_PER_BLOCK) {
+    // Loop til the k values written to shared memory are exhausted
+    for (i = threadIdx.x; i < total_bit_count; i += THREADS_PER_BLOCK) {
+        // Get the (k - k_base) value to test
+        k_delta = k_deltas[i];
 
-// Get the (k - k_base) value to test
-    k_delta = k_deltas[i];
+        // Compute new f.  This is computed as f = f_base + 2 * (k - k_base) * exp.
+        f.d0 = __add_cc(f_base.d0, __umul32(2 * k_delta * NUM_CLASSES, exp));
+        f.d1 = __addc_cc(f_base.d1, __umul32hi(2 * k_delta * NUM_CLASSES, exp));
+        f.d2 = __addc(f_base.d2, 0);
 
-// Compute new f.  This is computed as f = f_base + 2 * (k - k_base) * exp.
-    f.d0 = __add_cc (f_base.d0, __umul32(2 * k_delta * NUM_CLASSES, exp));
-    f.d1 = __addc_cc(f_base.d1, __umul32hi(2 * k_delta * NUM_CLASSES, exp));
-    f.d2 = __addc   (f_base.d2, 0);
-
-    test_FC96_barrett92(f, b_preinit, initial_shifter_value, RES, bit_max64
+        test_FC96_barrett92(f, b_preinit, initial_shifter_value, RES, bit_max64
 #ifdef DEBUG_GPU_MATH
-                        , modbasecase_debug
+                            ,
+                            modbasecase_debug
 #endif
-                        );
-  }
+        );
+    }
 }
-
 
 __global__ void
 #ifndef DEBUG_GPU_MATH
-__launch_bounds__(THREADS_PER_BLOCK, KERNEL_MIN_BLOCKS) mfaktc_barrett88_gs(unsigned int exp, int96 k_base, unsigned int *bit_array, unsigned int bits_to_process, int shiftcount, int192 b_preinit, unsigned int *RES, int bit_max64)
+__launch_bounds__(THREADS_PER_BLOCK, KERNEL_MIN_BLOCKS)
+    mfaktc_barrett88_gs(unsigned int exp, int96 k_base, unsigned int *bit_array, unsigned int bits_to_process, int shiftcount,
+                        int192 b_preinit, unsigned int *RES, int bit_max64)
 #else
-__launch_bounds__(THREADS_PER_BLOCK, KERNEL_MIN_BLOCKS) mfaktc_barrett88_gs(unsigned int exp, int96 k_base, unsigned int *bit_array, unsigned int bits_to_process, int shiftcount, int192 b_preinit, unsigned int *RES, int bit_max64, unsigned int *modbasecase_debug)
+__launch_bounds__(THREADS_PER_BLOCK, KERNEL_MIN_BLOCKS)
+    mfaktc_barrett88_gs(unsigned int exp, int96 k_base, unsigned int *bit_array, unsigned int bits_to_process, int shiftcount,
+                        int192 b_preinit, unsigned int *RES, int bit_max64, unsigned int *modbasecase_debug)
 #endif
 /*
 computes 2^exp mod f
@@ -104,41 +110,44 @@ a is precomputed on host ONCE.
 bit_max64 is the number of bits in the factor (minus 64)
 */
 {
-  int96 f, f_base;
-  int i, initial_shifter_value, total_bit_count, k_delta;
-  extern __shared__ unsigned short k_deltas[];		// Write bits to test here.  Launching program must estimate
-							// how much shared memory to allocate based on number of primes sieved.
+    int96 f, f_base;
+    int i, initial_shifter_value, total_bit_count, k_delta;
+    extern __shared__ unsigned short k_deltas[]; // Write bits to test here.  Launching program must estimate
+    // how much shared memory to allocate based on number of primes sieved.
 
-  create_k_deltas(bit_array, bits_to_process, &total_bit_count, k_deltas);
-  create_fbase96(&f_base, k_base, exp, bits_to_process);
+    create_k_deltas(bit_array, bits_to_process, &total_bit_count, k_deltas);
+    create_fbase96(&f_base, k_base, exp, bits_to_process);
 
-  initial_shifter_value = exp << (32 - shiftcount);	// Initial shifter value
+    initial_shifter_value = exp << (32 - shiftcount); // Initial shifter value
 
-// Loop til the k values written to shared memory are exhausted
-  for (i = threadIdx.x; i < total_bit_count; i += THREADS_PER_BLOCK) {
+    // Loop til the k values written to shared memory are exhausted
+    for (i = threadIdx.x; i < total_bit_count; i += THREADS_PER_BLOCK) {
+        // Get the (k - k_base) value to test
+        k_delta = k_deltas[i];
 
-// Get the (k - k_base) value to test
-    k_delta = k_deltas[i];
+        // Compute new f.  This is computed as f = f_base + 2 * (k - k_base) * exp.
+        f.d0 = __add_cc(f_base.d0, __umul32(2 * k_delta * NUM_CLASSES, exp));
+        f.d1 = __addc_cc(f_base.d1, __umul32hi(2 * k_delta * NUM_CLASSES, exp));
+        f.d2 = __addc(f_base.d2, 0);
 
-// Compute new f.  This is computed as f = f_base + 2 * (k - k_base) * exp.
-    f.d0 = __add_cc (f_base.d0, __umul32(2 * k_delta * NUM_CLASSES, exp));
-    f.d1 = __addc_cc(f_base.d1, __umul32hi(2 * k_delta * NUM_CLASSES, exp));
-    f.d2 = __addc   (f_base.d2, 0);
-
-    test_FC96_barrett88(f, b_preinit, initial_shifter_value, RES, bit_max64
+        test_FC96_barrett88(f, b_preinit, initial_shifter_value, RES, bit_max64
 #ifdef DEBUG_GPU_MATH
-                        , modbasecase_debug
+                            ,
+                            modbasecase_debug
 #endif
-                        );
-  }
+        );
+    }
 }
-
 
 __global__ void
 #ifndef DEBUG_GPU_MATH
-__launch_bounds__(THREADS_PER_BLOCK, KERNEL_MIN_BLOCKS) mfaktc_barrett87_gs(unsigned int exp, int96 k_base, unsigned int *bit_array, unsigned int bits_to_process, int shiftcount, int192 b_preinit, unsigned int *RES, int bit_max64)
+__launch_bounds__(THREADS_PER_BLOCK, KERNEL_MIN_BLOCKS)
+    mfaktc_barrett87_gs(unsigned int exp, int96 k_base, unsigned int *bit_array, unsigned int bits_to_process, int shiftcount,
+                        int192 b_preinit, unsigned int *RES, int bit_max64)
 #else
-__launch_bounds__(THREADS_PER_BLOCK, KERNEL_MIN_BLOCKS) mfaktc_barrett87_gs(unsigned int exp, int96 k_base, unsigned int *bit_array, unsigned int bits_to_process, int shiftcount, int192 b_preinit, unsigned int *RES, int bit_max64, unsigned int *modbasecase_debug)
+__launch_bounds__(THREADS_PER_BLOCK, KERNEL_MIN_BLOCKS)
+    mfaktc_barrett87_gs(unsigned int exp, int96 k_base, unsigned int *bit_array, unsigned int bits_to_process, int shiftcount,
+                        int192 b_preinit, unsigned int *RES, int bit_max64, unsigned int *modbasecase_debug)
 #endif
 /*
 computes 2^exp mod f
@@ -147,41 +156,44 @@ a is precomputed on host ONCE.
 bit_max64 is the number of bits in the factor (minus 64)
 */
 {
-  int96 f, f_base;
-  int i, initial_shifter_value, total_bit_count, k_delta;
-  extern __shared__ unsigned short k_deltas[];		// Write bits to test here.  Launching program must estimate
-							// how much shared memory to allocate based on number of primes sieved.
+    int96 f, f_base;
+    int i, initial_shifter_value, total_bit_count, k_delta;
+    extern __shared__ unsigned short k_deltas[]; // Write bits to test here.  Launching program must estimate
+    // how much shared memory to allocate based on number of primes sieved.
 
-  create_k_deltas(bit_array, bits_to_process, &total_bit_count, k_deltas);
-  create_fbase96(&f_base, k_base, exp, bits_to_process);
+    create_k_deltas(bit_array, bits_to_process, &total_bit_count, k_deltas);
+    create_fbase96(&f_base, k_base, exp, bits_to_process);
 
-  initial_shifter_value = exp << (32 - shiftcount);	// Initial shifter value
+    initial_shifter_value = exp << (32 - shiftcount); // Initial shifter value
 
-// Loop til the k values written to shared memory are exhausted
-  for (i = threadIdx.x; i < total_bit_count; i += THREADS_PER_BLOCK) {
+    // Loop til the k values written to shared memory are exhausted
+    for (i = threadIdx.x; i < total_bit_count; i += THREADS_PER_BLOCK) {
+        // Get the (k - k_base) value to test
+        k_delta = k_deltas[i];
 
-// Get the (k - k_base) value to test
-    k_delta = k_deltas[i];
+        // Compute new f.  This is computed as f = f_base + 2 * (k - k_base) * exp.
+        f.d0 = __add_cc(f_base.d0, __umul32(2 * k_delta * NUM_CLASSES, exp));
+        f.d1 = __addc_cc(f_base.d1, __umul32hi(2 * k_delta * NUM_CLASSES, exp));
+        f.d2 = __addc(f_base.d2, 0);
 
-// Compute new f.  This is computed as f = f_base + 2 * (k - k_base) * exp.
-    f.d0 = __add_cc (f_base.d0, __umul32(2 * k_delta * NUM_CLASSES, exp));
-    f.d1 = __addc_cc(f_base.d1, __umul32hi(2 * k_delta * NUM_CLASSES, exp));
-    f.d2 = __addc   (f_base.d2, 0);
-
-    test_FC96_barrett87(f, b_preinit, initial_shifter_value, RES, bit_max64
+        test_FC96_barrett87(f, b_preinit, initial_shifter_value, RES, bit_max64
 #ifdef DEBUG_GPU_MATH
-                        , modbasecase_debug
+                            ,
+                            modbasecase_debug
 #endif
-                        );
-  }
+        );
+    }
 }
-
 
 __global__ void
 #ifndef DEBUG_GPU_MATH
-__launch_bounds__(THREADS_PER_BLOCK, KERNEL_MIN_BLOCKS) mfaktc_barrett79_gs(unsigned int exp, int96 k_base, unsigned int *bit_array, unsigned int bits_to_process, int shiftcount, int192 b_preinit, unsigned int *RES)
+__launch_bounds__(THREADS_PER_BLOCK, KERNEL_MIN_BLOCKS)
+    mfaktc_barrett79_gs(unsigned int exp, int96 k_base, unsigned int *bit_array, unsigned int bits_to_process, int shiftcount,
+                        int192 b_preinit, unsigned int *RES)
 #else
-__launch_bounds__(THREADS_PER_BLOCK, KERNEL_MIN_BLOCKS) mfaktc_barrett79_gs(unsigned int exp, int96 k_base, unsigned int *bit_array, unsigned int bits_to_process, int shiftcount, int192 b_preinit, unsigned int *RES, int bit_max64, unsigned int *modbasecase_debug)
+__launch_bounds__(THREADS_PER_BLOCK, KERNEL_MIN_BLOCKS)
+    mfaktc_barrett79_gs(unsigned int exp, int96 k_base, unsigned int *bit_array, unsigned int bits_to_process, int shiftcount,
+                        int192 b_preinit, unsigned int *RES, int bit_max64, unsigned int *modbasecase_debug)
 #endif
 /*
 computes 2^exp mod f
@@ -189,41 +201,44 @@ shiftcount is used for precomputing without mod
 a is precomputed on host ONCE.
 */
 {
-  int96 f, f_base;
-  int i, initial_shifter_value, total_bit_count, k_delta;
-  extern __shared__ unsigned short k_deltas[];		// Write bits to test here.  Launching program must estimate
-							// how much shared memory to allocate based on number of primes sieved.
+    int96 f, f_base;
+    int i, initial_shifter_value, total_bit_count, k_delta;
+    extern __shared__ unsigned short k_deltas[]; // Write bits to test here.  Launching program must estimate
+    // how much shared memory to allocate based on number of primes sieved.
 
-  create_k_deltas(bit_array, bits_to_process, &total_bit_count, k_deltas);
-  create_fbase96(&f_base, k_base, exp, bits_to_process);
+    create_k_deltas(bit_array, bits_to_process, &total_bit_count, k_deltas);
+    create_fbase96(&f_base, k_base, exp, bits_to_process);
 
-  initial_shifter_value = exp << (32 - shiftcount);	// Initial shifter value
+    initial_shifter_value = exp << (32 - shiftcount); // Initial shifter value
 
-// Loop til the k values written to shared memory are exhausted
-  for (i = threadIdx.x; i < total_bit_count; i += THREADS_PER_BLOCK) {
+    // Loop til the k values written to shared memory are exhausted
+    for (i = threadIdx.x; i < total_bit_count; i += THREADS_PER_BLOCK) {
+        // Get the (k - k_base) value to test
+        k_delta = k_deltas[i];
 
-// Get the (k - k_base) value to test
-    k_delta = k_deltas[i];
+        // Compute new f.  This is computed as f = f_base + 2 * (k - k_base) * exp.
+        f.d0 = __add_cc(f_base.d0, __umul32(2 * k_delta * NUM_CLASSES, exp));
+        f.d1 = __addc_cc(f_base.d1, __umul32hi(2 * k_delta * NUM_CLASSES, exp));
+        f.d2 = __addc(f_base.d2, 0);
 
-// Compute new f.  This is computed as f = f_base + 2 * (k - k_base) * exp.
-    f.d0 = __add_cc (f_base.d0, __umul32(2 * k_delta * NUM_CLASSES, exp));
-    f.d1 = __addc_cc(f_base.d1, __umul32hi(2 * k_delta * NUM_CLASSES, exp));
-    f.d2 = __addc   (f_base.d2, 0);
-
-    test_FC96_barrett79(f, b_preinit, initial_shifter_value, RES
+        test_FC96_barrett79(f, b_preinit, initial_shifter_value, RES
 #ifdef DEBUG_GPU_MATH
-                        , bit_max64, modbasecase_debug
+                            ,
+                            bit_max64, modbasecase_debug
 #endif
-                        );
-  }
+        );
+    }
 }
-
 
 __global__ void
 #ifndef DEBUG_GPU_MATH
-__launch_bounds__(THREADS_PER_BLOCK, KERNEL_MIN_BLOCKS) mfaktc_barrett77_gs(unsigned int exp, int96 k_base, unsigned int *bit_array, unsigned int bits_to_process, int shiftcount, int192 b_preinit, unsigned int *RES)
+__launch_bounds__(THREADS_PER_BLOCK, KERNEL_MIN_BLOCKS)
+    mfaktc_barrett77_gs(unsigned int exp, int96 k_base, unsigned int *bit_array, unsigned int bits_to_process, int shiftcount,
+                        int192 b_preinit, unsigned int *RES)
 #else
-__launch_bounds__(THREADS_PER_BLOCK, KERNEL_MIN_BLOCKS) mfaktc_barrett77_gs(unsigned int exp, int96 k_base, unsigned int *bit_array, unsigned int bits_to_process, int shiftcount, int192 b_preinit, unsigned int *RES, int bit_max64, unsigned int *modbasecase_debug)
+__launch_bounds__(THREADS_PER_BLOCK, KERNEL_MIN_BLOCKS)
+    mfaktc_barrett77_gs(unsigned int exp, int96 k_base, unsigned int *bit_array, unsigned int bits_to_process, int shiftcount,
+                        int192 b_preinit, unsigned int *RES, int bit_max64, unsigned int *modbasecase_debug)
 #endif
 /*
 computes 2^exp mod f
@@ -231,41 +246,44 @@ shiftcount is used for precomputing without mod
 a is precomputed on host ONCE.
 */
 {
-  int96 f, f_base;
-  int i, initial_shifter_value, total_bit_count, k_delta;
-  extern __shared__ unsigned short k_deltas[];		// Write bits to test here.  Launching program must estimate
-							// how much shared memory to allocate based on number of primes sieved.
+    int96 f, f_base;
+    int i, initial_shifter_value, total_bit_count, k_delta;
+    extern __shared__ unsigned short k_deltas[]; // Write bits to test here.  Launching program must estimate
+    // how much shared memory to allocate based on number of primes sieved.
 
-  create_k_deltas(bit_array, bits_to_process, &total_bit_count, k_deltas);
-  create_fbase96(&f_base, k_base, exp, bits_to_process);
+    create_k_deltas(bit_array, bits_to_process, &total_bit_count, k_deltas);
+    create_fbase96(&f_base, k_base, exp, bits_to_process);
 
-  initial_shifter_value = exp << (32 - shiftcount);	// Initial shifter value
+    initial_shifter_value = exp << (32 - shiftcount); // Initial shifter value
 
-// Loop til the k values written to shared memory are exhausted
-  for (i = threadIdx.x; i < total_bit_count; i += THREADS_PER_BLOCK) {
+    // Loop til the k values written to shared memory are exhausted
+    for (i = threadIdx.x; i < total_bit_count; i += THREADS_PER_BLOCK) {
+        // Get the (k - k_base) value to test
+        k_delta = k_deltas[i];
 
-// Get the (k - k_base) value to test
-    k_delta = k_deltas[i];
+        // Compute new f.  This is computed as f = f_base + 2 * (k - k_base) * exp.
+        f.d0 = __add_cc(f_base.d0, __umul32(2 * k_delta * NUM_CLASSES, exp));
+        f.d1 = __addc_cc(f_base.d1, __umul32hi(2 * k_delta * NUM_CLASSES, exp));
+        f.d2 = __addc(f_base.d2, 0);
 
-// Compute new f.  This is computed as f = f_base + 2 * (k - k_base) * exp.
-    f.d0 = __add_cc (f_base.d0, __umul32(2 * k_delta * NUM_CLASSES, exp));
-    f.d1 = __addc_cc(f_base.d1, __umul32hi(2 * k_delta * NUM_CLASSES, exp));
-    f.d2 = __addc   (f_base.d2, 0);
-
-    test_FC96_barrett77(f, b_preinit, initial_shifter_value, RES
+        test_FC96_barrett77(f, b_preinit, initial_shifter_value, RES
 #ifdef DEBUG_GPU_MATH
-                        , bit_max64, modbasecase_debug
+                            ,
+                            bit_max64, modbasecase_debug
 #endif
-                        );
-  }
+        );
+    }
 }
-
 
 __global__ void
 #ifndef DEBUG_GPU_MATH
-__launch_bounds__(THREADS_PER_BLOCK, KERNEL_MIN_BLOCKS) mfaktc_barrett76_gs(unsigned int exp, int96 k_base, unsigned int *bit_array, unsigned int bits_to_process, int shiftcount, int192 b_preinit, unsigned int *RES)
+__launch_bounds__(THREADS_PER_BLOCK, KERNEL_MIN_BLOCKS)
+    mfaktc_barrett76_gs(unsigned int exp, int96 k_base, unsigned int *bit_array, unsigned int bits_to_process, int shiftcount,
+                        int192 b_preinit, unsigned int *RES)
 #else
-__launch_bounds__(THREADS_PER_BLOCK, KERNEL_MIN_BLOCKS) mfaktc_barrett76_gs(unsigned int exp, int96 k_base, unsigned int *bit_array, unsigned int bits_to_process, int shiftcount, int192 b_preinit, unsigned int *RES, int bit_max64, unsigned int *modbasecase_debug)
+__launch_bounds__(THREADS_PER_BLOCK, KERNEL_MIN_BLOCKS)
+    mfaktc_barrett76_gs(unsigned int exp, int96 k_base, unsigned int *bit_array, unsigned int bits_to_process, int shiftcount,
+                        int192 b_preinit, unsigned int *RES, int bit_max64, unsigned int *modbasecase_debug)
 #endif
 /*
 computes 2^exp mod f
@@ -273,35 +291,34 @@ shiftcount is used for precomputing without mod
 a is precomputed on host ONCE.
 */
 {
-  int96 f, f_base;
-  int i, initial_shifter_value, total_bit_count, k_delta;
-  extern __shared__ unsigned short k_deltas[];		// Write bits to test here.  Launching program must estimate
-							// how much shared memory to allocate based on number of primes sieved.
+    int96 f, f_base;
+    int i, initial_shifter_value, total_bit_count, k_delta;
+    extern __shared__ unsigned short k_deltas[]; // Write bits to test here.  Launching program must estimate
+    // how much shared memory to allocate based on number of primes sieved.
 
-  create_k_deltas(bit_array, bits_to_process, &total_bit_count, k_deltas);
-  create_fbase96(&f_base, k_base, exp, bits_to_process);
+    create_k_deltas(bit_array, bits_to_process, &total_bit_count, k_deltas);
+    create_fbase96(&f_base, k_base, exp, bits_to_process);
 
-  initial_shifter_value = exp << (32 - shiftcount);	// Initial shifter value
+    initial_shifter_value = exp << (32 - shiftcount); // Initial shifter value
 
-// Loop til the k values written to shared memory are exhausted
-  for (i = threadIdx.x; i < total_bit_count; i += THREADS_PER_BLOCK) {
+    // Loop til the k values written to shared memory are exhausted
+    for (i = threadIdx.x; i < total_bit_count; i += THREADS_PER_BLOCK) {
+        // Get the (k - k_base) value to test
+        k_delta = k_deltas[i];
 
-// Get the (k - k_base) value to test
-    k_delta = k_deltas[i];
+        // Compute new f.  This is computed as f = f_base + 2 * (k - k_base) * exp.
+        f.d0 = __add_cc(f_base.d0, __umul32(2 * k_delta * NUM_CLASSES, exp));
+        f.d1 = __addc_cc(f_base.d1, __umul32hi(2 * k_delta * NUM_CLASSES, exp));
+        f.d2 = __addc(f_base.d2, 0);
 
-// Compute new f.  This is computed as f = f_base + 2 * (k - k_base) * exp.
-    f.d0 = __add_cc (f_base.d0, __umul32(2 * k_delta * NUM_CLASSES, exp));
-    f.d1 = __addc_cc(f_base.d1, __umul32hi(2 * k_delta * NUM_CLASSES, exp));
-    f.d2 = __addc   (f_base.d2, 0);
-
-    test_FC96_barrett76(f, b_preinit, initial_shifter_value, RES
+        test_FC96_barrett76(f, b_preinit, initial_shifter_value, RES
 #ifdef DEBUG_GPU_MATH
-                        , bit_max64, modbasecase_debug
+                            ,
+                            bit_max64, modbasecase_debug
 #endif
-                        );
-  }
+        );
+    }
 }
-
 
 #define TF_BARRETT
 

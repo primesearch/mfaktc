@@ -16,5 +16,4 @@ You should have received a copy of the GNU General Public License
 along with mfaktc.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-
 unsigned int crc32_checksum(char *string, int chars);

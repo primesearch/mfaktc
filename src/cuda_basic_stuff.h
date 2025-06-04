@@ -18,8 +18,8 @@ along with mfaktc.  If not, see <http://www.gnu.org/licenses/>.
 
 #ifdef _MSC_VER
 extern "C" {
-	int check_subcc_bug(mystuff_t *mystuff);
-	void get_CUDA_arch(mystuff_t *mystuff);
+int check_subcc_bug(mystuff_t *mystuff);
+void get_CUDA_arch(mystuff_t *mystuff);
 };
 #else
 extern int check_subcc_bug(mystuff_t *mystuff);

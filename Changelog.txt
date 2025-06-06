@@ -63,6 +63,9 @@ new features:
 - elapsed time is now stored in the .ckp file for accurate progress reporting
 - changed all timestamps to UTC to meet GIMPS results reporting standards
 
+other changes:
+- switched to semantic versioning
+
 version 0.22
 ==============================
 - unreleased

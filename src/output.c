@@ -528,7 +528,7 @@ void print_result_line(mystuff_t *mystuff, int factorsfound)
     json_checksum = crc32_checksum(json_checksum_string, strlen(json_checksum_string));
     snprintf(
         jsonstring, sizeof(jsonstring),
-        "{\"exponent\":%u, \"worktype\":\"TF\", \"status\":\"%s\", \"bitlo\":%2d, \"bithi\":%2d, \"rangecomplete\":%s%s, \"program\":{\"name\":\"mfaktc\", \"version\":\"%s\", \"subversion\":\"%s\", \"details\":\"%s\"}, \"timestamp\":\"%s\"%s%s%s%s, \"checksum\":{\"version\":%u, \"checksum\":\"%08X\"}}",
+        "{\"exponent\":%u, \"worktype\":\"TF\", \"status\":\"%s\", \"bitlo\":%d, \"bithi\":%d, \"rangecomplete\":%s%s, \"program\":{\"name\":\"mfaktc\", \"version\":\"%s\", \"subversion\":\"%s\", \"details\":\"%s\"}, \"timestamp\":\"%s\"%s%s%s%s, \"checksum\":{\"version\":%u, \"checksum\":\"%08X\"}}",
         mystuff->exponent, factorsfound > 0 ? "F" : "NF", mystuff->bit_min, mystuff->bit_max_stage, partialresult ? "false" : "true",
         factorjson, MFAKTC_VERSION, mystuff->stats.kernelname, details, timestamp, userjson, computerjson, aidjson, osjson,
         MFAKTC_CHECKSUM_VERSION, json_checksum);

@@ -829,7 +829,7 @@ int main(int argc, char **argv)
             }
 
             if (tmp < 0) {
-                logprintf(&mystuff, "WARNING: minumum verbosity level is 0\n");
+                logprintf(&mystuff, "WARNING: minimum verbosity level is 0\n");
                 tmp = 0;
             }
 

@@ -411,7 +411,8 @@ static int cmp_int96(const void *p1, const void *p2)
 }
 
 void print_result_line(mystuff_t *mystuff, int factorsfound)
-/* printf the final result line (STDOUT and resultfile) */
+// printf the final result line to STDOUT and to resultfile if LegacyResultsTxt set to 1.
+// Prints JSON string to the jsonresultfile for Mersenne numbers as well.
 {
     char UID[110]; /* 50 (V5UserID) + 50 (ComputerID) + 8 + spare */
     int string_length = 0, factors_list_length = 0, factors_quote_list_length = 0, checksum, json_checksum;
@@ -488,11 +489,13 @@ void print_result_line(mystuff_t *mystuff, int factorsfound)
     get_utc_timestamp(timestamp);
 
     if (mystuff->mode == MODE_NORMAL) {
-        txtresultfile = fopen(mystuff->resultfile, "a");
 #ifndef WAGSTAFF
         jsonresultfile = fopen(mystuff->jsonresultfile, "a");
 #endif
-        if (mystuff->print_timestamp == 1) print_timestamp(txtresultfile);
+        if (mystuff->legacy_results_txt == 1) {
+            txtresultfile = fopen(mystuff->resultfile, "a");
+            if (mystuff->print_timestamp == 1) print_timestamp(txtresultfile);
+        }
     }
 #ifndef MORE_CLASSES
     bool partialresult = (mystuff->mode == MODE_NORMAL) && (mystuff->stats.class_counter < 96);
@@ -534,14 +537,16 @@ void print_result_line(mystuff_t *mystuff, int factorsfound)
         printf("%s\n", txtstring);
     }
     if (mystuff->mode == MODE_NORMAL) {
-        fprintf(txtresultfile, "%s%s\n", UID, txtstring);
-        fclose(txtresultfile);
-        txtresultfile = NULL;
 #ifndef WAGSTAFF
         fprintf(jsonresultfile, "%s\n", jsonstring);
         fclose(jsonresultfile);
         jsonresultfile = NULL;
 #endif
+        if (mystuff->legacy_results_txt == 1) {
+            fprintf(txtresultfile, "%s%s\n", UID, txtstring);
+            fclose(txtresultfile);
+            txtresultfile = NULL;
+        }
     }
 }
 
@@ -550,7 +555,7 @@ void print_factor(mystuff_t *mystuff, int factor_number, char *factor)
     char UID[110]; /* 50 (V5UserID) + 50 (ComputerID) + 8 + spare */
     char string[200];
     int max_class_counter, string_length = 0, checksum;
-    FILE *resultfile = NULL;
+    FILE *txtresultfile = NULL;
 
 #ifndef MORE_CLASSES
     max_class_counter = 96;
@@ -563,9 +568,9 @@ void print_factor(mystuff_t *mystuff, int factor_number, char *factor)
     else
         UID[0] = 0;
 
-    if (mystuff->mode == MODE_NORMAL) {
-        resultfile = fopen(mystuff->resultfile, "a");
-        if (mystuff->print_timestamp == 1 && factor_number == 0) print_timestamp(resultfile);
+    if (mystuff->mode == MODE_NORMAL && mystuff->legacy_results_txt == 1) {
+        txtresultfile = fopen(mystuff->resultfile, "a");
+        if (mystuff->print_timestamp == 1 && factor_number == 0) print_timestamp(txtresultfile);
     }
 
     if (factor_number < 10) {
@@ -587,19 +592,19 @@ void print_factor(mystuff_t *mystuff, int factor_number, char *factor)
             }
             printf("%s\n", string);
         }
-        if (mystuff->mode == MODE_NORMAL) {
-            fprintf(resultfile, "%s%s\n", UID, string);
+        if (mystuff->mode == MODE_NORMAL && mystuff->legacy_results_txt == 1) {
+            fprintf(txtresultfile, "%s%s\n", UID, string);
         }
     } else /* factor_number >= 10 */
     {
         if (mystuff->mode != MODE_SELFTEST_SHORT)
             printf("%s%u: %d additional factors not shown\n", NAME_NUMBERS, mystuff->exponent, factor_number - 10);
-        if (mystuff->mode == MODE_NORMAL)
-            fprintf(resultfile, "%s%s%u: %d additional factors not shown\n", UID, NAME_NUMBERS, mystuff->exponent, factor_number - 10);
+        if (mystuff->mode == MODE_NORMAL && mystuff->legacy_results_txt == 1)
+            fprintf(txtresultfile, "%s%s%u: %d additional factors not shown\n", UID, NAME_NUMBERS, mystuff->exponent, factor_number - 10);
     }
 
-    if (mystuff->mode == MODE_NORMAL) {
-        fclose(resultfile);
+    if (mystuff->mode == MODE_NORMAL && mystuff->legacy_results_txt == 1) {
+        fclose(txtresultfile);
     }
 }
 

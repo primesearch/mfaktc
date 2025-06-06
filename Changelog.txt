@@ -1,7 +1,7 @@
 
 version 0.24
 ==============================
-- merge 0.22 and 0.23 together
+- merge development branches 0.22 and 0.23 together
 
 new features:
 - CRC32 checksums in JSON output to reduce invalid results
@@ -18,11 +18,16 @@ bug fixes:
 
 build:
 - made the build scripts more robust
+- new CUDA versions added
 
 other changes:
 - dropped support for compute capability 1.x and 32-bit builds
 - replaced deprecated cudaThreadSynchronize() with cudaDeviceSynchronize()
 - removed the debug option "USE_DEVICE_PRINTF"
+- code has been revamped to improve formatting and maintain consistent style
+- deprecated results.txt logging is now disabled by default,
+  please use results.json.txt for submissions; to restore the old behavior
+  and re-enable logging to results.txt, set LegacyResultsTxt=1 in mfaktc.ini.
 
 version 0.23.3
 ==============================

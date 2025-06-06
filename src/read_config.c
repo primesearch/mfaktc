@@ -487,5 +487,22 @@ int read_config(mystuff_t *mystuff)
     }
     mystuff->print_timestamp = i;
 
+    /*****************************************************************************/
+
+    if (my_read_int("mfaktc.ini", "LegacyResultsTxt", &i)) {
+        logprintf(mystuff, "WARNING: Cannot read LegacyResultsTxt from mfaktc.ini, set to 0 by default\n");
+        i = 0;
+    } else if (i < 0 || i > 1) {
+        logprintf(mystuff, "WARNING: LegacyResultsTxt must be 0 or 1, set to 0 by default\n");
+        i = 0;
+    }
+    if (mystuff->verbosity >= 1) {
+        if (i == 0)
+            logprintf(mystuff, "  LegacyResultsTxt          no\n");
+        else
+            logprintf(mystuff, "  LegacyResultsTxt          yes\n");
+    }
+    mystuff->legacy_results_txt = i;
+
     return 0;
 }

@@ -120,6 +120,7 @@ typedef struct {
     int quit;
     int verbosity; /* 0 = reduced number of screen printfs, 1 = default, >= 2 = some additional printfs */
     int logging;   /* 0 = logging disabled (default), 1 = logging enabled */
+    int legacy_results_txt; /* 0 = output to results.txt disabled (default), 1 = output to results.txt enabled */
 
     int selftestsize;
     int selftestrandomoffset;

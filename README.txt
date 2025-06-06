@@ -73,9 +73,9 @@ Some compile-time settings in the file src/params.h can be changed:
 - the last part contains defines which should *not* be changed unless you
   fully understand them. It is possible to easily screw something up.
 
-Be aware that 32-bit builds are not supported in version 0.24.0 onwards, and in
-CUDA Toolkit 12.2 and later. You will need to use the '0.23' branch and an
-older CUDA Toolkit to build mfaktc for 32 bits. See this thread for details:
+Be aware that mfaktc 0.24.0 and CUDA Toolkit 12.2 drop support for 32-bit
+builds. You will need to use the '0.23' branch and an older CUDA Toolkit to
+compile mfaktc for 32 bits. See this thread for details:
 https://forums.developer.nvidia.com/t/whats-the-last-version-of-the-cuda-toolkit-to-support-32-bit-applications/323106/4
 
 In any case, a 64-bit build is preferred except on some old low-end GPUs.

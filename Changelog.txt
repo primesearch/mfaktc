@@ -1,7 +1,7 @@
 
-version 0.24
+version 0.24.0
 ==============================
-- merge development branches 0.22 and 0.23 together
+- merged development branches 0.22 and 0.23.x
 
 new features:
 - CRC32 checksums in JSON output to reduce invalid results
@@ -18,16 +18,36 @@ bug fixes:
 
 build:
 - made the build scripts more robust
-- new CUDA versions added
+- new CUDA versions added to GitHub Actions workflow (thanks to NStorm)
 
 other changes:
 - dropped support for compute capability 1.x and 32-bit builds
 - replaced deprecated cudaThreadSynchronize() with cudaDeviceSynchronize()
 - removed the debug option "USE_DEVICE_PRINTF"
 - code has been revamped to improve formatting and maintain consistent style
-- deprecated results.txt logging is now disabled by default,
-  please use results.json.txt for submissions; to restore the old behavior
-  and re-enable logging to results.txt, set LegacyResultsTxt=1 in mfaktc.ini.
+  (thanks to NStorm)
+- requested by James Heinrich: results are no longer saved to deprecated
+  results.txt by default (thanks to NStorm)
+  - please use results.json.txt for submissions
+  - set LegacyResultsTxt=1 in mfaktc.ini to restore old behavior and re-enable
+    logging to results.txt
+
+version 0.23.4
+==============================
+- includes changes backported from mfaktc 0.24.0
+
+bug fixes:
+- fixed typos and formatting in output
+- fix some compilation warnings
+- the maximum number of threads per SM should no longer exceed the limit for
+  certain architectures
+- CUDA versions are now correctly detected
+
+build:
+- made the build helper script more robust
+
+other changes:
+- replaced deprecated CUDA function calls
 
 version 0.23.3
 ==============================
@@ -79,6 +99,9 @@ new features:
 - found factors are now stored in the .ckp file
 - elapsed time is now stored in the .ckp file for accurate progress reporting
 - changed all timestamps to UTC to meet GIMPS results reporting standards
+
+other changes
+- switched to semantic versioning
 
 version 0.22
 ==============================

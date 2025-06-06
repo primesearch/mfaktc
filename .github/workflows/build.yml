@@ -171,7 +171,7 @@ jobs:
 
       matrix:
         # Available versions can be viewed at the Jimver/cuda-toolkit action sources:
-        # https://github.com/Jimver/cuda-toolkit/blob/v0.2.21/src/links/windows-links.ts
+        # https://github.com/Jimver/cuda-toolkit/blob/v0.2.24/src/links/windows-links.ts
         sys:
           - { cuda_version: '12.9.0', os: 'windows-2022' }
           - { cuda_version: '12.8.1', os: 'windows-2022' }

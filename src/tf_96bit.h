@@ -18,10 +18,10 @@ along with mfaktc.  If not, see <http://www.gnu.org/licenses/>.
 
 #ifdef _MSC_VER
 extern "C" {
-       int tf_class_75(unsigned long long int k_min, unsigned long long int k_max, mystuff_t *mystuff);
-       int tf_class_95(unsigned long long int k_min, unsigned long long int k_max, mystuff_t *mystuff);
-       int tf_class_75_gs(unsigned long long int k_min, unsigned long long int k_max, mystuff_t *mystuff);
-       int tf_class_95_gs(unsigned long long int k_min, unsigned long long int k_max, mystuff_t *mystuff);
+int tf_class_75(unsigned long long int k_min, unsigned long long int k_max, mystuff_t *mystuff);
+int tf_class_95(unsigned long long int k_min, unsigned long long int k_max, mystuff_t *mystuff);
+int tf_class_75_gs(unsigned long long int k_min, unsigned long long int k_max, mystuff_t *mystuff);
+int tf_class_95_gs(unsigned long long int k_min, unsigned long long int k_max, mystuff_t *mystuff);
 }
 #else
 extern int tf_class_75(unsigned long long int k_min, unsigned long long int k_max, mystuff_t *mystuff);

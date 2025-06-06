@@ -17,8 +17,6 @@ You should have received a copy of the GNU General Public License
 along with mfaktc.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-
-
 /*
 *1 Luigi initially wrote the two functions get_next_assignment() and
 clear_assignment() after we (Luigi and myself (Oliver)) have discussed the
@@ -70,20 +68,18 @@ returns
 1 if n is prime
 */
 {
-  unsigned int i;
-  
-  if(n<=1) return 0;
-  if(n>2 && n%2==0)return 0;
+    unsigned int i;
 
-  i=3;
-  while(i*i <= n && i < 0x10000)
-  {
-    if(n%i==0)return 0;
-    i+=2;
-  }
-  return 1;
+    if (n <= 1) return 0;
+    if (n > 2 && n % 2 == 0) return 0;
+
+    i = 3;
+    while (i * i <= n && i < 0x10000) {
+        if (n % i == 0) return 0;
+        i += 2;
+    }
+    return 1;
 }
-
 
 int valid_assignment(unsigned int exp, int bit_min, int bit_max, int verbosity)
 /*
@@ -91,8 +87,9 @@ returns 1 if the assignment is within the supported bounds of mfaktc,
 0 otherwise.
 */
 {
-  int ret = 1;
-  
+    int ret = 1;
+
+    // clang-format off
        if(exp < 100000 )      {ret = 0; if(verbosity >= 1)printf("WARNING: exponents < 100000 are not supported!\n");}
   else if(!isprime(exp))      {ret = 0; if(verbosity >= 1)printf("WARNING: exponent is not prime!\n");}
   else if(bit_min < 1 )       {ret = 0; if(verbosity >= 1)printf("WARNING: bit_min < 1 doesn't make sense!\n");}
@@ -101,7 +98,7 @@ returns 1 if the assignment is within the supported bounds of mfaktc,
   else if(bit_max > 95)       {ret = 0; if(verbosity >= 1)printf("WARNING: bit_max > 95 is not supported!\n");}
   else if(((double)(bit_max-1) - (log((double)exp) / log(2.0F))) > 63.9F) /* this leave enough room so k_min/k_max won't overflow in tf_XX() */
                               {ret = 0; if(verbosity >= 1)printf("WARNING: k_max > 2^63.9 is not supported!\n");}
-  
+    // clang-format on  
   if(verbosity >= 1 && ret == 0)printf("         Ignoring TF %s%u from 2^%d to 2^%d!\n", NAME_NUMBERS, exp, bit_min, bit_max);
   
   return ret;

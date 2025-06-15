@@ -16,20 +16,30 @@ You should have received a copy of the GNU General Public License
 along with mfaktc.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+#include <stdio.h>
+
 #include "crc.h"
 
+/* uses a variant of CRC32 to generate the checksum of a string */
 unsigned int crc32_checksum(char *string, int chars)
-/* generates a CRC-32 like checksum of the string */
 {
-    unsigned int c, m, chksum = 0xFFFFFFFF;
-    int i, j;
+    unsigned int cur_char, chksum = 0xFFFFFFFF;
+    int str_idx, cur_bit;
 
-    for (i = 0; i < chars; i++) {
-        c = string[i];
-        chksum ^= c;
-        for (j = 7; j >= 0; j--) {
-            m      = -(chksum & 1);
-            chksum = (chksum >> 1) ^ (0xEDB88320 & m);
+    for (str_idx = 0; str_idx < chars; str_idx++) {
+        cur_char = string[str_idx];
+        if (!cur_char) {
+            printf("Error: failed to compute checksum due to invalid character at index %d\n", str_idx);
+            break;
+        }
+        chksum ^= cur_char;
+        for (cur_bit = 7; cur_bit >= 0; cur_bit--) {
+            if (chksum & 1) {
+                chksum = (chksum >> 1) ^ 0xEDB88320;
+            }
+            else {
+                chksum >>= 1;
+            }
         }
     }
     chksum ^= 0xFFFFFFFF;

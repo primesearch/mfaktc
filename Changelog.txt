@@ -18,6 +18,8 @@ bug fixes:
 
 build:
 - made the build scripts more robust
+- more compiler optimizations enabled by default, slightly improving factoring
+  speed
 - new CUDA versions added to GitHub Actions workflow (thanks to NStorm)
 
 other changes:

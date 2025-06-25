@@ -35,9 +35,6 @@ checkpoint_write() writes the checkpoint file.
 */
 {
     FILE *f;
-    const int MAX_FACTOR_BUFFER_LENGTH       = MAX_FACTORS_PER_JOB * MAX_DEZ_96_STRING_LENGTH;
-    const int MAX_BUFFER_LENGTH              = MAX_FACTOR_BUFFER_LENGTH + 100;
-    const int MAX_CHECKPOINT_FILENAME_LENGTH = 40;
     char buffer[MAX_BUFFER_LENGTH], filename[MAX_CHECKPOINT_FILENAME_LENGTH], factors_buffer[MAX_FACTOR_BUFFER_LENGTH];
     unsigned int i, factors_buffer_length;
 

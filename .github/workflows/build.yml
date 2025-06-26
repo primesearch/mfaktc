@@ -148,8 +148,14 @@ jobs:
           SCRIPT: |
             cd /workspace
             zip -9 -j ${{ steps.prepare.outputs.BASE_NAME }}.zip Changelog.txt COPYING mfaktc mfaktc.ini README.txt
+            cc_min=${{ steps.prepare.outputs.CC_MIN }}
+            cc_max=${{ steps.prepare.outputs.CC_MAX }}
+            cc_min_minor=$(($cc_min % 10))
+            cc_min_major=$((($cc_min - $cc_min_minor) / 10))
+            cc_max_minor=$(($cc_max % 10))
+            cc_max_major=$((($cc_max - $cc_max_minor) / 10))
             echo "[${{ steps.prepare.outputs.BASE_NAME }}.zip](https://github.com/${GITHUB_REPOSITORY}/releases/download/${GITHUB_REF_NAME}/${{ steps.prepare.outputs.BASE_NAME }}.zip) | \
-            ${{ matrix.sys.cuda_version }} | ${{ steps.prepare.outputs.CC_MIN }}-${{ steps.prepare.outputs.CC_MAX }} | ${{ steps.prepare.outputs.OS_VER }} | \
+            ${{ matrix.sys.cuda_version }} | $cc_min_major.$cc_min_minor-$cc_max_major.$cc_max_minor | ${{ steps.prepare.outputs.OS_VER }} | \
             ${{ steps.prepare.outputs.COMPILER_VER }} | ${{ steps.prepare.outputs.NVCC_VER }}" > ${{ steps.prepare.outputs.BASE_NAME }}.txt
         run: docker exec build-container bash -c "$SCRIPT"
 
@@ -265,8 +271,14 @@ jobs:
           [ -f src/clversion.log ] && CL_VER="$(grep -Eoe 'Version [\.0-9]+ ' src/clversion.log | cut -d' ' -f2)"
           [ -z "$CL_VER" ] && CL_VER='Unknown'
           tar -a -c -f "${{ steps.prepare.outputs.BASE_NAME }}.zip" Changelog.txt COPYING mfaktc-win-64.exe mfaktc.ini README.txt
+          cc_min=${{ steps.prepare.outputs.CC_MIN }}
+          cc_max=${{ steps.prepare.outputs.CC_MAX }}
+          cc_min_minor=$(($cc_min % 10))
+          cc_min_major=$((($cc_min - $cc_min_minor) / 10))
+          cc_max_minor=$(($cc_max % 10))
+          cc_max_major=$((($cc_max - $cc_max_minor) / 10))
           echo "[${{ steps.prepare.outputs.BASE_NAME }}.zip](https://github.com/${GITHUB_REPOSITORY}/releases/download/${GITHUB_REF_NAME}/${{ steps.prepare.outputs.BASE_NAME }}.zip) | \
-          ${{ matrix.sys.cuda_version }} | ${{ steps.prepare.outputs.CC_MIN }}-${{ steps.prepare.outputs.CC_MAX }} | ${{ steps.prepare.outputs.OS_VER }} | \
+          ${{ matrix.sys.cuda_version }} | $cc_min_major.$cc_min_minor-$cc_max_major.$cc_max_minor | ${{ steps.prepare.outputs.OS_VER }} | \
           ${CL_VER} (${{ steps.prepare.outputs.COMPILER_VER }}) | ${{ steps.prepare.outputs.NVCC_VER }}" > ${{ steps.prepare.outputs.BASE_NAME }}.txt
 
       - name: Upload build artifacts
@@ -307,10 +319,9 @@ jobs:
           fi
           {
             echo "Binary releases (automated builds) as follows."
-            echo "Compute Capability (CC) in the table means minimum and maximum versions supported."
-            echo "CC versions are listed without the separator. For example, '90' means devices with compute capability 9.0 can run that build."
+            echo "In this table, the Compute Capability column means the minimum and maximum versions supported."
             echo
-            echo "File | CUDA version | Compute Capability | Build OS | Compiler version | NVCC version"
+            echo "File | CUDA version | Compute Capability | Build OS | Host compiler | NVCC version"
             echo "--- | --- | --- | --- | --- | ---"
             sort -Vr ${base_name}.txt
           } > RELEASE_NOTES.txt

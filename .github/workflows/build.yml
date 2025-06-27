@@ -23,11 +23,13 @@ on:
   push:
     paths-ignore:
       - '**/*.txt'
+      - '**/*.ini'
       - 'COPYING'
       - '.gitignore'
   pull_request:
     paths-ignore:
       - '**/*.txt'
+      - '**/*.ini'
       - 'COPYING'
       - '.gitignore'
     types:

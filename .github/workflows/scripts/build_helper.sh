@@ -87,9 +87,9 @@ if [ "$CUDA_VER" -lt 1200 ]; then
   sed -i -E 's/^(LDFLAGS = .*? -lcudart_static) (.*)/\1 -ldl -lrt -lpthread \2/' src/Makefile
 fi
 
-echo 'Gathering version info on generic compiler and NVCC...'
+echo 'Gathering host compiler and NVCC version info...'
 # COMPILER_VER for Windows builds is actually set to the MSVC product version.
-# The workflow retrieves the version from cl.exe during the build stage and adds it to the report.
+# We retrieve the cl.exe version during the build step and add it to the table.
 if [[ -x "$(command -v vswhere.exe)" ]]; then
   CC_VSPROD="$(vswhere -latest -products '*' -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property displayName | sed -e 's/Visual Studio/MSVC/')"
   COMPILER_VER="${CC_VSPROD}, $(vswhere -latest -products '*' -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationVersion)"

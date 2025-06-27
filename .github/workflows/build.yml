@@ -168,8 +168,9 @@ jobs:
 
 # Begin job "build-win"
   build-win:
-    # Build should work with windows-2022 images as well, but the resulting binaries
-    # are nearly identical. So let's target the image that will be supported longer term.
+    # windows-2022 also works and produces nearly identical binaries, so let's
+    # target the image that will be supported in the longer term. windows-2025
+    # is in beta as of June 2025, but testing has shown it is reliable.
     runs-on: windows-2025
 
     strategy:
@@ -244,7 +245,10 @@ jobs:
           "${{ env.VCVARS_PATH }}" x64 ${{ env.VCVARS_VER }} & cd src & copy mfaktc.ini .. & make SHELL="powershell.exe" -j%NUMBER_OF_PROCESSORS% -f Makefile.win & cl /? 2>&1 | findstr /C:"Version" > clversion.log & echo Build finished
         env:
           VCVARS_PATH: 'C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\vcvars64.bat'
-          # vcvars_ver=14.X enables previous versions of MSVC build environments (MSVC 2015: 14.0, MSVC 2017: 14.16, MSVC 2019: 14.29)
+          # vcvars_ver=14.x enables Build Tools for previous MSVC versions:
+          # - 14.0 is for Visual Studio 2015
+          # - 14.16 is for Visual Studio 2017 version 15.9.x
+          # - 14.29 is for Visual Studio 2019 version 16.11.x
           VCVARS_VER: >-
             ${{ (
                  steps.prepare.outputs.CUDA_VER_MAJOR <= 9 && '-vcvars_ver=14.0'
@@ -252,21 +256,27 @@ jobs:
               || steps.prepare.outputs.CUDA_VER_MAJOR == 11 && steps.prepare.outputs.CUDA_VER_MINOR <= 2 && '-vcvars_ver=14.29'
               || ''
             ) }}
-          # windows-2022/2025 images come with the MSVC 2019 component (named VC142 internally) installed,
-          # but older versions need to be installed by running '${MSVC_SETUP_CMD} --add PKG_NAME'
-          # ${MSVC_PKG_VC140} is required for 14.0 (MSVC 2015), and ${MSVC_PKG_VC141} for 14.16 (MSVC 2017)
+          # Build Tools for Visual Studio 2019 (named VC142 internally) are
+          # included with windows-2022 and later. However, the Build Tools for
+          # older MSVC versions need to be installed by running '${MSVC_SETUP_CMD} --add <package name>'
+          #
+          # - ${MSVC_PKG_VC140} is required for 14.0 / MSVC 2015
+          # - ${MSVC_PKG_VC141} is required for 14.16 / MSVC 2017 version 15.9.x
           MSVC_ADD_PKG_CMD: >-
             ${{ (
                  steps.prepare.outputs.CUDA_VER_MAJOR <= 9 && format('{0} --add {1}', env.MSVC_SETUP_CMD, env.MSVC_PKG_VC140)
               || steps.prepare.outputs.CUDA_VER_MAJOR == 10 && format('{0} --add {1}', env.MSVC_SETUP_CMD, env.MSVC_PKG_VC141)
-              || 'REM No component to install'
+              || 'REM Build Tools for Visual Studio 2019 already exist - no additional component to install'
             ) }}
 
       - name: Prepare build archive with description
         shell: bash
-        # We can't get the actual compiler (cl.exe) version in the helper script, because it might not be installed during the 'prepare' stage.
-        # COMPILER_VER from that stage contains the MSVC version, but not the compiler version, which has its own version number.
-        # So a little hack was added to log the cl version during the build stage, and now we extract and use it in the report along with the MSVC version.
+        # We can't get the actual compiler (cl.exe) version with the helper
+        # script because cl might not be installed during the 'Prepare sources
+        # and gather info' step. COMPILER_VER is set to the MSVC rather than
+        # the cl version number, so we added a hack to log the cl version
+        # during the build step. Here, the cl version is extracted and added to
+        # the table along with the MSVC version.
         run: |
           [ -f src/clversion.log ] && CL_VER="$(grep -Eoe 'Version [\.0-9]+ ' src/clversion.log | cut -d' ' -f2)"
           [ -z "$CL_VER" ] && CL_VER='Unknown'
@@ -290,10 +300,8 @@ jobs:
 
 # Begin job "upload-release"
   upload-release:
-    # This job expects the Git tag name to begin with the version specified by
-    # MFAKTC_VERSION in params.h
-    # Otherwise, the job will fail because there is a version conflict between Git
-    # and params.h that must be resolved.
+    # Git tag name must begin with the version specified by MFAKTC_VERSION in
+    # params.h or else the job will fail
     if: github.ref_type == 'tag' && startsWith(github.ref, 'refs/tags/')
     needs: [ build-linux, build-win ]
     runs-on: ubuntu-latest
@@ -318,7 +326,7 @@ jobs:
             exit 1
           fi
           {
-            echo "Binary releases (automated builds) as follows."
+            echo "Pre-compiled binaries (automated builds) as follows."
             echo "In this table, the Compute Capability column means the minimum and maximum versions supported."
             echo
             echo "File | CUDA version | Compute Capability | Build OS | Host compiler | NVCC version"

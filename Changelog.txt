@@ -36,6 +36,7 @@ other changes:
   - please use results.json.txt for submissions
   - set LegacyResultsTxt=1 in mfaktc.ini to restore old behavior and re-enable
     logging to results.txt
+- re-organized mfaktc.ini to be more user-friendly (thanks to James Heinrich)
 
 version 0.23.4
 ==============================

@@ -58,6 +58,7 @@ mfaktc 0.07-0.14 to see Luigis code.
 #include <errno.h>
 
 #include "compatibility.h"
+#include "filelocking.h"
 #include "params.h"
 #include "parse.h"
 

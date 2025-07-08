@@ -29,6 +29,7 @@ along with mfaktc.  If not, see <http://www.gnu.org/licenses/>.
 #include "my_types.h"
 #include "output.h"
 #include "compatibility.h"
+#include "filelocking.h"
 #include "crc.h"
 
 /* Visual C++ introduced stdbool support in VS 2013 */

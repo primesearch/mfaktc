@@ -490,10 +490,10 @@ void print_result_line(mystuff_t *mystuff, int factorsfound)
 
     if (mystuff->mode == MODE_NORMAL) {
 #ifndef WAGSTAFF
-        jsonresultfile = fopen(mystuff->jsonresultfile, "a");
+        jsonresultfile = fopen_and_lock(mystuff->jsonresultfile, "a");
 #endif
         if (mystuff->legacy_results_txt == 1) {
-            txtresultfile = fopen(mystuff->resultfile, "a");
+            txtresultfile = fopen_and_lock(mystuff->resultfile, "a");
             if (mystuff->print_timestamp == 1) print_timestamp(txtresultfile);
         }
     }
@@ -539,12 +539,12 @@ void print_result_line(mystuff_t *mystuff, int factorsfound)
     if (mystuff->mode == MODE_NORMAL) {
 #ifndef WAGSTAFF
         fprintf(jsonresultfile, "%s\n", jsonstring);
-        fclose(jsonresultfile);
+        unlock_and_fclose(jsonresultfile);
         jsonresultfile = NULL;
 #endif
         if (mystuff->legacy_results_txt == 1) {
             fprintf(txtresultfile, "%s%s\n", UID, txtstring);
-            fclose(txtresultfile);
+            unlock_and_fclose(txtresultfile);
             txtresultfile = NULL;
         }
     }
@@ -569,7 +569,7 @@ void print_factor(mystuff_t *mystuff, int factor_number, char *factor)
         UID[0] = 0;
 
     if (mystuff->mode == MODE_NORMAL && mystuff->legacy_results_txt == 1) {
-        txtresultfile = fopen(mystuff->resultfile, "a");
+        txtresultfile = fopen_and_lock(mystuff->resultfile, "a");
         if (mystuff->print_timestamp == 1 && factor_number == 0) print_timestamp(txtresultfile);
     }
 
@@ -604,7 +604,7 @@ void print_factor(mystuff_t *mystuff, int factor_number, char *factor)
     }
 
     if (mystuff->mode == MODE_NORMAL && mystuff->legacy_results_txt == 1) {
-        fclose(txtresultfile);
+        unlock_and_fclose(txtresultfile);
     }
 }
 

@@ -17,16 +17,14 @@ You should have received a copy of the GNU General Public License
 along with mfaktc (mfakto).  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifdef __cplusplus
-extern "C"
-{
+#if defined(NVCC_EXTERN) && !defined(_MSC_VER)
+extern "C" {
 #endif
 
 int file_exists (char	*filename);
 FILE *fopen_and_lock(const char *path, const char *mode);
 int unlock_and_fclose(FILE *f);
 
-#ifdef __cplusplus
+#if defined(NVCC_EXTERN) && !defined(_MSC_VER)
 }
 #endif
-

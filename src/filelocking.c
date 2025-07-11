@@ -81,7 +81,7 @@ int file_exists (char	*filename)
       fprintf(stderr, "\nWarning: Current directory \"%s\" is not available.\n", current_dir);
   }
   fd = open(filename, O_RDONLY);
-//  printf ("file_exists(%s)\n", filename);
+  printf ("file_exists(%s)\n", filename);
 	if (fd < 0) return 0;
 	close(fd);
 	return 1;
@@ -114,7 +114,7 @@ FILE *fopen_and_lock(const char *path, const char *mode)
   if (chdrive(current_drive) || current_dir == NULL || chdir(current_dir)) {
       fprintf(stderr, "\nWarning: Current directory \"%s\" is not available.\n", current_dir);
   }
-//  printf("fopen_and_lock(%s)\n", path);
+  printf("fopen_and_lock(%s)\n", path);
   for(i=0;;)
   {
     if ((lockfd = open(locked_files[num_locked_files].lock_filename, O_EXCL | O_CREAT, MODE)) < 0)
@@ -179,7 +179,7 @@ int unlock_and_fclose(FILE *f)
       f = NULL;
       if (close(locked_files[i].lockfd) != 0) perror("Failed to close lockfile");
       if (remove(locked_files[i].lock_filename)!= 0) perror("Failed to delete lockfile");
-//      printf("unlock_and_fclose(%s)\n", locked_files[i].lock_filename);
+      printf("unlock_and_fclose(%s)\n", locked_files[i].lock_filename);
       for (j=i+1; j<num_locked_files; j++)
       {
         locked_files[j-1].lockfd = locked_files[j].lockfd;

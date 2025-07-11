@@ -41,6 +41,12 @@ along with mfaktc.  If not, see <http://www.gnu.org/licenses/>.
 #include <stdbool.h>
 #endif
 
+#ifdef _MSC_VER
+#include <windows.h>
+#else
+#include <sys/time.h>
+#endif
+
 void print_help(char *string)
 {
     printf("mfaktc v%s Copyright (C) 2009-2015, 2018, 2019, 2024 Oliver Weihe (o.weihe@t-online.de)\n", MFAKTC_VERSION);
@@ -62,8 +68,41 @@ void print_help(char *string)
     printf("  --sleeptest            run test of sleep functions and exit\n");
 }
 
+#ifdef __GNUC__
+__attribute__ ((format(printf, 2, 3)))
+#endif
 void logprintf(mystuff_t *mystuff, const char *fmt, ...)
 {
+#ifdef _MSC_VER
+    SYSTEMTIME st;
+    GetLocalTime(&st);
+
+    struct tm tm_now;
+    tm_now.tm_year = st.wYear - 1900;
+    tm_now.tm_mon = st.wMonth - 1;
+    tm_now.tm_mday = st.wDay;
+    tm_now.tm_hour = st.wHour;
+    tm_now.tm_min = st.wMinute;
+    tm_now.tm_sec = st.wSecond;
+    mktime(&tm_now);
+
+    int milliseconds = st.wMilliseconds;
+#else
+    struct timeval tv;
+    gettimeofday(&tv, NULL);
+    const time_t raw_time = tv.tv_sec;
+    struct tm tm_now = *localtime(&raw_time);
+
+    int milliseconds = tv.tv_usec / 1000;
+#endif
+
+    char buf[24];
+    strftime(buf, sizeof(buf), "%Y-%m-%d %H:%M:%S", &tm_now);
+    char buffer[32];
+    snprintf(buffer, sizeof(buffer), "[%s,%03d]  ", buf, milliseconds);
+
+    fputs(buffer, stdout);
+
     va_list args;
 
     va_start(args, fmt);
@@ -71,6 +110,8 @@ void logprintf(mystuff_t *mystuff, const char *fmt, ...)
     va_end(args);
 
     if (mystuff->logging == 1 && mystuff->logfileptr != NULL && len > 0) {
+        fputs(buffer, mystuff->logfileptr);
+
         if (mystuff->printmode == 1) {
             char *buffer = (char *)malloc(len + 1);
             va_start(args, fmt);
@@ -80,7 +121,7 @@ void logprintf(mystuff_t *mystuff, const char *fmt, ...)
             // Replace to CR to LF if it's last char in the string when writing to logfile
             if (buffer[len - 1] == '\r') buffer[len - 1] = '\n';
 
-            fprintf(mystuff->logfileptr, "%s", buffer);
+            fputs(buffer, mystuff->logfileptr);
             free(buffer);
         } else {
             va_start(args, fmt);

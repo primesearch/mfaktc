@@ -29,6 +29,7 @@ along with mfaktc.  If not, see <http://www.gnu.org/licenses/>.
 #include "my_types.h"
 #include "output.h"
 #include "compatibility.h"
+#include "filelocking.h"
 #include "crc.h"
 
 /* Visual C++ introduced stdbool support in VS 2013 */
@@ -38,6 +39,12 @@ along with mfaktc.  If not, see <http://www.gnu.org/licenses/>.
 #define false 0
 #else
 #include <stdbool.h>
+#endif
+
+#ifdef _MSC_VER
+#include <windows.h>
+#else
+#include <sys/time.h>
 #endif
 
 void print_help(char *string)
@@ -61,8 +68,41 @@ void print_help(char *string)
     printf("  --sleeptest            run test of sleep functions and exit\n");
 }
 
+#ifdef __GNUC__
+__attribute__ ((format(printf, 2, 3)))
+#endif
 void logprintf(mystuff_t *mystuff, const char *fmt, ...)
 {
+#ifdef _MSC_VER
+    SYSTEMTIME st;
+    GetLocalTime(&st);
+
+    struct tm tm_now;
+    tm_now.tm_year = st.wYear - 1900;
+    tm_now.tm_mon = st.wMonth - 1;
+    tm_now.tm_mday = st.wDay;
+    tm_now.tm_hour = st.wHour;
+    tm_now.tm_min = st.wMinute;
+    tm_now.tm_sec = st.wSecond;
+    mktime(&tm_now);
+
+    int milliseconds = st.wMilliseconds;
+#else
+    struct timeval tv;
+    gettimeofday(&tv, NULL);
+    const time_t raw_time = tv.tv_sec;
+    struct tm tm_now = *localtime(&raw_time);
+
+    int milliseconds = tv.tv_usec / 1000;
+#endif
+
+    char buf[24];
+    strftime(buf, sizeof(buf), "%Y-%m-%d %H:%M:%S", &tm_now);
+    char buffer[32];
+    snprintf(buffer, sizeof(buffer), "[%s,%03d]  ", buf, milliseconds);
+
+    fputs(buffer, stdout);
+
     va_list args;
 
     va_start(args, fmt);
@@ -70,6 +110,8 @@ void logprintf(mystuff_t *mystuff, const char *fmt, ...)
     va_end(args);
 
     if (mystuff->logging == 1 && mystuff->logfileptr != NULL && len > 0) {
+        fputs(buffer, mystuff->logfileptr);
+
         if (mystuff->printmode == 1) {
             char *buffer = (char *)malloc(len + 1);
             va_start(args, fmt);
@@ -79,7 +121,7 @@ void logprintf(mystuff_t *mystuff, const char *fmt, ...)
             // Replace to CR to LF if it's last char in the string when writing to logfile
             if (buffer[len - 1] == '\r') buffer[len - 1] = '\n';
 
-            fprintf(mystuff->logfileptr, "%s", buffer);
+            fputs(buffer, mystuff->logfileptr);
             free(buffer);
         } else {
             va_start(args, fmt);
@@ -500,10 +542,10 @@ void print_result_line(mystuff_t *mystuff, int factorsfound)
 
     if (mystuff->mode == MODE_NORMAL) {
 #ifndef WAGSTAFF
-        jsonresultfile = fopen(mystuff->jsonresultfile, "a");
+        jsonresultfile = fopen_and_lock(mystuff->jsonresultfile, "a");
 #endif
         if (mystuff->legacy_results_txt == 1) {
-            txtresultfile = fopen(mystuff->resultfile, "a");
+            txtresultfile = fopen_and_lock(mystuff->resultfile, "a");
             if (mystuff->print_timestamp == 1) print_timestamp(txtresultfile);
         }
     }
@@ -549,12 +591,12 @@ void print_result_line(mystuff_t *mystuff, int factorsfound)
     if (mystuff->mode == MODE_NORMAL) {
 #ifndef WAGSTAFF
         fprintf(jsonresultfile, "%s\n", jsonstring);
-        fclose(jsonresultfile);
+        unlock_and_fclose(jsonresultfile);
         jsonresultfile = NULL;
 #endif
         if (mystuff->legacy_results_txt == 1) {
             fprintf(txtresultfile, "%s%s\n", UID, txtstring);
-            fclose(txtresultfile);
+            unlock_and_fclose(txtresultfile);
             txtresultfile = NULL;
         }
     }
@@ -579,7 +621,7 @@ void print_factor(mystuff_t *mystuff, int factor_number, char *factor)
         UID[0] = 0;
 
     if (mystuff->mode == MODE_NORMAL && mystuff->legacy_results_txt == 1) {
-        txtresultfile = fopen(mystuff->resultfile, "a");
+        txtresultfile = fopen_and_lock(mystuff->resultfile, "a");
         if (mystuff->print_timestamp == 1 && factor_number == 0) print_timestamp(txtresultfile);
     }
 
@@ -614,7 +656,7 @@ void print_factor(mystuff_t *mystuff, int factor_number, char *factor)
     }
 
     if (mystuff->mode == MODE_NORMAL && mystuff->legacy_results_txt == 1) {
-        fclose(txtresultfile);
+        unlock_and_fclose(txtresultfile);
     }
 }
 

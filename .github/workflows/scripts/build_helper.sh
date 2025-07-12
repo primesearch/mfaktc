@@ -69,8 +69,10 @@ elif [ ${#CC_LIST[*]} -lt 3 ]; then
   echo "Warning: less than three (3) supported compute capabilities" >&2
 fi
 
-echo "All supported CCs: ${CC_LIST[*]}, CC_MIN=${CC_LIST[0]}, CC_MAX=${CC_LIST[-1]}"
-echo -e "CC_LIST=\"${CC_LIST[*]}\"\nCC_MIN=${CC_LIST[0]}\nCC_MAX=${CC_LIST[-1]}" >> "$0.out"
+CC_MIN="${CC_LIST[0]:0:(-1)}.${CC_LIST[0]:(-1)}"
+CC_MAX="${CC_LIST[-1]:0:(-1)}.${CC_LIST[-1]:(-1)}"
+echo "All supported CCs: ${CC_LIST[*]}, CC_MIN=${CC_MIN}, CC_MAX=${CC_MAX}"
+echo -e "CC_LIST=\"${CC_LIST[*]}\"\nCC_MIN=${CC_MIN}\nCC_MAX=${CC_MAX}" >> "$0.out"
 
 echo 'Removing NVCCFLAGS strings with "arch=..." entries from makefiles and populating them with discovered supported values.'
 sed -i '/^NVCCFLAGS += --generate-code arch=compute.*/d' src/Makefile.win src/Makefile

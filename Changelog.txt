@@ -24,6 +24,8 @@ build:
   - support for additional CUDA versions
   - removed dependency on deprecated windows-2019 images
   - code analysis with CodeQL
+- improved visual appearance and clarity of release information (thanks to
+  Danny Chia)
 
 other changes:
 - dropped support for compute capability 1.x and 32-bit builds

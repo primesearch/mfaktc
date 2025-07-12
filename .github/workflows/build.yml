@@ -268,7 +268,7 @@ jobs:
             ${{ (
                  steps.prepare.outputs.CUDA_VER_MAJOR <= 9 && format('{0} --add {1}', env.MSVC_SETUP_CMD, env.MSVC_PKG_VC140)
               || steps.prepare.outputs.CUDA_VER_MAJOR == 10 && format('{0} --add {1}', env.MSVC_SETUP_CMD, env.MSVC_PKG_VC141)
-              || 'echo Build Tools for Visual Studio 2019 already exist - installation not needed'
+              || 'echo Build Tools already exist - installation not needed'
             ) }}
 
       - name: Prepare build archive with description

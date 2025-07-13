@@ -69,8 +69,10 @@ elif [ ${#CC_LIST[*]} -lt 3 ]; then
   echo "Warning: less than three (3) supported compute capabilities" >&2
 fi
 
-echo "All supported CCs: ${CC_LIST[*]}, CC_MIN=${CC_LIST[0]}, CC_MAX=${CC_LIST[-1]}"
-echo -e "CC_LIST=\"${CC_LIST[*]}\"\nCC_MIN=${CC_LIST[0]}\nCC_MAX=${CC_LIST[-1]}" >> "$0.out"
+CC_MIN="${CC_LIST[0]:0:(-1)}.${CC_LIST[0]:(-1)}"
+CC_MAX="${CC_LIST[-1]:0:(-1)}.${CC_LIST[-1]:(-1)}"
+echo "All supported CCs: ${CC_LIST[*]}, CC_MIN=${CC_MIN}, CC_MAX=${CC_MAX}"
+echo -e "CC_LIST=\"${CC_LIST[*]}\"\nCC_MIN=${CC_MIN}\nCC_MAX=${CC_MAX}" >> "$0.out"
 
 echo 'Removing NVCCFLAGS strings with "arch=..." entries from makefiles and populating them with discovered supported values.'
 sed -i '/^NVCCFLAGS += --generate-code arch=compute.*/d' src/Makefile.win src/Makefile
@@ -87,13 +89,15 @@ if [ "$CUDA_VER" -lt 1200 ]; then
   sed -i -E 's/^(LDFLAGS = .*? -lcudart_static) (.*)/\1 -ldl -lrt -lpthread \2/' src/Makefile
 fi
 
-echo 'Gathering version info on generic compiler and NVCC...'
+echo 'Gathering host compiler and NVCC version info...'
+# COMPILER_VER for Windows builds is actually set to the MSVC product version.
+# We retrieve the cl.exe version during the build step and add it to the table.
 if [[ -x "$(command -v vswhere.exe)" ]]; then
-  CC_VSPROD="$(vswhere -latest -products '*' -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property displayName)"
+  CC_VSPROD="$(vswhere -latest -products '*' -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property displayName | sed -e 's/Visual Studio/MSVC/')"
   COMPILER_VER="${CC_VSPROD}, $(vswhere -latest -products '*' -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationVersion)"
 elif [[ -x "$(command -v powershell.exe)" ]]; then
   CC_VSINFO="$(powershell -Command Get-VSSetupInstance)"
-  CC_VSPROD="$(echo "$CC_VSINFO" | grep DisplayName | cut -d':' -f2 | xargs)"
+  CC_VSPROD="$(echo "$CC_VSINFO" | grep DisplayName | cut -d':' -f2 | xargs | sed -e 's/Visual Studio/MSVC/')"
   COMPILER_VER="${CC_VSPROD}, $(echo "$CC_VSINFO" | grep InstallationVersion | cut -d':' -f2 | xargs)"
 else
   COMPILER_VER="$(gcc --version | head -n1)"
@@ -104,11 +108,11 @@ else
 fi
 
 if [[ -x "$(command -v powershell.exe)" ]]; then
-  OS_VER="$(powershell -Command "[System.Environment]::OSVersion.VersionString")"
+  OS_VER="$(powershell -Command "[System.Environment]::OSVersion.VersionString" | cut -d ' ' -f2-)"
   OS_TYPE="win64"
 fi
 
-NVCC_VER="$(nvcc --version | tail -n1 | sed -E 's/^Build //')"
+NVCC_VER="$(nvcc --version | tail -n1 | sed -E 's/^Build //;s/^Cuda compilation tools, //')"
 
 # get mfaktc version from src/params.h
 # match SemVer and GIMPS version strings: https://regex101.com/r/m38d3i/2

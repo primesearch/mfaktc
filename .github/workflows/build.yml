@@ -23,11 +23,13 @@ on:
   push:
     paths-ignore:
       - '**/*.txt'
+      - '**/*.ini'
       - 'COPYING'
       - '.gitignore'
   pull_request:
     paths-ignore:
       - '**/*.txt'
+      - '**/*.ini'
       - 'COPYING'
       - '.gitignore'
     types:
@@ -102,7 +104,7 @@ jobs:
       - name: Start Docker container
         run: |
           docker pull $CONTAINER
-          docker run --name build-container -d -v ${{ github.workspace }}:/workspace $CONTAINER tail -f /dev/null
+          docker run --name build-container -d -v ${GITHUB_WORKSPACE}:/workspace $CONTAINER tail -f /dev/null
 
       - name: Update GPG keys for CUDA repo on Ubuntu 16.04
         if: matrix.sys.ct_os == 'ubuntu16.04'
@@ -147,8 +149,8 @@ jobs:
         env:
           SCRIPT: |
             cd /workspace
-            zip -9 -j ${{ steps.prepare.outputs.BASE_NAME }}.zip *
-            echo "[${{ steps.prepare.outputs.BASE_NAME }}.zip](https://github.com/${{ github.repository }}/releases/download/${{ github.ref_name }}/${{ steps.prepare.outputs.BASE_NAME }}.zip) | \
+            zip -9 -j ${{ steps.prepare.outputs.BASE_NAME }}.zip Changelog.txt COPYING mfaktc mfaktc.ini README.txt
+            echo "[${{ steps.prepare.outputs.BASE_NAME }}.zip](https://github.com/${GITHUB_REPOSITORY}/releases/download/${GITHUB_REF_NAME}/${{ steps.prepare.outputs.BASE_NAME }}.zip) | \
             ${{ matrix.sys.cuda_version }} | ${{ steps.prepare.outputs.CC_MIN }}-${{ steps.prepare.outputs.CC_MAX }} | ${{ steps.prepare.outputs.OS_VER }} | \
             ${{ steps.prepare.outputs.COMPILER_VER }} | ${{ steps.prepare.outputs.NVCC_VER }}" > ${{ steps.prepare.outputs.BASE_NAME }}.txt
         run: docker exec build-container bash -c "$SCRIPT"
@@ -162,7 +164,10 @@ jobs:
 
 # Begin job "build-win"
   build-win:
-    runs-on: ${{ matrix.sys.os }}
+    # windows-2022 also works and produces nearly identical binaries, so let's
+    # target the image that will be supported in the longer term. windows-2025
+    # is in beta as of June 2025, but testing has shown it is reliable.
+    runs-on: windows-2025
 
     strategy:
       # If set to true, all jobs within the same matrix (such as Linux or
@@ -170,30 +175,35 @@ jobs:
       fail-fast: false
 
       matrix:
-        # Available versions can be viewed at the Jimver/cuda-toolkit action sources:
-        # https://github.com/Jimver/cuda-toolkit/blob/v0.2.21/src/links/windows-links.ts
+        # Available CUDA versions can be viewed at the Jimver/cuda-toolkit action sources:
+        # https://github.com/Jimver/cuda-toolkit/blob/v0.2.24/src/links/windows-links.ts
         sys:
-          - { cuda_version: '12.9.0', os: 'windows-2022' }
-          - { cuda_version: '12.8.1', os: 'windows-2022' }
-          - { cuda_version: '12.6.3', os: 'windows-2022' }
-          - { cuda_version: '12.5.1', os: 'windows-2022' }
-          - { cuda_version: '12.4.1', os: 'windows-2022' }
-          - { cuda_version: '12.3.2', os: 'windows-2022' }
-          - { cuda_version: '12.2.2', os: 'windows-2022' }
-          - { cuda_version: '12.1.1', os: 'windows-2022' }
-          - { cuda_version: '12.0.1', os: 'windows-2022' }
-          - { cuda_version: '11.8.0', os: 'windows-2022' }
-          - { cuda_version: '11.7.1', os: 'windows-2022' }
-          - { cuda_version: '11.6.2', os: 'windows-2022' }
-          - { cuda_version: '11.5.2', os: 'windows-2022' }
-          - { cuda_version: '11.4.4', os: 'windows-2022' }
-          - { cuda_version: '11.3.1', os: 'windows-2022' }
-          - { cuda_version: '11.2.2', os: 'windows-2019' }
-          - { cuda_version: '11.1.1', os: 'windows-2019' }
-          - { cuda_version: '11.0.1', os: 'windows-2019' }
-          - { cuda_version: '10.0.130', os: 'windows-2019' }
-          - { cuda_version: '9.2.148', os: 'windows-2019' }
-          - { cuda_version: '8.0.61', os: 'windows-2019' }
+          - { cuda_version: '12.9.0' }
+          - { cuda_version: '12.8.1' }
+          - { cuda_version: '12.6.3' }
+          - { cuda_version: '12.5.1' }
+          - { cuda_version: '12.4.1' }
+          - { cuda_version: '12.3.2' }
+          - { cuda_version: '12.2.2' }
+          - { cuda_version: '12.1.1' }
+          - { cuda_version: '12.0.1' }
+          - { cuda_version: '11.8.0' }
+          - { cuda_version: '11.7.1' }
+          - { cuda_version: '11.6.2' }
+          - { cuda_version: '11.5.2' }
+          - { cuda_version: '11.4.4' }
+          - { cuda_version: '11.3.1' }
+          - { cuda_version: '11.2.2' }
+          - { cuda_version: '11.1.1' }
+          - { cuda_version: '11.0.1' }
+          - { cuda_version: '10.0.130' }
+          - { cuda_version: '9.2.148' }
+          - { cuda_version: '8.0.61' }
+
+    env:
+      MSVC_PKG_VC140: Microsoft.VisualStudio.Component.VC.140
+      MSVC_PKG_VC141: Microsoft.VisualStudio.Component.VC.v141.x86.x64
+      MSVC_SETUP_CMD: '"C:\Program Files (x86)\Microsoft Visual Studio\Installer\setup.exe" modify --passive --norestart --installPath "C:\Program Files\Microsoft Visual Studio\2022\Enterprise"'
 
     steps:
 
@@ -224,41 +234,52 @@ jobs:
           bash .github/workflows/scripts/build_helper.sh ${{ matrix.sys.cuda_version }}
           cat .github/workflows/scripts/build_helper.sh.out >> $GITHUB_OUTPUT
 
-      - name: Build from sources with MSVC 2022 using PowerShell
-        if: ${{ matrix.sys.os == 'windows-2022' }}
-        shell: powershell
-        # MSVC 2022 on the Windows 2022 Server runner has a PowerShell script to
-        # launch a development shell.
-        run: |
-          & 'C:\Program Files\Microsoft Visual Studio\2022\Enterprise\Common7\Tools\Launch-VsDevShell.ps1' -Arch amd64 -HostArch amd64
-          cd "${{ github.workspace }}\src"
-          Copy-Item mfaktc.ini ..
-          make SHELL="powershell.exe" -f Makefile.win
-
-      - name: Build from sources with MSVC 2019 using cmd.exe
-        if: ${{ matrix.sys.os == 'windows-2019' }}
+      - name: Build from sources with MSVC
         shell: cmd
-        # MSVC 2019 has a similar script on the Windows 2019 Server runner, but
-        # that only supports a 32-bit (x86) environment and doesn't allow
-        # setting the architecture.
-        # So we have to run a batch file to configure a 64-bit environment and
-        # then launch PowerShell from make afterwards. PowerShell is much better
-        # at handling long paths and quotes when invoked from make.
         run: |
-          "C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\VC\Auxiliary\Build\vcvars64.bat" x64 ${{ env.VCVARS_VER }} & cd src & copy mfaktc.ini .. & make SHELL="powershell.exe" -f Makefile.win
+          ${{ env.MSVC_ADD_PKG_CMD }}
+          "${{ env.VCVARS_PATH }}" x64 ${{ env.VCVARS_VER }} & cd src & copy mfaktc.ini .. & make SHELL="powershell.exe" -j%NUMBER_OF_PROCESSORS% -f Makefile.win & cl /? 2>&1 | findstr /C:"Version" > clversion.log & echo Build finished
         env:
-          # -vcvars_ver=14.0 enables the MSVC 14.0 (2015) build environment -
-          # this is an MSVC 2019 component and not a complete MSVC instance.
-          VCVARS_VER: ${{ steps.prepare.outputs.CUDA_VER_MAJOR <= 10 && '-vcvars_ver=14.0' || '' }}
+          VCVARS_PATH: 'C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\vcvars64.bat'
+          # vcvars_ver=14.x enables Build Tools for previous MSVC versions:
+          # - 14.0 is for Visual Studio 2015
+          # - 14.16 is for Visual Studio 2017 version 15.9.x
+          # - 14.29 is for Visual Studio 2019 version 16.11.x
+          VCVARS_VER: >-
+            ${{ (
+                 steps.prepare.outputs.CUDA_VER_MAJOR <= 9 && '-vcvars_ver=14.0'
+              || steps.prepare.outputs.CUDA_VER_MAJOR == 10 && '-vcvars_ver=14.16'
+              || steps.prepare.outputs.CUDA_VER_MAJOR == 11 && steps.prepare.outputs.CUDA_VER_MINOR <= 2 && '-vcvars_ver=14.29'
+              || ''
+            ) }}
+          # Build Tools for Visual Studio 2019 (named VC142 internally) are
+          # included with windows-2022 and later. However, the Build Tools for
+          # older MSVC versions need to be installed by running '${MSVC_SETUP_CMD} --add <package name>'
+          #
+          # - ${MSVC_PKG_VC140} is required for 14.0 / MSVC 2015
+          # - ${MSVC_PKG_VC141} is required for 14.16 / MSVC 2017 version 15.9.x
+          MSVC_ADD_PKG_CMD: >-
+            ${{ (
+                 steps.prepare.outputs.CUDA_VER_MAJOR <= 9 && format('{0} --add {1}', env.MSVC_SETUP_CMD, env.MSVC_PKG_VC140)
+              || steps.prepare.outputs.CUDA_VER_MAJOR == 10 && format('{0} --add {1}', env.MSVC_SETUP_CMD, env.MSVC_PKG_VC141)
+              || 'echo Build Tools already exist - installation not needed'
+            ) }}
 
       - name: Prepare build archive with description
         shell: bash
+        # We can't get the actual compiler (cl.exe) version with the helper
+        # script because cl might not be installed during the 'Prepare sources
+        # and gather info' step. COMPILER_VER is set to the MSVC rather than
+        # the cl version number, so we added a hack to log the cl version
+        # during the build step. Here, the cl version is extracted and added to
+        # the table along with the MSVC version.
         run: |
-          choco install -y --no-progress zip
-          zip -9 -j "${{ steps.prepare.outputs.BASE_NAME }}.zip" *
-          echo "[${{ steps.prepare.outputs.BASE_NAME }}.zip](https://github.com/${{ github.repository }}/releases/download/${{ github.ref_name }}/${{ steps.prepare.outputs.BASE_NAME }}.zip) | \
+          [ -f src/clversion.log ] && CL_VER="$(grep -Eoe 'Version [\.0-9]+ ' src/clversion.log | cut -d' ' -f2)"
+          [ -z "$CL_VER" ] && CL_VER='Unknown'
+          tar -a -c -f "${{ steps.prepare.outputs.BASE_NAME }}.zip" Changelog.txt COPYING mfaktc-win-64.exe mfaktc.ini README.txt
+          echo "[${{ steps.prepare.outputs.BASE_NAME }}.zip](https://github.com/${GITHUB_REPOSITORY}/releases/download/${GITHUB_REF_NAME}/${{ steps.prepare.outputs.BASE_NAME }}.zip) | \
           ${{ matrix.sys.cuda_version }} | ${{ steps.prepare.outputs.CC_MIN }}-${{ steps.prepare.outputs.CC_MAX }} | ${{ steps.prepare.outputs.OS_VER }} | \
-          ${{ steps.prepare.outputs.COMPILER_VER }} | ${{ steps.prepare.outputs.NVCC_VER }}" > ${{ steps.prepare.outputs.BASE_NAME }}.txt
+          ${CL_VER} (${{ steps.prepare.outputs.COMPILER_VER }}) | ${{ steps.prepare.outputs.NVCC_VER }}" > ${{ steps.prepare.outputs.BASE_NAME }}.txt
 
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4
@@ -269,10 +290,8 @@ jobs:
 
 # Begin job "upload-release"
   upload-release:
-    # This job expects the Git tag name to begin with the version specified by
-    # MFAKTC_VERSION in params.h
-    # Otherwise, the job will fail because there is a version conflict between Git
-    # and params.h that must be resolved.
+    # Git tag name must begin with the version specified by MFAKTC_VERSION in
+    # params.h or else the job will fail
     if: github.ref_type == 'tag' && startsWith(github.ref, 'refs/tags/')
     needs: [ build-linux, build-win ]
     runs-on: ubuntu-latest
@@ -291,26 +310,25 @@ jobs:
       - name: Prepare asset list and release notes
         id: makeinfo
         run: |
-          if ! compgen -G "${{ env.base_name }}.txt" > /dev/null 2>&1; then
-            echo "::error ::Could not find release notes with mask ${{ env.base_name }}.txt"
+          if ! compgen -G "${base_name}.txt" > /dev/null 2>&1; then
+            echo "::error ::Could not find release notes with mask ${base_name}.txt"
             echo "::error ::Ensure the Git tag name begins with the version specified by MFAKTC_VERSION in src/params.h"
             exit 1
           fi
           {
-            echo "Binary releases (automated builds) as follows."
-            echo "Compute Capability (CC) in the table means minimum and maximum versions supported."
-            echo "CC versions are listed without the separator. For example, '90' means devices with compute capability 9.0 can run that build."
+            echo "Pre-compiled binaries (automated builds) as follows."
+            echo "In this table, the Compute Capability column means the minimum and maximum versions supported."
             echo
-            echo "File | CUDA version | Compute Capability | Build OS | Compiler version | NVCC version"
+            echo "File | CUDA version | Compute Capability | Build OS | Host compiler | NVCC version"
             echo "--- | --- | --- | --- | --- | ---"
-            sort -Vr ${{ env.base_name }}.txt
+            sort -Vr ${base_name}.txt
           } > RELEASE_NOTES.txt
           {
             echo 'RELEASE_FILES<<EOF'
-            printf '%s\n' ${{ env.base_name }}.zip | sort -Vr
+            printf '%s\n' "${base_name}.zip" | sort -Vr
             echo 'EOF'
           } > $GITHUB_OUTPUT
-          ( echo "${{ github.ref_name }}" | grep -qsP "v?\d+(?:\.\d+(?:\.\d+)?(?:-\d+)?|\b)(-(?:alpha|beta|pre))" && echo "PRERELEASE=true" || echo "PRERELEASE=false" ) >> $GITHUB_OUTPUT
+          ( echo "$GITHUB_REF_NAME" | grep -qsP "v?\d+(?:\.\d+(?:\.\d+)?(?:-\d+)?|\b)(-(?:alpha|beta|pre))" && echo "PRERELEASE=true" || echo "PRERELEASE=false" ) >> $GITHUB_OUTPUT
 
       - name: Create and upload release package
         uses: softprops/action-gh-release@v2.2.1

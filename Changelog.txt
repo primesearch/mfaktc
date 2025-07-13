@@ -18,9 +18,14 @@ bug fixes:
 
 build:
 - made the build scripts more robust
-- more compiler optimizations enabled by default, slightly improving factoring
-  speed
-- new CUDA versions added to GitHub Actions workflow (thanks to NStorm)
+- enabled more compiler optimizations by default for a slight performance gain
+  (thanks to NStorm)
+- various improvements to GitHub Actions workflows (thanks to NStorm)
+  - support for additional CUDA versions
+  - removed dependency on deprecated windows-2019 images
+  - code analysis with CodeQL
+- improved visual appearance and clarity of release information (thanks to
+  Danny Chia)
 
 other changes:
 - dropped support for compute capability 1.x and 32-bit builds
@@ -33,6 +38,7 @@ other changes:
   - please use results.json.txt for submissions
   - set LegacyResultsTxt=1 in mfaktc.ini to restore old behavior and re-enable
     logging to results.txt
+- re-organized mfaktc.ini to be more user-friendly (thanks to James Heinrich)
 
 version 0.23.4
 ==============================

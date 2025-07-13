@@ -89,7 +89,7 @@ code path */
  Please discuss with the community before making changes to version numbers!
  */
 
-#define MFAKTC_VERSION "0.23.4"
+#define MFAKTC_VERSION "0.23.5"
 
 
 /*

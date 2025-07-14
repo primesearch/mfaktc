@@ -3,8 +3,8 @@ version 0.23.5
 - includes changes backported from mfaktc 0.24.0
 
 bug fixes:
-- Blackwell devices are now correctly supported on Windows (thanks to
-  yellowbeeblackbee)
+- added build flags to enable support for Blackwell devices by default
+  in Makefile.win (thanks to yellowbeeblackbee)
 
 build:
 - enabled more compiler optimizations by default for a slight performance gain
@@ -39,7 +39,7 @@ other changes:
 version 0.23.3
 ==============================
 bug fixes:
-- self-tests could fail on Blackwell devices due to a "random offset" error
+- fixed "random offset" error; Blackwell devices are now correctly supported
   (thanks to Dmitry Bolshakov)
 
 version 0.23.2

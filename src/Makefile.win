@@ -1,8 +1,8 @@
 CC = cl
-CFLAGS = /Ox /Oy /W2 /fp:fast /I"$(CUDA_PATH)\include" /I"$(CUDA_PATH)\include\cudart" /nologo
+CFLAGS = /O2 /Oy /W2 /fp:fast /I"$(CUDA_PATH)\include" /I"$(CUDA_PATH)\include\cudart" /nologo
 
-NVCCFLAGS = -m64 --ptxas-options=-v -Wno-deprecated-gpu-targets
-CUFLAGS = -DWIN64 -Xcompiler "/EHsc /W3 /nologo /Ox" $(NVCCFLAGS)
+NVCCFLAGS = -m64 -O3 --ptxas-options=-v -Wno-deprecated-gpu-targets
+CUFLAGS = -DWIN64 -Xcompiler "/EHsc /W3 /nologo /O2" $(NVCCFLAGS)
 
 ############################################################
 
@@ -18,6 +18,7 @@ NVCCFLAGS += --generate-code arch=compute_86,code=sm_86
 NVCCFLAGS += --generate-code arch=compute_87,code=sm_87
 NVCCFLAGS += --generate-code arch=compute_89,code=sm_89
 NVCCFLAGS += --generate-code arch=compute_90,code=sm_90
+NVCCFLAGS += --generate-code arch=compute_120,code=sm_120
 
 ############################################################
 
@@ -51,10 +52,10 @@ clean :
 	$(CC) $(CFLAGS) /c /Tp $<
 
 tf_75bit.obj : tf_96bit.cu
-	nvcc -O2 -c $< -o $@ $(CUFLAGS) -DSHORTCUT_75BIT
+	nvcc -c $< -o $@ $(CUFLAGS) -DSHORTCUT_75BIT
 
 %.obj : %.cu
-	nvcc -O2 -c $< -o $@ $(CUFLAGS)
+	nvcc -c $< -o $@ $(CUFLAGS)
 
 ..\\%.ini : %.ini
 	$(INSTALL) $< ..

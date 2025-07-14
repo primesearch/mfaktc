@@ -1,3 +1,24 @@
+version 0.23.5
+==============================
+- includes changes backported from mfaktc 0.24.0
+
+bug fixes:
+- Blackwell devices are now correctly supported on Windows (thanks to
+  yellowbeeblackbee)
+
+build:
+- enabled more compiler optimizations by default for a slight performance gain
+  (thanks to NStorm)
+- various improvements to GitHub Actions workflows (thanks to NStorm)
+  - support for additional CUDA versions
+  - removed dependency on deprecated windows-2019 images
+  - code analysis with CodeQL
+- improved visual appearance and clarity of release information (thanks to
+  Danny Chia)
+
+other changes:
+- re-organized mfaktc.ini to be more user-friendly (thanks to James Heinrich)
+
 version 0.23.4
 ==============================
 - includes changes backported from mfaktc 0.24.0

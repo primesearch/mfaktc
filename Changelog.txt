@@ -9,6 +9,10 @@ new features:
 - improved checkpoint compatibility between versions
   - file names now contain metadata
 
+enhancements:
+- merged in file locking code from mfakto to reduce concurrency (thanks to
+  James Heinrich)
+
 bug fixes:
 - fixed typos and formatting in output
 - fix some compilation warnings

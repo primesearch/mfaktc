@@ -91,7 +91,7 @@ FILE *fopen_and_lock(const char *path, const char *mode)
                 Sleep(i);
                 continue;
             } else {
-                perror("Cannot open lockfile");
+                perror("Cannot open lock file");
                 break;
             }
         }
@@ -108,8 +108,8 @@ FILE *fopen_and_lock(const char *path, const char *mode)
     if (f) {
         locked_files[num_locked_files++].open_file = f;
     } else {
-        if (close(locked_files[num_locked_files].lockfd) != 0) perror("Failed to close lockfile");
-        if (remove(locked_files[num_locked_files].lock_filename) != 0) perror("Failed to delete lockfile");
+        if (close(locked_files[num_locked_files].lockfd) != 0) perror("Failed to close lock file");
+        if (remove(locked_files[num_locked_files].lock_filename) != 0) perror("Failed to delete lock file");
     }
 
     return f;
@@ -120,14 +120,16 @@ int unlock_and_fclose(FILE *f)
     unsigned int i, j;
     int ret;
 
-    if (f == NULL) return -1;
+    if (f == NULL) {
+        return -1;
+    }
 
     for (i = 0; i < num_locked_files; i++) {
         if (locked_files[i].open_file == f) {
             ret = fclose(f);
             f   = NULL;
-            if (close(locked_files[i].lockfd) != 0) perror("Failed to close lockfile");
-            if (remove(locked_files[i].lock_filename) != 0) perror("Failed to delete lockfile");
+            if (close(locked_files[i].lockfd) != 0) perror("Failed to close lock file");
+            if (remove(locked_files[i].lock_filename) != 0) perror("Failed to delete lock file");
             //      printf("unlock_and_fclose(%s)\n", locked_files[i].lock_filename);
             for (j = i + 1; j < num_locked_files; j++) {
                 locked_files[j - 1].lockfd    = locked_files[j].lockfd;

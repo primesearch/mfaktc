@@ -21,7 +21,6 @@ along with mfaktc (mfakto).  If not, see <http://www.gnu.org/licenses/>.
 extern "C" {
 #endif
 
-int file_exists (char	*filename);
 FILE *fopen_and_lock(const char *path, const char *mode);
 int unlock_and_fclose(FILE *f);
 

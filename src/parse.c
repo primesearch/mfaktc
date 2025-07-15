@@ -361,7 +361,7 @@ enum ASSIGNMENT_ERRORS clear_assignment(char *filename, unsigned int exponent, i
   if (NULL == f_in)
     return CANT_OPEN_WORKFILE;
 
-  f_out = fopen_and_lock("__worktodo__.tmp", "w");
+  f_out = fopen("__worktodo__.tmp", "w");
   if (NULL == f_out)
   {
     unlock_and_fclose(f_in);

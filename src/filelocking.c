@@ -28,15 +28,10 @@ along with mfaktc (mfakto).  If not, see <http://www.gnu.org/licenses/>.
 #if defined _MSC_VER || defined __MINGW32__
 #include <Windows.h>
 #include <io.h>
-#include <direct.h>
 #undef open
 #undef close
 #define open     _open
 #define close    _close
-#define getcwd   _getcwd
-#define chdir    _chdir
-#define getdrive _getdrive
-#define chdrive  _chdrive
 #define MODE     _S_IREAD | _S_IWRITE
 #define O_RDONLY _O_RDONLY
 #else
@@ -50,8 +45,6 @@ static void Sleep(unsigned int ms)
     ts.tv_nsec = (ms % 1000) * 1000000;
     nanosleep(&ts, NULL);
 }
-#define getdrive() 0
-#define chdrive(x) 0
 #endif
 
 #define MAX_LOCKED_FILES 5

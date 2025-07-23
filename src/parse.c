@@ -21,10 +21,10 @@ along with mfaktc.  If not, see <http://www.gnu.org/licenses/>.
 *1 Luigi initially wrote the two functions get_next_assignment() and
 clear_assignment() after we (Luigi and myself (Oliver)) have discussed the
 interface. Luigi was so nice to write those functions so I had time to focus
-on other parts, this made early (mfaktc 0.07) worktodo parsing posible.
-For mfakc 0.15 I've completly rewritten those two functions. The rewritten
+on other parts, this made early (mfaktc 0.07) worktodo parsing possible.
+For mfakc 0.15 I've completely rewritten those two functions. The rewritten
 functions should be more robust against malformed input. Grab the sources of
-mfaktc 0.07-0.14 to see Luigis code.
+mfaktc 0.07-0.14 to see Luigi's code.
 */
 
 //Christenson, 2011, needed to expand the functionality, and strongly

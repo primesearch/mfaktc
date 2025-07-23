@@ -1601,7 +1601,7 @@ for exponents from 800000000 to 800010000 */
 
     /* all known factors from primenet (2011-07-16) with at least 20 digits and a k <= 2^63.9
 for M5x.000.000 to M5x.100.000 with x = 3, 5, 7 and 9
-except those which were allready in this file before */
+except those which were already in this file before */
     {   53054873, 63,          94448564136ULL }, // M53054873 has a factor: 10021913150535669457
     {   55085521, 63,          91109099676ULL }, // M55085521 has a factor: 10037584446986782393
     {   53026187, 63,          95608729528ULL }, // M53026187 has a factor: 10139532741568299473

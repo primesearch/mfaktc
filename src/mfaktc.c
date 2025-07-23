@@ -99,7 +99,7 @@ int class_needed(unsigned int exp, unsigned long long int k_min, int c)
     /*
 checks whether the class c must be processed or can be ignored at all because
 all factor candidates within the class c are a multiple of 3, 5, 7 or 11 (11
-only if MORE_CLASSES is definied) or are 3 or 5 mod 8 (Mersenne) or are 5 or 7 mod 8 (Wagstaff)
+only if MORE_CLASSES is defined) or are 3 or 5 mod 8 (Mersenne) or are 5 or 7 mod 8 (Wagstaff)
 
 k_min *MUST* be aligned in that way that k_min is in class 0!
 */
@@ -143,7 +143,7 @@ RET_CUDA_ERROR cudaGetLastError() returned an error
 RET_QUIT if early exit was requested by SIGINT
 
 return value (mystuff->mode = MODE_SELFTEST_SHORT or MODE_SELFTEST_FULL):
-0 for a successfull selftest (known factor was found)
+0 for a successful selftest (known factor was found)
 1 no factor found
 2 wrong factor returned
 RET_CUDA_ERROR cudaGetLastError() returned an error
@@ -294,7 +294,7 @@ see benchmarks in src/kernel_benchmarks.txt */
                 logprintf(mystuff, "\n");
             cur_class++; // the checkpoint contains the last complete processed class!
 
-            /* calculate the number of classes which are allready processed. This value is needed to estimate ETA */
+            /* calculate the number of classes which are already processed. This value is needed to estimate ETA */
             for (i = 0; i < cur_class; i++) {
                 if (class_needed(mystuff->exponent, k_min, i)) mystuff->stats.class_counter++;
             }
@@ -312,7 +312,7 @@ see benchmarks in src/kernel_benchmarks.txt */
         if (class_needed(mystuff->exponent, k_min, cur_class)) {
             mystuff->stats.class_number = cur_class;
             if (mystuff->quit) {
-                /* check if quit is requested. Because this is at the begining of the class
+                /* check if quit is requested. Because this is at the beginning of the class
    we can be sure that if RET_QUIT is returned the last class hasn't
    finished. The signal handler which sets mystuff->quit not active during
    selftests so we need to check for RET_QUIT only when doing real work. */
@@ -503,7 +503,7 @@ type = 1: small selftest (this is executed EACH time mfaktc is started)
 return value
 0 selftest passed
 1 selftest failed
-RET_CUDA_ERROR we might have a serios problem (detected by cudaGetLastError())
+RET_CUDA_ERROR we might have a serious problem (detected by cudaGetLastError())
 */
 {
     int i, j, tf_res, st_success = 0, st_nofactor = 0, st_wrongfactor = 0, st_unknown = 0;
@@ -576,7 +576,7 @@ RET_CUDA_ERROR we might have a serios problem (detected by cudaGetLastError())
                 else if (tf_res == 2)
                     st_wrongfactor++;
                 else if (tf_res == RET_CUDA_ERROR)
-                    return RET_CUDA_ERROR; /* bail out, we might have a serios problem (detected by cudaGetLastError())... */
+                    return RET_CUDA_ERROR; /* bail out, we might have a serious problem (detected by cudaGetLastError())... */
                 else
                     st_unknown++;
 
@@ -652,7 +652,7 @@ RET_CUDA_ERROR we might have a serios problem (detected by cudaGetLastError())
                 else if (tf_res == 2)
                     st_wrongfactor++;
                 else if (tf_res == RET_CUDA_ERROR)
-                    return RET_CUDA_ERROR; /* bail out, we might have a serios problem (detected by cudaGetLastError())... */
+                    return RET_CUDA_ERROR; /* bail out, we might have a serious problem (detected by cudaGetLastError())... */
                 else
                     st_unknown++;
             } while (j > 0);
@@ -1136,7 +1136,7 @@ int main(int argc, char **argv)
                     // tmp = tf(&mystuff, 0, 0, BARRETT92_MUL32);
                     // tmp = tf(&mystuff, 0, 0, BARRETT92_MUL32_GS);
 
-                    if (tmp == RET_CUDA_ERROR) return 1; /* bail out, we might have a serios problem (detected by cudaGetLastError())... */
+                    if (tmp == RET_CUDA_ERROR) return 1; /* bail out, we might have a serious problem (detected by cudaGetLastError())... */
 
                     if (tmp != RET_QUIT) {
                         if ((mystuff.stopafterfactor > 0) && (tmp > 0)) {

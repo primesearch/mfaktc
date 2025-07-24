@@ -74,7 +74,7 @@ typedef struct {
     int sieve_primes;                       /* the actual number of odd primes using for sieving */
     int sieve_primes_adjust;                /* allow automated adjustment of sieve_primes? */
     int sieve_primes_upper_limit;           /* the upper limit of sieve_primes for the current exponent */
-    int sieve_primes_min, sieve_primes_max; /* user configureable sieve_primes min/max */
+    int sieve_primes_min, sieve_primes_max; /* user configurable sieve_primes min/max */
   
     char workfile[51];                      /* allow filenames up to 50 chars... */
     char addfile[51];                       /* allow filenames up to 50 chars... */
@@ -134,7 +134,7 @@ typedef struct {
     int96 factors[MAX_FACTORS_PER_JOB];       /* store factors in global state */
     // clang-format on
 
-} mystuff_t; /* FIXME: propper name needed */
+} mystuff_t; /* FIXME: proper name needed */
 
 enum GPUKernels {
     AUTOSELECT_KERNEL,

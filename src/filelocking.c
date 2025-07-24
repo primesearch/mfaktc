@@ -64,6 +64,15 @@ FILE *fopen_and_lock(const char *path, const char *mode)
     int lockfd;
     FILE *f;
 
+    if (!path) {
+        fprintf(stderr, "fopen_and_lock() called with NULL passed as path argument.\n");
+        return NULL;
+     }
+
+     if (!mode) {
+         fprintf(stderr, "Cannot open %.250s: mode is NULL.\n", path);
+         return NULL;
+     }
     if (strlen(path) > 250) {
         fprintf(stderr, "Cannot open %.250s: Name too long.\n", path);
         return NULL;

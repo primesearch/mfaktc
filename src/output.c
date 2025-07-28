@@ -501,7 +501,7 @@ void print_result_line(mystuff_t *mystuff, int factorsfound)
     sprintf(txtstring, "no factor for %s%u from 2^%d to 2^%d [mfaktc %s %s]", NAME_NUMBERS, mystuff->exponent, mystuff->bit_min, mystuff->bit_max_stage, MFAKTC_VERSION, mystuff->stats.kernelname);
   }
 #ifndef WAGSTAFF
-  snprintf(jsonstring, sizeof(jsonstring), "{\"exponent\":%u, \"worktype\":\"TF\", \"status\":\"%s\", \"bitlo\":%d, \"bithi\":%d, \"rangecomplete\":%s%s, \"program\":{\"name\":\"mfaktc\", \"version\":\"%s\", \"subversion\":\"%s\"}, \"timestamp\":\"%s\"%s%s%s%s}",
+  snprintf(jsonstring, sizeof(jsonstring), "{\"exponent\":%u, \"worktype\":\"TF\", \"status\":\"%s\", \"bitlo\":%d, \"bithi\":%d, \"rangecomplete\":%s%s, \"program\":{\"name\":\"mfaktc\", \"version\":\"%s\", \"kernel\":\"%s\"}, \"timestamp\":\"%s\"%s%s%s%s}",
       mystuff->exponent, factorsfound > 0 ? "F" : "NF", mystuff->bit_min, mystuff->bit_max_stage, partialresult ? "false" : "true", factorjson, MFAKTC_VERSION, mystuff->stats.kernelname, timestamp, userjson, computerjson, aidjson, osjson);
 #endif
   if(mystuff->mode != MODE_SELFTEST_SHORT)

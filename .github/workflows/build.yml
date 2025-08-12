@@ -150,7 +150,7 @@ jobs:
           SCRIPT: |
             cd /workspace
             zip -9 -j ${{ steps.prepare.outputs.BASE_NAME }}.zip Changelog.txt COPYING mfaktc mfaktc.ini README.txt
-            echo "[${{ steps.prepare.outputs.BASE_NAME }}.zip](https://github.com/${GITHUB_REPOSITORY}/releases/download/${GITHUB_REF_NAME}/${{ steps.prepare.outputs.BASE_NAME }}.zip) | \
+            echo "[${{ steps.prepare.outputs.BASE_NAME }}.zip](https://github.com/${{ github.repository }}/releases/download/${{ github.ref_name }}/${{ steps.prepare.outputs.BASE_NAME }}.zip) | \
             ${{ matrix.sys.cuda_version }} | ${{ steps.prepare.outputs.CC_MIN }}-${{ steps.prepare.outputs.CC_MAX }} | ${{ steps.prepare.outputs.OS_VER }} | \
             ${{ steps.prepare.outputs.COMPILER_VER }} | ${{ steps.prepare.outputs.NVCC_VER }}" > ${{ steps.prepare.outputs.BASE_NAME }}.txt
         run: docker exec build-container bash -c "$SCRIPT"

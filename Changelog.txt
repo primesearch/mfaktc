@@ -35,8 +35,6 @@ build:
 
 other changes:
 - replaced deprecated CUDA function calls
-- changed the key "subversion" to "kernel" in the JSON output
-  - PrimeNet should still accept results with "subversion"
 
 version 0.23.3
 ==============================

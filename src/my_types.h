@@ -47,8 +47,8 @@ typedef struct {
 // clang-format off
 typedef struct
 {
-  char progressheader[256];              /* userconfigureable progress header */
-  char progressformat[256];              /* userconfigureable progress line */
+  char progressheader[256];              /* user-configurable progress header */
+  char progressformat[256];              /* user-configurable progress line */
   int class_number;                      /* the number of the last processed class */
   int grid_count;                        /* number of grids processed in the last processed class */
   unsigned long long int class_time;     /* time (in ms) needed to process the last processed class */
@@ -77,7 +77,7 @@ typedef struct
   int sieve_primes;                    /* the actual number of odd primes using for sieving */
   int sieve_primes_adjust;             /* allow automated adjustment of sieve_primes? */
   int sieve_primes_upper_limit;        /* the upper limit of sieve_primes for the current exponent */
-  int sieve_primes_min, sieve_primes_max; /* user configureable sieve_primes min/max */
+  int sieve_primes_min, sieve_primes_max; /* user configurable sieve_primes min/max */
 
   char workfile[51];                   /* allow filenames up to 50 chars... */
   char addfile[51];                    /* allow filenames up to 50 chars... */
@@ -132,7 +132,7 @@ typedef struct
     char assignment_key[MAX_LINE_LENGTH + 1]; /* the assignment ID */
     char factors_string[500]; /* store factors in global state */
 
-} mystuff_t; /* FIXME: propper name needed */
+} mystuff_t; /* FIXME: proper name needed */
 
 enum GPUKernels {
     AUTOSELECT_KERNEL,

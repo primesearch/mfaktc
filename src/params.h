@@ -23,7 +23,7 @@ too big => doesn't fit into (fast) CPU-caches
 The size given here is in kiB (1024 bytes). A good starting point is the size
 of your CPUs L1-Data cache.
 This is just the upper LIMIT of the SIEVE_SIZE, the actual sieve size depends
-on some other factors asweel, but you don't have to worry about.
+on some other factors as well, but you don't have to worry about.
 */
 
 #define SIEVE_SIZE_LIMIT 32
@@ -31,10 +31,10 @@ on some other factors asweel, but you don't have to worry about.
 /*
 If MORE_CLASSES is defined than the while TF process is split into 4620
 (4 * 3*5*7*11) classes. Otherwise it will be split into 420 (4 * 3*5*7)
-classes. With 4620 the siever runs a bit more efficent at the cost of 10 times
+classes. With 4620 the siever runs a bit more efficient at the cost of 10 times
 more sieve initializations. This will allow to increase SIEVE_PRIMES a little
 bit further.
-This starts to become usefull on my system for e.g. TF M66xxxxxx from 2^66 to
+This starts to become useful on my system for e.g. TF M66xxxxxx from 2^66 to
 2^67.
 */
 

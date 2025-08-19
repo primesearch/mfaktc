@@ -135,7 +135,7 @@ smaller ints */
     nn_old = jj;
     jj     = nn;
 
-    if (jj == 1) /* qi0 * j = -1 mod n     FIXME, is the describtion correct?*/
+    if (jj == 1) /* qi0 * j = -1 mod n     FIXME, is the description correct?*/
     {
         tmp = ((-r * qi0) % n) + n;
         return (int)tmp;
@@ -354,7 +354,7 @@ void sieve_candidates(int ktab_size, unsigned int *ktab, int sieve_limit)
 
         /*
         we have finished sieving and now we need to translate the remaining bits in
-        the sieve to the correspondic k_tab offsets
+        the sieve to the corresponding k_tab offsets
         */
 
         /* part one of the loop:

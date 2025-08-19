@@ -1591,7 +1591,7 @@ exp[1556]=3321928619; bit_min[1556]=94; k[1556]=5842180456452690237ULL; // M3321
 
 /* all known factors from primenet (2011-07-16) with at least 20 digits and a k <= 2^63.9
 for M5x.000.000 to M5x.100.000 with x = 3, 5, 7 and 9
-except those which were allready in this file before */
+except those which were already in this file before */
 exp[1557]=53054873; bit_min[1557]=63; k[1557]=94448564136ULL; // M53054873 has a factor: 10021913150535669457
 exp[1558]=55085521; bit_min[1558]=63; k[1558]=91109099676ULL; // M55085521 has a factor: 10037584446986782393
 exp[1559]=53026187; bit_min[1559]=63; k[1559]=95608729528ULL; // M53026187 has a factor: 10139532741568299473
@@ -2833,7 +2833,7 @@ exp[2788]=200579; bit_min[2788]=71; k[2788]=7124604582470136ULL; // M200579 has 
 exp[2789]=200023; bit_min[2789]=75; k[2789]=134049395598996777ULL; // M200023 has a factor: 53625924511796264651743
 exp[2790]=200513; bit_min[2790]=77; k[2790]=506218960959779235ULL; // M200513 has a factor: 203006965037856427495111
 
-/* some (all) known factors from the primenet server (2013-12-18) http://www.mersenne.org/
+/* some (all) known factors from the PrimeNet server (2013-12-18) http://www.mersenne.org/
 for exponents from 500000 to 501000 */
 exp[2791]=500459; bit_min[2791]=19; k[2791]=1ULL; // M500459 has a factor: 1000919
 exp[2792]=500579; bit_min[2792]=19; k[2792]=1ULL; // M500579 has a factor: 1001159

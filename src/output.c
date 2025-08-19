@@ -55,7 +55,7 @@ void print_help(char *string)
     printf("  -st2                   same as -st but extended range for k_min and k_max\n");
     printf("  -v <number>            set verbosity (min = 0, default = 1, more = 2, max = 3)\n");
     printf("\n");
-    printf("options for debuging purposes\n");
+    printf("options for debugging purposes\n");
     printf("  --timertest            run test of timer functions and exit\n");
     printf("  --sleeptest            run test of sleep functions and exit\n");
 }

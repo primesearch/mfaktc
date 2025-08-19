@@ -5,6 +5,7 @@ version 0.23.5
 bug fixes:
 - added build flags to enable support for Blackwell devices by default in
   Makefile.win (thanks to yellowbeeblackbee)
+- fixed some typos in code comments and program output
 
 build:
 - enabled more compiler optimizations by default for a slight performance gain
@@ -17,6 +18,8 @@ build:
   Danny Chia)
 
 other changes:
+- code has been revamped to improve formatting and maintain consistent style
+  (thanks to NStorm)
 - re-organized mfaktc.ini to be more user-friendly (thanks to James Heinrich)
 
 version 0.23.4

@@ -215,7 +215,7 @@ extern "C" __host__ int tf_class_71(unsigned long long int k_min, unsigned long 
                 k_base.d2 = 0;
 #endif
 
-                MFAKTC_FUNC<<<blocksPerGrid, threadsPerBlock, 0, mystuff->stream[stream]> > >(
+                MFAKTC_FUNC<<<blocksPerGrid, threadsPerBlock, 0, mystuff->stream[stream]>>>(
                     mystuff->exponent, k_base, mystuff->d_ktab[stream], shiftcount, b_preinit, mystuff->d_RES
 #if defined(TF_BARRETT) && (defined(TF_BARRETT_87BIT) || defined(TF_BARRETT_88BIT) || defined(TF_BARRETT_92BIT) || defined(DEBUG_GPU_MATH))
                     ,

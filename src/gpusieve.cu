@@ -1623,7 +1623,7 @@ void gpusieve_init_exponent(mystuff_t *mystuff)
     last_exponent_initialized = mystuff->exponent;
 
     // Calculate the modular inverses that will be used by each class to calculate initial bit-to-clear for each prime
-    CalcModularInverses<<<primes_per_thread + 1, threadsPerBlock> > >(mystuff->exponent, (int *)mystuff->d_calc_bit_to_clear_info);
+    CalcModularInverses<<<primes_per_thread + 1, threadsPerBlock>>>(mystuff->exponent, (int *)mystuff->d_calc_bit_to_clear_info);
     cudaDeviceSynchronize();
 }
 
@@ -1644,7 +1644,7 @@ void gpusieve_init_class(mystuff_t *mystuff, unsigned long long k_min)
     k_base.d2 = 0;
 
     // Calculate the initial bit-to-clear for each prime
-    CalcBitToClear<<<primes_per_thread + 1, threadsPerBlock> > >(mystuff->exponent, k_base, (int *)mystuff->d_calc_bit_to_clear_info,
+    CalcBitToClear<<<primes_per_thread + 1, threadsPerBlock>>>(mystuff->exponent, k_base, (int *)mystuff->d_calc_bit_to_clear_info,
                                                                  (uint8 *)mystuff->d_sieve_info);
     cudaDeviceSynchronize();
 }
@@ -1668,7 +1668,7 @@ void gpusieve(mystuff_t *mystuff, unsigned long long num_k_remaining)
         sieve_size = (int)num_k_remaining;
 
     // Do some sieving on the GPU!
-    SegSieve<<<(sieve_size + block_size - 1) / block_size, threadsPerBlock> > >((uint8 *)mystuff->d_bitarray,
+    SegSieve<<<(sieve_size + block_size - 1) / block_size, threadsPerBlock>>>((uint8 *)mystuff->d_bitarray,
                                                                                 (uint8 *)mystuff->d_sieve_info, primes_per_thread);
     cudaDeviceSynchronize();
 }

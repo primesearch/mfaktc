@@ -170,7 +170,7 @@ extern "C" __host__ int tf_class_barrett92_gs(unsigned long long int k_min, unsi
 
         // Now let the GPU trial factor the candidates that survived the sieving
 
-        MFAKTC_FUNC<<<numblocks, THREADS_PER_BLOCK, shared_mem_required> > >(
+        MFAKTC_FUNC<<<numblocks, THREADS_PER_BLOCK, shared_mem_required>>>(
             mystuff->exponent, k_base, mystuff->d_bitarray, mystuff->gpu_sieve_processing_size, shiftcount, b_preinit, mystuff->d_RES
 #if defined(TF_BARRETT) &&                                                                                                    \
     (defined(TF_BARRETT_87BIT_GS) || defined(TF_BARRETT_88BIT_GS) || defined(TF_BARRETT_92BIT_GS) || defined(DEBUG_GPU_MATH))

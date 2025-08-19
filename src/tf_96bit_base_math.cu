@@ -13,7 +13,7 @@ mfaktc is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
-                                
+
 You should have received a copy of the GNU General Public License
 along with mfaktc.  If not, see <http://www.gnu.org/licenses/>.
 */
@@ -21,12 +21,13 @@ along with mfaktc.  If not, see <http://www.gnu.org/licenses/>.
 __device__ static int cmp_ge_96(int96 a, int96 b)
 /* checks if a is greater or equal than b */
 {
+    // clang-format off
     if (a.d2 == b.d2) {
-        // clang-format off
+
         if(a.d1 == b.d1) return(a.d0 >= b.d0);
         else             return(a.d1 >  b.d1);
-  }
-  else                   return(a.d2 >  b.d2);
+    }
+    else                 return(a.d2 >  b.d2);
     // clang-format on
 }
 
@@ -63,75 +64,23 @@ res = a - b */
 __device__ static void mul_96(int96 *res, int96 a, int96 b)
 /* res = a * b (only lower 96 bits of the result) */
 {
-//#if (__CUDA_ARCH__ >= MAXWELL)
-#if (__CUDA_ARCH__ >= 9999)
-    asm volatile("{\n\t"
-                 ".reg .u16 a0, a1, a2, a3, a4, a5;\n\t"
-                 ".reg .u16 b0, b1, b2, b3, b4, b5;\n\t"
-                 ".reg .u32 t0, t1, t2;\n\t"
+#if (__CUDA_ARCH__ >= MAXWELL) && (CUDART_VERSION >= 12000) // CUDA versions 12.0 and up
 
-                 "mov.b32          {a0,a1}, %3;\n\t"
-                 "mov.b32          {a2,a3}, %4;\n\t"
-                 "mov.b32          {a4,a5}, %5;\n\t"
+    // Step 1: r0 = a0 * b0 (lower 32 bits)
+    uint64_t t0 = (uint64_t)a.d0 * b.d0;
 
-                 "mov.b32          {b0,b1}, %6;\n\t"
-                 "mov.b32          {b2,b3}, %7;\n\t"
-                 "mov.b32          {b4,b5}, %8;\n\t"
+    // Step 2: r1 += a0 * b1 + a1 * b0 + carry(t0)
+    uint64_t t1 = (uint64_t)a.d0 * b.d1 + (uint64_t)a.d1 * b.d0 + (t0 >> 32);
 
-                 "mul.wide.u16     %0, a0, b1;\n\t"
-                 "mul.wide.u16     %1, a0, b3;\n\t"
-                 "mul.wide.u16     %2, a0, b5;\n\t"
+    // Step 3: r2 += a0 * b2 + a1 * b1 + a2 * b0 + carry(t1)
+    uint64_t t2 = (uint64_t)a.d0 * b.d2 + (uint64_t)a.d1 * b.d1 + (uint64_t)a.d2 * b.d0 + (t1 >> 32);
 
-                 "mul.wide.u16     t0, a1, b0;\n\t"
-                 "mul.wide.u16     t1, a1, b2;\n\t"
-                 "mul.wide.u16     t2, a1, b4;\n\t"
-                 "add.cc.u32       %0, %0, t0;\n\t"
-                 "addc.cc.u32      %1, %1, t1;\n\t"
-                 "addc.u32         %2, %2, t2;\n\t"
+    res->d0 = (uint32_t)t0;
+    res->d1 = (uint32_t)t1;
+    res->d2 = (uint32_t)t2;
 
-                 "mul.wide.u16     t1, a2, b1;\n\t"
-                 "mul.wide.u16     t2, a2, b3;\n\t"
-                 "add.cc.u32       %1, %1, t1;\n\t"
-                 "addc.u32         %2, %2, t2;\n\t"
-
-                 "mul.wide.u16     t1, a3, b0;\n\t"
-                 "mul.wide.u16     t2, a3, b2;\n\t"
-                 "add.cc.u32       %1, %1, t1;\n\t"
-                 "addc.u32         %2, %2, t2;\n\t"
-
-                 "mad.wide.u16     %2, a4, b1, %2;\n\t"
-
-                 "mad.wide.u16     %2, a5, b0, %2;\n\t"
-
-                 "shf.l.clamp.b32  %2, %1, %2, 16;\n\t"
-                 "shf.l.clamp.b32  %1, %0, %1, 16;\n\t"
-                 "shf.l.clamp.b32  %0,  0, %0, 16;\n\t"
-
-                 "mul.wide.u16     t0, a0, b0;\n\t"
-                 "mul.wide.u16     t1, a0, b2;\n\t"
-                 "mul.wide.u16     t2, a0, b4;\n\t"
-                 "add.cc.u32       %0, %0, t0;\n\t"
-                 "addc.cc.u32      %1, %1, t1;\n\t"
-                 "addc.u32         %2, %2, t2;\n\t"
-
-                 "mul.wide.u16     t1, a1, b1;\n\t"
-                 "mul.wide.u16     t2, a1, b3;\n\t"
-                 "add.cc.u32       %1, %1, t1;\n\t"
-                 "addc.u32         %2, %2, t2;\n\t"
-
-                 "mul.wide.u16     t1, a2, b0;\n\t"
-                 "mul.wide.u16     t2, a2, b2;\n\t"
-                 "add.cc.u32       %1, %1, t1;\n\t"
-                 "addc.u32         %2, %2, t2;\n\t"
-
-                 "mad.wide.u16     %2, a3, b1, %2;\n\t"
-
-                 "mad.wide.u16     %2, a4, b0, %2;\n\t"
-                 "}"
-                 : "=r"(res->d0), "=r"(res->d1), "=r"(res->d2)
-                 : "r"(a.d0), "r"(a.d1), "r"(a.d2), "r"(b.d0), "r"(b.d1), "r"(b.d2));
-#elif (__CUDA_ARCH__ >= FERMI) &&                                                                                 \
-    (CUDART_VERSION >= 4010) /* multiply-add with carry is not available on CC 1.x devices and before CUDA 4.1 */
+#elif (__CUDA_ARCH__ >= FERMI) && (CUDART_VERSION >= 4010) // multiply-add with carry is not available on CC 1.x devices
+                                                           // and before CUDA 4.1
     asm volatile("{\n\t"
                  "mul.lo.u32    %0, %3, %6;\n\t" /* (a.d0 * b.d0).lo */
 
@@ -156,7 +105,7 @@ __device__ static void mul_96(int96 *res, int96 a, int96 b)
 
     res->d1 = __add_cc(__umul32hi(a.d0, b.d0), __umul32  (a.d1, b.d0));
     res->d2 = __addc  (__umul32  (a.d2, b.d0), __umul32hi(a.d1, b.d0));
-  
+
     res->d1 = __add_cc(res->d1,                __umul32  (a.d0, b.d1));
     res->d2 = __addc  (res->d2,                __umul32hi(a.d0, b.d1));
     // clang-format on
@@ -299,7 +248,7 @@ than of mul_96_192().
     // clang-format off
     res->d3 = __add_cc (res->d3, __umul32  (a.d2, b.d1));
     res->d4 = __addc   (      0,                      0);
-  
+
     res->d3 = __add_cc (res->d3, __umul32  (a.d1, b.d2));
     res->d4 = __addc   (res->d4, __umul32hi(a.d1, b.d2)); // no carry propagation to d5 needed: 0xFFFF.FFFF * 0xFFFF.FFFF + 0xFFFF.FFFF      + 0xFFFF.FFFE      = 0xFFFF.FFFF.FFFF.FFFE
                                                           //                       res->d4|d3 = (a.d1 * b.d2).hi|lo       + (a.d2 * b.d1).lo + (a.d2 * b.d0).hi
@@ -360,7 +309,7 @@ than of mul_96_192().
     // clang-format off
     res->d3 = __add_cc (res->d3, __umul32  (a.d2, b.d1));
     res->d4 = __addc   (      0,                      0);
-  
+
     t1      = __add_cc (     t1, __umul32  (a.d1, b.d1));
     res->d3 = __addc_cc(res->d3, __umul32  (a.d1, b.d2));
     res->d4 = __addc   (res->d4, __umul32hi(a.d1, b.d2)); // no carry propagation to d5 needed: 0xFFFF.FFFF * 0xFFFF.FFFF + 0xFFFF.FFFF      + 0xFFFF.FFFE      + 1             = 0xFFFF.FFFF.FFFF.FFFF
@@ -416,7 +365,7 @@ assuming that a is < 2^95 (a.d2 < 2^31)! */
                  "shf.l.clamp.b32 %2, %1, %2, 17;\n\t"
                  "shf.l.clamp.b32 %1, %0, %1, 17;\n\t"
                  "shf.l.clamp.b32 %0,  0, %0, 17;\n\t"
-                 /*      
+                 /*
                  "mul.wide.u16   s2, a0, a4;\n\t"
                  "mul.wide.u16   s3, a1, a5;\n\t"
                  "mul.wide.u16   s4, a3, a5;\n\t"
@@ -428,7 +377,7 @@ assuming that a is < 2^95 (a.d2 < 2^31)! */
                  "add.cc.u32     t2, t2, s2;\n\t"
                  "addc.cc.u32    t3, t3, s3;\n\t"
                  "addc.u32       t4,  0, s4;\n\t"
-      
+
                  "add.cc.u32     %1, %1, t1;\n\t"
                  "addc.cc.u32    %2, %2, t2;\n\t"
                  "addc.cc.u32    %3, %3, t3;\n\t"

@@ -1,0 +1,10 @@
+{
+    "C_Cpp.codeAnalysis.clangTidy.enabled": true,
+    "C_Cpp.default.cppStandard": "gnu++17",
+    "C_Cpp.default.cStandard": "gnu17",
+    "C_Cpp.default.intelliSenseMode": "gcc-x64",
+    "C_Cpp.inlayHints.parameterNames.enabled": false,
+    "C_Cpp.clang_format_fallbackStyle": "{ BasedOnStyle: Microsoft, UseTab: Never, IndentWidth: 4, TabWidth: 4, FixNamespaceComments: false }",
+    "C_Cpp.clang_format_sortIncludes": false,
+    "C_Cpp.formatting": "default"
+}

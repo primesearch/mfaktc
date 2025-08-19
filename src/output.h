@@ -16,12 +16,11 @@ You should have received a copy of the GNU General Public License
 along with mfaktc.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-
 #if defined(NVCC_EXTERN) && !defined(_MSC_VER)
 extern "C" {
 #endif
 void print_help(char *string);
-void logprintf(mystuff_t* mystuff, const char* fmt, ...);
+void logprintf(mystuff_t *mystuff, const char *fmt, ...);
 
 void print_dez72(int72 a, char *buf);
 void print_dez144(int144 a, char *buf);

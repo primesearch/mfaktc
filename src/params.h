@@ -28,7 +28,6 @@ on some other factors asweel, but you don't have to worry about.
 
 #define SIEVE_SIZE_LIMIT 32
 
-
 /*
 If MORE_CLASSES is defined than the while TF process is split into 4620
 (4 * 3*5*7*11) classes. Otherwise it will be split into 420 (4 * 3*5*7)
@@ -41,12 +40,10 @@ This starts to become usefull on my system for e.g. TF M66xxxxxx from 2^66 to
 
 #define MORE_CLASSES
 
-
 /* use WAGSTAFF to build mfaktc doing TF on Wagstaff numbers instead of
 Mersenne numbers */
 
 //#define WAGSTAFF
-
 
 /******************
 ** DEBUG options **
@@ -56,10 +53,8 @@ Mersenne numbers */
 code path */
 //#define USE_DEVICE_PRINTF
 
-
 /* do some checks on math done on GPU (mainly division stuff) */
 //#define DEBUG_GPU_MATH
-
 
 /* print stream and h_ktab usage */
 //#define DEBUG_STREAM_SCHEDULE
@@ -67,10 +62,8 @@ code path */
 /* perform a sanity check on the h_ktab usage */
 //#define DEBUG_STREAM_SCHEDULE_CHECK
 
-
 /* disable sieve code to measure raw GPU performance */
 //#define RAW_GPU_BENCH
-
 
 /*******************************************************************************
 ********************************************************************************
@@ -91,7 +84,6 @@ code path */
 
 #define MFAKTC_VERSION "0.23.5"
 
-
 /*
 THREADS_PER_BLOCK has a hardware limit, 512 on GPUs with compute capability
 1.x and 1024 on GPUs with compute capability 2.0.
@@ -104,7 +96,6 @@ time. When it is increased too much you might run out of register space
 
 #define THREADS_PER_BLOCK 256 /* DO NOT CHANGE! */
 
-
 /*
 SIEVE_PRIMES defines how far we sieve the factor candidates.
 The first <SIEVE_PRIMES> odd primes are sieved.
@@ -114,16 +105,16 @@ The actual configuration is done in mfaktc.ini.
 The following lines define the min, default and max value.
 */
 
+// clang-format off
 #define SIEVE_PRIMES_MIN      2000 /* DO NOT CHANGE! */
 #define SIEVE_PRIMES_DEFAULT 25000 /* DO NOT CHANGE! */
 #define SIEVE_PRIMES_MAX    200000 /* DO NOT CHANGE! */
-
+// clang-format on
 
 /* the first SIEVE_SPLIT primes have a special code in sieve.c. This defines
 when the siever switches between those two code variants. */
 
 #define SIEVE_SPLIT 250 /* DO NOT CHANGE! */
-
 
 /*
 The number of CUDA streams used by mfaktc.
@@ -132,6 +123,7 @@ a small description, too
 The following lines define the min, default and max value.
 */
 
+// clang-format off
 #define NUM_STREAMS_MIN     1 /* DO NOT CHANGE! */
 #define NUM_STREAMS_DEFAULT 3 /* DO NOT CHANGE! */
 #define NUM_STREAMS_MAX     10 /* DO NOT CHANGE! */
@@ -139,17 +131,16 @@ The following lines define the min, default and max value.
 #define CPU_STREAMS_MIN     1 /* DO NOT CHANGE! */
 #define CPU_STREAMS_DEFAULT 3 /* DO NOT CHANGE! */
 #define CPU_STREAMS_MAX     5 /* DO NOT CHANGE! */
-
+// clang-format on
 
 /* set NUM_CLASSES and SIEVE_SIZE depending on MORE_CLASSES and SIEVE_SIZE_LIMIT */
 #ifndef MORE_CLASSES
-  #define NUM_CLASSES 420 /* 2 * 2 * 3 * 5 * 7 */  /* DO NOT CHANGE! */
-  #define SIEVE_SIZE ((SIEVE_SIZE_LIMIT<<13) - (SIEVE_SIZE_LIMIT<<13) % (11*13*17*19)) /* DO NOT CHANGE! */
+#define NUM_CLASSES 420 /* 2 * 2 * 3 * 5 * 7 */ /* DO NOT CHANGE! */
+#define SIEVE_SIZE  ((SIEVE_SIZE_LIMIT << 13) - (SIEVE_SIZE_LIMIT << 13) % (11 * 13 * 17 * 19)) /* DO NOT CHANGE! */
 #else
-  #define NUM_CLASSES 4620 /* 2 * 2 * 3 * 5 * 7 * 11 */ /* DO NOT CHANGE! */
-  #define SIEVE_SIZE ((SIEVE_SIZE_LIMIT<<13) - (SIEVE_SIZE_LIMIT<<13) % (13*17*19*23)) /* DO NOT CHANGE! */
+#define NUM_CLASSES 4620 /* 2 * 2 * 3 * 5 * 7 * 11 */ /* DO NOT CHANGE! */
+#define SIEVE_SIZE  ((SIEVE_SIZE_LIMIT << 13) - (SIEVE_SIZE_LIMIT << 13) % (13 * 17 * 19 * 23)) /* DO NOT CHANGE! */
 #endif
-
 
 /*
 GPU_SIEVE_PRIMES defines how far we sieve the factor candidates on the GPU.
@@ -166,6 +157,7 @@ The actual configuration is done in mfaktc.ini.
 The following lines define the min, default and max value.
 */
 
+// clang-format off
 #define GPU_SIEVE_PRIMES_MIN                 0 /* GPU sieving code can work (inefficiently) with very small numbers */
 #define GPU_SIEVE_PRIMES_DEFAULT         82486 /* Default is to sieve primes up to about 1.05M */
 #define GPU_SIEVE_PRIMES_MAX           1075000 /* Primes to 16,729,793.  GPU sieve should be able to handle up to 16M. */
@@ -177,12 +169,12 @@ The following lines define the min, default and max value.
 #define GPU_SIEVE_PROCESS_SIZE_MIN           8 /* Processing 8K bits in each block is minimum (256 threads * 1 word of 32 bits) */
 #define GPU_SIEVE_PROCESS_SIZE_DEFAULT      16 /* Default is processing 8K bits */
 #define GPU_SIEVE_PROCESS_SIZE_MAX          32 /* Upper limit is 64K, since we store k values as "short". */
-
+// clang-format on
 
 #ifdef WAGSTAFF
-  #define NAME_NUMBERS "W"
+#define NAME_NUMBERS "W"
 #else /* Mersennes */
-  #define NAME_NUMBERS "M"
+#define NAME_NUMBERS "M"
 #endif
 
 /* For worktodo.txt files */

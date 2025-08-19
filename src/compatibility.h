@@ -17,30 +17,28 @@ along with mfaktc.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 #ifndef _MSC_VER
-  #include <unistd.h> // needed for usleep()
+#include <unistd.h> // needed for usleep()
 #endif
-
 
 /* define some format strings */
 #ifdef _MSC_VER
-  #define PRId64 "lld"
-  #define PRIu64 "llu"
-  #define PRIx64 "llx"
+#define PRId64      "lld"
+#define PRIu64      "llu"
+#define PRIx64      "llx"
 
-  #define strncasecmp _strnicmp
+#define strncasecmp _strnicmp
 #else
-  #define PRId64 "Ld"
-  #define PRIu64 "Lu"
-  #define PRIx64 "Lx"
+#define PRId64 "Ld"
+#define PRIu64 "Lu"
+#define PRIx64 "Lx"
 #endif
 
-
 #ifdef _MSC_VER
-  #define my_usleep(A) Sleep((A) / 1000)
-  #define srandom(A) srand(A)
-  #define random() rand()
+#define my_usleep(A) Sleep((A) / 1000)
+#define srandom(A)   srand(A)
+#define random()     rand()
 #else
-  #define my_usleep(A) usleep(A)
+#define my_usleep(A) usleep(A)
 #endif
 
 /* snprintf for VS 2005-2013 https://stackoverflow.com/a/8712996 */
@@ -50,22 +48,20 @@ along with mfaktc.  If not, see <http://www.gnu.org/licenses/>.
 #include <stdarg.h>
 #endif
 
-#define snprintf c99_snprintf
+#define snprintf  c99_snprintf
 #define vsnprintf c99_vsnprintf
 
-__inline int c99_vsnprintf(char* outBuf, size_t size, const char* format, va_list ap)
+__inline int c99_vsnprintf(char *outBuf, size_t size, const char *format, va_list ap)
 {
     int count = -1;
 
-    if (size != 0)
-        count = _vsnprintf_s(outBuf, size, _TRUNCATE, format, ap);
-    if (count == -1)
-        count = _vscprintf(format, ap);
+    if (size != 0) count = _vsnprintf_s(outBuf, size, _TRUNCATE, format, ap);
+    if (count == -1) count = _vscprintf(format, ap);
 
     return count;
 }
 
-__inline int c99_snprintf(char* outBuf, size_t size, const char* format, ...)
+__inline int c99_snprintf(char *outBuf, size_t size, const char *format, ...)
 {
     int count;
     va_list ap;

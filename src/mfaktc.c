@@ -71,11 +71,11 @@ unsigned long long int calculate_k(unsigned int exp, int bits)
 }
 
 int kernel_possible(int kernel, mystuff_t *mystuff)
-/* returns 1 if the selected kernel can handle the assignment, 0 otherwise
-The variables mystuff->exponent, mystuff->bit_min and mystuff->bit_max_stage
-must be set to a valid assignment prior call of this function!
-Because all currently available kernels can handle the full supported range
-of exponents this isn't used here for now. */
+/*  returns 1 if the selected kernel can handle the assignment, 0 otherwise
+    The variables mystuff->exponent, mystuff->bit_min and mystuff->bit_max_stage
+    must be set to a valid assignment prior call of this function!
+    Because all currently available kernels can handle the full supported range
+    of exponents this isn't used here for now. */
 {
     int ret = 0;
 
@@ -95,14 +95,12 @@ of exponents this isn't used here for now. */
 }
 
 int class_needed(unsigned int exp, unsigned long long int k_min, int c)
-{
-    /*
-checks whether the class c must be processed or can be ignored at all because
-all factor candidates within the class c are a multiple of 3, 5, 7 or 11 (11
-only if MORE_CLASSES is defined) or are 3 or 5 mod 8 (Mersenne) or are 5 or 7 mod 8 (Wagstaff)
+/*   checks whether the class c must be processed or can be ignored at all because
+     all factor candidates within the class c are a multiple of 3, 5, 7 or 11 (11
+     only if MORE_CLASSES is definied) or are 3 or 5 mod 8 (Mersenne) or are 5 or 7 mod 8 (Wagstaff)
+     k_min *MUST* be aligned in that way that k_min is in class 0! */
 
-k_min *MUST* be aligned in that way that k_min is in class 0!
-*/
+{
     // clang-format off
 #ifdef WAGSTAFF
     if ((2 * (exp % 8) * ((k_min + c) % 8)) % 8 != 6)
@@ -132,24 +130,22 @@ void close_log(mystuff_t *mystuff)
 }
 
 int tf(mystuff_t *mystuff, int class_hint, unsigned long long int k_hint, int kernel)
-/*
-tf M<mystuff->exponent> from 2^<mystuff->bit_min> to 2^<mystuff->mystuff->bit_max_stage>
+/* tf M<mystuff->exponent> from 2^<mystuff->bit_min> to 2^<mystuff->mystuff->bit_max_stage>
 
-kernel: see my_types.h -> enum GPUKernels
+   kernel: see my_types.h -> enum GPUKernels
 
-return value (mystuff->mode = MODE_NORMAL):
-number of factors found
-RET_CUDA_ERROR cudaGetLastError() returned an error
-RET_QUIT if early exit was requested by SIGINT
+   return value (mystuff->mode = MODE_NORMAL): number of factors found
+   RET_CUDA_ERROR cudaGetLastError() returned an error
+   RET_QUIT if early exit was requested by SIGINT
 
-return value (mystuff->mode = MODE_SELFTEST_SHORT or MODE_SELFTEST_FULL):
-0 for a successful selftest (known factor was found)
-1 no factor found
-2 wrong factor returned
-RET_CUDA_ERROR cudaGetLastError() returned an error
+   return value (mystuff->mode = MODE_SELFTEST_SHORT or MODE_SELFTEST_FULL):
+   0 for a successful selftest (known factor was found)
+   1 no factor found
+   2 wrong factor returned
+   RET_CUDA_ERROR cudaGetLastError() returned an error
 
-other return value
--1 unknown mode
+   other return value
+   -1 unknown mode
 */
 {
     int cur_class, max_class = NUM_CLASSES - 1, i;
@@ -190,7 +186,7 @@ other return value
 
     if ((mystuff->mode == MODE_SELFTEST_FULL) || (mystuff->mode == MODE_SELFTEST_SHORT)) {
         /* a shortcut for the selftest, bring k_min a k_max "close" to the known factor
-   0 <= mystuff->selftestrandomoffset < 25000000, thus k_range must be greater than 25000000 */
+           0 <= mystuff->selftestrandomoffset < 25000000, thus k_range must be greater than 25000000 */
         if (NUM_CLASSES == 420)
             k_range = 50000000ULL;
         else
@@ -218,9 +214,9 @@ other return value
 
     if (kernel == AUTOSELECT_KERNEL) {
         /* select the GPU kernel (fastest GPU kernel has highest priority)
-see benchmarks in src/kernel_benchmarks.txt */
+           see benchmarks in src/kernel_benchmarks.txt */
 
-        //    if(mystuff->compcapa_major >= 2)
+        // if(mystuff->compcapa_major >= 2)
         // clang-format off
         {
                  if (kernel_possible(BARRETT76_MUL32_GS, mystuff)) kernel = BARRETT76_MUL32_GS;
@@ -312,10 +308,10 @@ see benchmarks in src/kernel_benchmarks.txt */
         if (class_needed(mystuff->exponent, k_min, cur_class)) {
             mystuff->stats.class_number = cur_class;
             if (mystuff->quit) {
-                /* check if quit is requested. Because this is at the beginning of the class
-   we can be sure that if RET_QUIT is returned the last class hasn't
-   finished. The signal handler which sets mystuff->quit not active during
-   selftests so we need to check for RET_QUIT only when doing real work. */
+             /* check if quit is requested. Because this is at the beginning of the class
+                we can be sure that if RET_QUIT is returned the last class hasn't
+                finished. The signal handler which sets mystuff->quit not active during
+                selftests so we need to check for RET_QUIT only when doing real work. */
                 if (mystuff->printmode == 1) logprintf(mystuff, "\n");
                 return RET_QUIT;
             } else {
@@ -411,11 +407,9 @@ see benchmarks in src/kernel_benchmarks.txt */
             retval = 1;
         } else // mystuff->h_RES[0] > 0
         {
-            /*
-calculate the value of the known factor in f_{hi|med|low} and compare with the
-results from the selftest.
-k_max and k_min are used as 64bit temporary integers here...
-*/
+        /*  calculate the value of the known factor in f_{hi|med|low} and compare with the
+            results from the selftest.
+            k_max and k_min are used as 64bit temporary integers here... */
             f_hi  = (k_hint >> 63);
             f_med = (k_hint >> 31) & 0xFFFFFFFFULL;
             f_low = (k_hint << 1) & 0xFFFFFFFFULL; /* f_{hi|med|low} = 2 * k_hint */
@@ -495,16 +489,14 @@ k_max and k_min are used as 64bit temporary integers here...
 }
 
 int selftest(mystuff_t *mystuff, int type)
-/*
-type = 0: full selftest (1557 testcases)
-type = 1: full selftest (all testcases)
-type = 1: small selftest (this is executed EACH time mfaktc is started)
+/*  type = 0: full selftest (1557 testcases)
+    type = 1: full selftest (all testcases)
+    type = 1: small selftest (this is executed EACH time mfaktc is started)
 
-return value
-0 selftest passed
-1 selftest failed
-RET_CUDA_ERROR we might have a serious problem (detected by cudaGetLastError())
-*/
+    return value
+    0 selftest passed
+    1 selftest failed
+    RET_CUDA_ERROR we might have a serios problem (detected by cudaGetLastError()) */
 {
     int i, j, tf_res, st_success = 0, st_nofactor = 0, st_wrongfactor = 0, st_unknown = 0;
 
@@ -941,7 +933,7 @@ int main(int argc, char **argv)
         logprintf(&mystuff, "  number of multiprocessors %d\n", deviceinfo.multiProcessorCount);
 
         /* map deviceinfo.major + deviceinfo.minor to number of CUDA cores per MP.
-   This is just information, I doesn't matter whether it is correct or not */
+           This is just information, I doesn't matter whether it is correct or not */
         i = 0;
         if (deviceinfo.major == 1)
             i = 8;

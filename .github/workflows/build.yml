@@ -53,7 +53,9 @@ jobs:
         sys:
           # Specified version combination must exist as CUDA container image from Nvidia: nvcr.io/nvidia/cuda:${{ matrix.sys.cuda_version }}-devel-${{ matrix.sys.ct_os }}
           # Available versions can be found here: https://catalog.ngc.nvidia.com/orgs/nvidia/containers/cuda/tags (note that only Ubuntu distros are supported by this action)
-          - { cuda_version: '12.9.0', ct_os: 'ubuntu24.04' }
+          - { cuda_version: '13.0.0', ct_os: 'ubuntu24.04' }
+          - { cuda_version: '12.9.1', ct_os: 'ubuntu24.04' }
+          # - { cuda_version: '12.9.0', ct_os: 'ubuntu24.04' }
           - { cuda_version: '12.8.1', ct_os: 'ubuntu24.04' }
           # - { cuda_version: '12.8.0', ct_os: 'ubuntu24.04' }
           - { cuda_version: '12.6.3', ct_os: 'ubuntu22.04' }
@@ -150,7 +152,7 @@ jobs:
           SCRIPT: |
             cd /workspace
             zip -9 -j ${{ steps.prepare.outputs.BASE_NAME }}.zip Changelog.txt COPYING mfaktc mfaktc.ini README.txt
-            echo "[${{ steps.prepare.outputs.BASE_NAME }}.zip](https://github.com/${GITHUB_REPOSITORY}/releases/download/${GITHUB_REF_NAME}/${{ steps.prepare.outputs.BASE_NAME }}.zip) | \
+            echo "[${{ steps.prepare.outputs.BASE_NAME }}.zip](https://github.com/${{ github.repository }}/releases/download/${{ github.ref_name }}/${{ steps.prepare.outputs.BASE_NAME }}.zip) | \
             ${{ matrix.sys.cuda_version }} | ${{ steps.prepare.outputs.CC_MIN }}-${{ steps.prepare.outputs.CC_MAX }} | ${{ steps.prepare.outputs.OS_VER }} | \
             ${{ steps.prepare.outputs.COMPILER_VER }} | ${{ steps.prepare.outputs.NVCC_VER }}" > ${{ steps.prepare.outputs.BASE_NAME }}.txt
         run: docker exec build-container bash -c "$SCRIPT"

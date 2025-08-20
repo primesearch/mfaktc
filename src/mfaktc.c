@@ -122,8 +122,6 @@ k_min *MUST* be aligned in that way that k_min is in class 0!
             {
             return 1;
             }
-        
-
     // clang-format on
     return 0;
 }
@@ -992,10 +990,21 @@ int main(int argc, char **argv)
             logprintf(&mystuff, "  CUDA cores - total        %d\n", i * deviceinfo.multiProcessorCount);
         }
 
+#if CUDART_VERSION >= 13000
+        int clockRate, memoryClockRate, memoryBusWidth;
+        cudaDeviceGetAttribute(&clockRate, cudaDevAttrClockRate, devicenumber);
+        cudaDeviceGetAttribute(&memoryClockRate, cudaDevAttrMemoryClockRate, devicenumber);
+        cudaDeviceGetAttribute(&memoryBusWidth, cudaDevAttrGlobalMemoryBusWidth, devicenumber);
+
+        logprintf(&mystuff, "  clock rate (CUDA cores)   %d MHz\n", clockRate / 1000);
+        logprintf(&mystuff, "  memory clock rate:        %d MHz\n", memoryClockRate / 1000);
+        logprintf(&mystuff, "  memory bus width:         %d bits\n", memoryBusWidth);
+#else
         logprintf(&mystuff, "  clock rate (CUDA cores)   %d MHz\n", deviceinfo.clockRate / 1000);
 #if CUDART_VERSION >= 5000
         logprintf(&mystuff, "  memory clock rate:        %d MHz\n", deviceinfo.memoryClockRate / 1000);
         logprintf(&mystuff, "  memory bus width:         %d bits\n", deviceinfo.memoryBusWidth);
+#endif
 #endif
     }
 

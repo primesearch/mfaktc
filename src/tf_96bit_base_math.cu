@@ -60,26 +60,41 @@ res = a - b */
     res->d2 = __subc(a.d2, b.d2);
 }
 
-__device__ static void mul_96(int96 *res, int96 a, int96 b)
 /* res = a * b (only lower 96 bits of the result) */
+__device__ static void mul_96(int96 *res, int96 a, int96 b)
 {
-#if (__CUDA_ARCH__ >= FERMI) &&                                                                                   \
-    (CUDART_VERSION >= 4010) /* multiply-add with carry is not available on CC 1.x devices and before CUDA 4.1 */
+#if (__CUDA_ARCH__ >= MAXWELL) && (CUDART_VERSION >= 12000) // CUDA versions 12.0 and up
+
+    // Step 1: r0 = a0 * b0 (lower 32 bits)
+    uint64_t t0 = (uint64_t)a.d0 * b.d0;
+
+    // Step 2: r1 += a0 * b1 + a1 * b0 + carry(t0)
+    uint64_t t1 = (uint64_t)a.d0 * b.d1 + (uint64_t)a.d1 * b.d0 + (t0 >> 32);
+
+    // Step 3: r2 += a0 * b2 + a1 * b1 + a2 * b0 + carry(t1)
+    uint64_t t2 = (uint64_t)a.d0 * b.d2 + (uint64_t)a.d1 * b.d1 + (uint64_t)a.d2 * b.d0 + (t1 >> 32);
+
+    res->d0 = (uint32_t)t0;
+    res->d1 = (uint32_t)t1;
+    res->d2 = (uint32_t)t2;
+
+#elif (__CUDA_ARCH__ >= FERMI) && (CUDART_VERSION >= 4010)  // multiply-add with carry is not available on CC 1.x devices
+                                                            // and before CUDA 4.1
     asm volatile("{\n\t"
-                 "mul.lo.u32    %0, %3, %6;\n\t" /* (a.d0 * b.d0).lo */
+                 "mul.lo.u32    %0, %3, %6;\n\t"            /* (a.d0 * b.d0).lo */
 
-                 "mul.hi.u32    %1, %3, %6;\n\t" /* (a.d0 * b.d0).hi */
-                 "mad.lo.cc.u32 %1, %4, %6, %1;\n\t" /* (a.d1 * b.d0).lo */
+                 "mul.hi.u32    %1, %3, %6;\n\t"            /* (a.d0 * b.d0).hi */
+                 "mad.lo.cc.u32 %1, %4, %6, %1;\n\t"        /* (a.d1 * b.d0).lo */
 
-                 "mul.lo.u32    %2, %5, %6;\n\t" /* (a.d2 * b.d0).lo */
-                 "madc.hi.u32   %2, %4, %6, %2;\n\t" /* (a.d1 * b.d0).hi */
+                 "mul.lo.u32    %2, %5, %6;\n\t"            /* (a.d2 * b.d0).lo */
+                 "madc.hi.u32   %2, %4, %6, %2;\n\t"        /* (a.d1 * b.d0).hi */
 
-                 "mad.lo.cc.u32 %1, %3, %7, %1;\n\t" /* (a.d0 * b.d1).lo */
-                 "madc.hi.u32   %2, %3, %7, %2;\n\t" /* (a.d0 * b.d1).hi */
+                 "mad.lo.cc.u32 %1, %3, %7, %1;\n\t"        /* (a.d0 * b.d1).lo */
+                 "madc.hi.u32   %2, %3, %7, %2;\n\t"        /* (a.d0 * b.d1).hi */
 
-                 "mad.lo.u32    %2, %3, %8, %2;\n\t" /* (a.d0 * b.d2).lo */
+                 "mad.lo.u32    %2, %3, %8, %2;\n\t"        /* (a.d0 * b.d2).lo */
 
-                 "mad.lo.u32    %2, %4, %7, %2;\n\t" /* (a.d1 * b.d1).lo */
+                 "mad.lo.u32    %2, %4, %7, %2;\n\t"        /* (a.d1 * b.d1).lo */
                  "}"
                  : "=r"(res->d0), "=r"(res->d1), "=r"(res->d2)
                  : "r"(a.d0), "r"(a.d1), "r"(a.d2), "r"(b.d0), "r"(b.d1), "r"(b.d2));
@@ -89,14 +104,14 @@ __device__ static void mul_96(int96 *res, int96 a, int96 b)
 
     res->d1 = __add_cc(__umul32hi(a.d0, b.d0), __umul32  (a.d1, b.d0));
     res->d2 = __addc  (__umul32  (a.d2, b.d0), __umul32hi(a.d1, b.d0));
-  
+
     res->d1 = __add_cc(res->d1,                __umul32  (a.d0, b.d1));
     res->d2 = __addc  (res->d2,                __umul32hi(a.d0, b.d1));
-
-    res->d2+= __umul32  (a.d0, b.d2);
-
-    res->d2+= __umul32  (a.d1, b.d1);
     // clang-format on
+
+    res->d2 += __umul32(a.d0, b.d2);
+
+    res->d2 += __umul32(a.d1, b.d1);
 #endif
 }
 

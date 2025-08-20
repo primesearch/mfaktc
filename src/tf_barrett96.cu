@@ -18,7 +18,7 @@ along with mfaktc.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <stdio.h>
 #include <cuda.h>
-#include <cuda_runtime.h>  
+#include <cuda_runtime.h>
 
 #include "params.h"
 #include "my_types.h"
@@ -45,13 +45,11 @@ along with mfaktc.  If not, see <http://www.gnu.org/licenses/>.
 #include "tf_barrett96_core.cu"
 #undef CPU_SIEVE
 
-
 #if __CUDA_ARCH__ >= FERMI
-  #define KERNEL_MIN_BLOCKS 2
+#define KERNEL_MIN_BLOCKS 2
 #else
-  #define KERNEL_MIN_BLOCKS 1
+#define KERNEL_MIN_BLOCKS 1
 #endif
-
 
 /*
 The following functions receive a list of factor candidates (FCs) to test whether the divide M(exp) = (2^exp)-1 or not.
@@ -70,126 +68,143 @@ Output:
 RES               integer array where the results (FCs which actually divide M(exp))
 */
 
+__global__ void
+#ifndef DEBUG_GPU_MATH
+__launch_bounds__(THREADS_PER_BLOCK, KERNEL_MIN_BLOCKS)
+    mfaktc_barrett92(unsigned int exp, int96 k, unsigned int *k_tab, int shiftcount, int192 b, unsigned int *RES, int bit_max64)
+#else
+__launch_bounds__(THREADS_PER_BLOCK, KERNEL_MIN_BLOCKS)
+    mfaktc_barrett92(unsigned int exp, int96 k, unsigned int *k_tab, int shiftcount, int192 b, unsigned int *RES, int bit_max64,
+                     unsigned int *modbasecase_debug)
+#endif
+{
+    int96 f;
+    int index = blockDim.x * blockIdx.x + threadIdx.x;
+
+    create_FC96(&f, exp, k, k_tab[index]);
+
+    test_FC96_barrett92(f, b, exp, RES, bit_max64, shiftcount
+#ifdef DEBUG_GPU_MATH
+                        ,
+                        modbasecase_debug
+#endif
+    );
+}
 
 __global__ void
 #ifndef DEBUG_GPU_MATH
-__launch_bounds__(THREADS_PER_BLOCK, KERNEL_MIN_BLOCKS) mfaktc_barrett92(unsigned int exp, int96 k, unsigned int *k_tab, int shiftcount, int192 b, unsigned int *RES, int bit_max64)
+__launch_bounds__(THREADS_PER_BLOCK, KERNEL_MIN_BLOCKS)
+    mfaktc_barrett88(unsigned int exp, int96 k, unsigned int *k_tab, int shiftcount, int192 b, unsigned int *RES, int bit_max64)
 #else
-__launch_bounds__(THREADS_PER_BLOCK, KERNEL_MIN_BLOCKS) mfaktc_barrett92(unsigned int exp, int96 k, unsigned int *k_tab, int shiftcount, int192 b, unsigned int *RES, int bit_max64, unsigned int *modbasecase_debug)
+__launch_bounds__(THREADS_PER_BLOCK, KERNEL_MIN_BLOCKS)
+    mfaktc_barrett88(unsigned int exp, int96 k, unsigned int *k_tab, int shiftcount, int192 b, unsigned int *RES, int bit_max64,
+                     unsigned int *modbasecase_debug)
 #endif
 {
-  int96 f;
-  int index = blockDim.x * blockIdx.x + threadIdx.x;
+    int96 f;
+    int index = blockDim.x * blockIdx.x + threadIdx.x;
 
-  create_FC96(&f, exp, k, k_tab[index]);
+    create_FC96(&f, exp, k, k_tab[index]);
 
-  test_FC96_barrett92(f, b, exp, RES, bit_max64, shiftcount
+    test_FC96_barrett88(f, b, exp, RES, bit_max64, shiftcount
 #ifdef DEBUG_GPU_MATH
-                      , modbasecase_debug
+                        ,
+                        modbasecase_debug
 #endif
-                      );
+    );
 }
-
 
 __global__ void
 #ifndef DEBUG_GPU_MATH
-__launch_bounds__(THREADS_PER_BLOCK, KERNEL_MIN_BLOCKS) mfaktc_barrett88(unsigned int exp, int96 k, unsigned int *k_tab, int shiftcount, int192 b, unsigned int *RES, int bit_max64)
+__launch_bounds__(THREADS_PER_BLOCK, KERNEL_MIN_BLOCKS)
+    mfaktc_barrett87(unsigned int exp, int96 k, unsigned int *k_tab, int shiftcount, int192 b, unsigned int *RES, int bit_max64)
 #else
-__launch_bounds__(THREADS_PER_BLOCK, KERNEL_MIN_BLOCKS) mfaktc_barrett88(unsigned int exp, int96 k, unsigned int *k_tab, int shiftcount, int192 b, unsigned int *RES, int bit_max64, unsigned int *modbasecase_debug)
+__launch_bounds__(THREADS_PER_BLOCK, KERNEL_MIN_BLOCKS)
+    mfaktc_barrett87(unsigned int exp, int96 k, unsigned int *k_tab, int shiftcount, int192 b, unsigned int *RES, int bit_max64,
+                     unsigned int *modbasecase_debug)
 #endif
 {
-  int96 f;
-  int index = blockDim.x * blockIdx.x + threadIdx.x;
+    int96 f;
+    int index = blockDim.x * blockIdx.x + threadIdx.x;
 
-  create_FC96(&f, exp, k, k_tab[index]);
-  
-  test_FC96_barrett88(f, b, exp, RES, bit_max64, shiftcount
+    create_FC96(&f, exp, k, k_tab[index]);
+
+    test_FC96_barrett87(f, b, exp, RES, bit_max64, shiftcount
 #ifdef DEBUG_GPU_MATH
-                      , modbasecase_debug
+                        ,
+                        modbasecase_debug
 #endif
-                      );
+    );
 }
-
 
 __global__ void
 #ifndef DEBUG_GPU_MATH
-__launch_bounds__(THREADS_PER_BLOCK, KERNEL_MIN_BLOCKS) mfaktc_barrett87(unsigned int exp, int96 k, unsigned int *k_tab, int shiftcount, int192 b, unsigned int *RES, int bit_max64)
+__launch_bounds__(THREADS_PER_BLOCK, KERNEL_MIN_BLOCKS)
+    mfaktc_barrett79(unsigned int exp, int96 k, unsigned int *k_tab, int shiftcount, int192 b, unsigned int *RES)
 #else
-__launch_bounds__(THREADS_PER_BLOCK, KERNEL_MIN_BLOCKS) mfaktc_barrett87(unsigned int exp, int96 k, unsigned int *k_tab, int shiftcount, int192 b, unsigned int *RES, int bit_max64, unsigned int *modbasecase_debug)
+__launch_bounds__(THREADS_PER_BLOCK, KERNEL_MIN_BLOCKS)
+    mfaktc_barrett79(unsigned int exp, int96 k, unsigned int *k_tab, int shiftcount, int192 b, unsigned int *RES, int bit_max64,
+                     unsigned int *modbasecase_debug)
 #endif
 {
-  int96 f;
-  int index = blockDim.x * blockIdx.x + threadIdx.x;
+    int96 f;
+    int index = blockDim.x * blockIdx.x + threadIdx.x;
 
-  create_FC96(&f, exp, k, k_tab[index]);
+    create_FC96_mad(&f, exp, k, k_tab[index]);
 
-  test_FC96_barrett87(f, b, exp, RES, bit_max64, shiftcount
+    test_FC96_barrett79(f, b, exp, RES, shiftcount
 #ifdef DEBUG_GPU_MATH
-                      , modbasecase_debug
+                        ,
+                        bit_max64, modbasecase_debug
 #endif
-                      );
+    );
 }
-
 
 __global__ void
 #ifndef DEBUG_GPU_MATH
-__launch_bounds__(THREADS_PER_BLOCK, KERNEL_MIN_BLOCKS) mfaktc_barrett79(unsigned int exp, int96 k, unsigned int *k_tab, int shiftcount, int192 b, unsigned int *RES)
+__launch_bounds__(THREADS_PER_BLOCK, KERNEL_MIN_BLOCKS)
+    mfaktc_barrett77(unsigned int exp, int96 k, unsigned int *k_tab, int shiftcount, int192 b, unsigned int *RES)
 #else
-__launch_bounds__(THREADS_PER_BLOCK, KERNEL_MIN_BLOCKS) mfaktc_barrett79(unsigned int exp, int96 k, unsigned int *k_tab, int shiftcount, int192 b, unsigned int *RES, int bit_max64, unsigned int *modbasecase_debug)
+__launch_bounds__(THREADS_PER_BLOCK, KERNEL_MIN_BLOCKS)
+    mfaktc_barrett77(unsigned int exp, int96 k, unsigned int *k_tab, int shiftcount, int192 b, unsigned int *RES, int bit_max64,
+                     unsigned int *modbasecase_debug)
 #endif
 {
-  int96 f;
-  int index = blockDim.x * blockIdx.x + threadIdx.x;
+    int96 f;
+    int index = blockDim.x * blockIdx.x + threadIdx.x;
 
-  create_FC96_mad(&f, exp, k, k_tab[index]);
+    create_FC96_mad(&f, exp, k, k_tab[index]);
 
-  test_FC96_barrett79(f, b, exp, RES, shiftcount
+    test_FC96_barrett77(f, b, exp, RES, shiftcount
 #ifdef DEBUG_GPU_MATH
-                      , bit_max64, modbasecase_debug
+                        ,
+                        bit_max64, modbasecase_debug
 #endif
-                      );
+    );
 }
-
 
 __global__ void
 #ifndef DEBUG_GPU_MATH
-__launch_bounds__(THREADS_PER_BLOCK, KERNEL_MIN_BLOCKS) mfaktc_barrett77(unsigned int exp, int96 k, unsigned int *k_tab, int shiftcount, int192 b, unsigned int *RES)
+__launch_bounds__(THREADS_PER_BLOCK, KERNEL_MIN_BLOCKS)
+    mfaktc_barrett76(unsigned int exp, int96 k, unsigned int *k_tab, int shiftcount, int192 b, unsigned int *RES)
 #else
-__launch_bounds__(THREADS_PER_BLOCK, KERNEL_MIN_BLOCKS) mfaktc_barrett77(unsigned int exp, int96 k, unsigned int *k_tab, int shiftcount, int192 b, unsigned int *RES, int bit_max64, unsigned int *modbasecase_debug)
+__launch_bounds__(THREADS_PER_BLOCK, KERNEL_MIN_BLOCKS)
+    mfaktc_barrett76(unsigned int exp, int96 k, unsigned int *k_tab, int shiftcount, int192 b, unsigned int *RES, int bit_max64,
+                     unsigned int *modbasecase_debug)
 #endif
 {
-  int96 f;
-  int index = blockDim.x * blockIdx.x + threadIdx.x;
+    int96 f;
+    int index = blockDim.x * blockIdx.x + threadIdx.x;
 
-  create_FC96_mad(&f, exp, k, k_tab[index]);
-  
-  test_FC96_barrett77(f, b, exp, RES, shiftcount
+    create_FC96_mad(&f, exp, k, k_tab[index]);
+
+    test_FC96_barrett76(f, b, exp, RES, shiftcount
 #ifdef DEBUG_GPU_MATH
-                      , bit_max64, modbasecase_debug
+                        ,
+                        bit_max64, modbasecase_debug
 #endif
-                      );
+    );
 }
-
-
-__global__ void
-#ifndef DEBUG_GPU_MATH
-__launch_bounds__(THREADS_PER_BLOCK, KERNEL_MIN_BLOCKS) mfaktc_barrett76(unsigned int exp, int96 k, unsigned int *k_tab, int shiftcount, int192 b, unsigned int *RES)
-#else
-__launch_bounds__(THREADS_PER_BLOCK, KERNEL_MIN_BLOCKS) mfaktc_barrett76(unsigned int exp, int96 k, unsigned int *k_tab, int shiftcount, int192 b, unsigned int *RES, int bit_max64, unsigned int *modbasecase_debug)
-#endif
-{
-  int96 f;
-  int index = blockDim.x * blockIdx.x + threadIdx.x;
-
-  create_FC96_mad(&f, exp, k, k_tab[index]);
-  
-  test_FC96_barrett76(f, b, exp, RES, shiftcount
-#ifdef DEBUG_GPU_MATH
-                      , bit_max64, modbasecase_debug
-#endif
-                      );
-}
-
 
 #define TF_BARRETT
 

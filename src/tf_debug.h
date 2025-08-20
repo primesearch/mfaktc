@@ -25,21 +25,17 @@ C = qi
 D = index for modbasecase_debug[];
 */
 #if defined USE_DEVICE_PRINTF && __CUDA_ARCH__ >= FERMI
-  #define MODBASECASE_QI_ERROR(A, B, C, D) \
-  if(C > (A)) \
-  { \
-    printf("EEEEEK, step %d qi = %u\n", B, C); \
-    modbasecase_debug[D]++; \
-  }
+#define MODBASECASE_QI_ERROR(A, B, C, D)           \
+    if (C > (A)) {                                 \
+        printf("EEEEEK, step %d qi = %u\n", B, C); \
+        modbasecase_debug[D]++;                    \
+    }
 #else
-  #define MODBASECASE_QI_ERROR(A, B, C, D) \
-  if(C > (A)) \
-  { \
-    modbasecase_debug[D]++; \
-  }
+#define MODBASECASE_QI_ERROR(A, B, C, D) \
+    if (C > (A)) {                       \
+        modbasecase_debug[D]++;          \
+    }
 #endif
-
-
 
 /*
 A = q.dX
@@ -48,21 +44,17 @@ C = number of q.dX
 D = index for modbasecase_debug[];
 */
 #if defined USE_DEVICE_PRINTF && __CUDA_ARCH__ >= FERMI
-  #define MODBASECASE_NONZERO_ERROR(A, B, C, D) \
-  if(A) \
-  { \
-    printf("EEEEEK, step %d q.d%d is nonzero: %u\n", B, C, A); \
-    modbasecase_debug[D]++; \
-  }
+#define MODBASECASE_NONZERO_ERROR(A, B, C, D)                      \
+    if (A) {                                                       \
+        printf("EEEEEK, step %d q.d%d is nonzero: %u\n", B, C, A); \
+        modbasecase_debug[D]++;                                    \
+    }
 #else
-  #define MODBASECASE_NONZERO_ERROR(A, B, C, D) \
-  if(A) \
-  { \
-    modbasecase_debug[D]++; \
-  }
+#define MODBASECASE_NONZERO_ERROR(A, B, C, D) \
+    if (A) {                                  \
+        modbasecase_debug[D]++;               \
+    }
 #endif
-
-
 
 /*
 A = limit
@@ -71,18 +63,16 @@ C = nn
 D = index for modbasecase_debug[];
 */
 #if defined USE_DEVICE_PRINTF && __CUDA_ARCH__ >= FERMI
-  #define MODBASECASE_VALUE_BIG_ERROR(A, NAME, B, C, D) \
-  if(C > A) \
-  { \
-    printf("EEEEEK, step %d " NAME " is too big: %u\n", B, C); \
-    modbasecase_debug[D]++; \
-  }
+#define MODBASECASE_VALUE_BIG_ERROR(A, NAME, B, C, D)              \
+    if (C > A) {                                                   \
+        printf("EEEEEK, step %d " NAME " is too big: %u\n", B, C); \
+        modbasecase_debug[D]++;                                    \
+    }
 #else
-  #define MODBASECASE_VALUE_BIG_ERROR(A, NAME, B, C, D) \
-  if(C > A) \
-  { \
-    modbasecase_debug[D]++; \
-  }
+#define MODBASECASE_VALUE_BIG_ERROR(A, NAME, B, C, D) \
+    if (C > A) {                                      \
+        modbasecase_debug[D]++;                       \
+    }
 #endif
 
 #else

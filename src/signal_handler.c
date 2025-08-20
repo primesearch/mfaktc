@@ -28,37 +28,34 @@ along with mfaktc.  If not, see <http://www.gnu.org/licenses/>.
 
 mystuff_t *signal_handler_mystuff;
 
-
-
 void my_signal_handler(int signum)
 {
 #ifdef _MSC_VER
-/* Windows resets the signal handler to the default action once it is
+    /* Windows resets the signal handler to the default action once it is
 invoked so we just register it again. */
-  signal(signum, &my_signal_handler);
+    signal(signum, &my_signal_handler);
 #endif
-  
-  if(signal_handler_mystuff->printmode == 1)printf("\n");
-  signal_handler_mystuff->quit++;
-  if(signal_handler_mystuff->quit == 1)
-  {
-         if(signum == SIGINT)  printf("received signal \"SIGINT\"\n");
-    else if(signum == SIGTERM) printf("received signal \"SIGTERM\"\n");
-    printf("mfaktc will exit once the current class is finished.\n");
-    printf("press ^C again to exit immediately\n");
-  }
-  if(signal_handler_mystuff->quit > 1)
-  {
-    printf("mfaktc will exit NOW!\n");
-    exit(1);
-  }
-  signum++; /* useless but avoids warning about unused variable... */
-}
 
+    if (signal_handler_mystuff->printmode == 1) printf("\n");
+    signal_handler_mystuff->quit++;
+    if (signal_handler_mystuff->quit == 1) {
+        if (signum == SIGINT)
+            printf("received signal \"SIGINT\"\n");
+        else if (signum == SIGTERM)
+            printf("received signal \"SIGTERM\"\n");
+        printf("mfaktc will exit once the current class is finished.\n");
+        printf("press ^C again to exit immediately\n");
+    }
+    if (signal_handler_mystuff->quit > 1) {
+        printf("mfaktc will exit NOW!\n");
+        exit(1);
+    }
+    signum++; /* useless but avoids warning about unused variable... */
+}
 
 void register_signal_handler(mystuff_t *mystuff)
 {
-  signal_handler_mystuff = mystuff;
-  signal(SIGINT,  &my_signal_handler);
-  signal(SIGTERM, &my_signal_handler);
+    signal_handler_mystuff = mystuff;
+    signal(SIGINT, &my_signal_handler);
+    signal(SIGTERM, &my_signal_handler);
 }

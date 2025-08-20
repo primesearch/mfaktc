@@ -1007,6 +1007,7 @@ int main(int argc, char **argv)
         logprintf(&mystuff, "  memory clock rate:        %d MHz\n", deviceinfo.memoryClockRate / 1000);
         logprintf(&mystuff, "  memory bus width:         %d bits\n", deviceinfo.memoryBusWidth);
 #endif
+#endif
     }
 
     if ((mystuff.compcapa_major == 1) && (mystuff.compcapa_minor == 0)) {

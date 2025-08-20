@@ -16,11 +16,14 @@ build:
   - code analysis with CodeQL
 - improved visual appearance and clarity of release information (thanks to
   Danny Chia)
+- added CUDA 13.x support (thanks to NStorm)
 
 other changes:
 - code has been revamped to improve formatting and maintain consistent style
   (thanks to NStorm)
 - re-organized mfaktc.ini to be more user-friendly (thanks to James Heinrich)
+- updated print_dez96() to use int96 data type (thanks to NStorm)
+  - converted some hard-coded values to macros
 
 version 0.23.4
 ==============================

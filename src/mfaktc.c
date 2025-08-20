@@ -122,8 +122,6 @@ k_min *MUST* be aligned in that way that k_min is in class 0!
             {
             return 1;
             }
-        
-
     // clang-format on
     return 0;
 }

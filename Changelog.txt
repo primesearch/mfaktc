@@ -2,6 +2,10 @@ version 0.23.5
 ==============================
 - includes changes backported from mfaktc 0.24.0
 
+enhancements:
+- updated mul_96() to use 64-bit integers (thanks to NStorm)
+  - users should see a small performance improvement on newer devices
+
 bug fixes:
 - added build flags to enable support for Blackwell devices by default in
   Makefile.win (thanks to yellowbeeblackbee)

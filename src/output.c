@@ -129,38 +129,50 @@ void print_dez144(int144 a, char *buf)
 
 void print_dez96(int96 a, char *buf)
 {
-    int192 tmp;
+    char digit[MAX_DEZ_96_STRING_LENGTH] = { 0 };
+    int digits = 0, carry = 0, i = 0;
+    long long int tmp = 0;
 
-    tmp.d5 = 0;
-    tmp.d4 = 0;
-    tmp.d3 = 0;
-    tmp.d2 = a.d2;
-    tmp.d1 = a.d1;
-    tmp.d0 = a.d0;
+    // clang-format off
+    while ((a.d0 != 0 || a.d1 != 0 || a.d2 != 0) && digits < (MAX_DEZ_96_STRING_LENGTH - 1)) {
+                                                       carry = a.d2 % 10; a.d2 /=      10;
+        tmp = a.d1; tmp += (long long int)carry << 32; carry = tmp  % 10; a.d1 = tmp / 10;
+        tmp = a.d0; tmp += (long long int)carry << 32; carry = tmp  % 10; a.d0 = tmp / 10;
+        digit[digits++] = carry;
+    }
+    // clang-format on
 
-    print_dez192(tmp, buf);
+    if (digits == 0) {
+        sprintf(buf, "0");
+    }
+    else {
+        digits--;
+        while (digits >= 0) {
+            sprintf(&(buf[i++]), "%1d", digit[digits--]);
+        }
+    }
 }
 
 void print_dez192(int192 a, char *buf)
 {
-    char digit[58];
-    int digits = 0, carry, i = 0;
-    long long int tmp;
+    char digit[MAX_DEZ_192_STRING_LENGTH] = { 0 };
+    int digits = 0, carry = 0, i = 0;
+    long long int tmp = 0;
 
     // clang-format off
-    while ((a.d0 != 0 || a.d1 != 0 || a.d2 != 0 || a.d3 != 0 || a.d4 != 0 || a.d5 != 0) && digits < 58)
-    {
-                                                       carry = a.d5%10; a.d5 /= 10;
-        tmp = a.d4; tmp += (long long int)carry << 32; carry = tmp%10;  a.d4 =  tmp / 10;
-        tmp = a.d3; tmp += (long long int)carry << 32; carry = tmp%10;  a.d3 =  tmp / 10;
-        tmp = a.d2; tmp += (long long int)carry << 32; carry = tmp%10;  a.d2 =  tmp / 10;
-        tmp = a.d1; tmp += (long long int)carry << 32; carry = tmp%10;  a.d1 =  tmp / 10;
-        tmp = a.d0; tmp += (long long int)carry << 32; carry = tmp%10;  a.d0 =  tmp / 10;
+    while ((a.d0 != 0 || a.d1 != 0 || a.d2 != 0 || a.d3 != 0 || a.d4 != 0 || a.d5 != 0) && digits < (MAX_DEZ_192_STRING_LENGTH - 1)) {
+                                                       carry = a.d5 % 10; a.d5 /=      10;
+        tmp = a.d4; tmp += (long long int)carry << 32; carry = tmp  % 10; a.d4 = tmp / 10;
+        tmp = a.d3; tmp += (long long int)carry << 32; carry = tmp  % 10; a.d3 = tmp / 10;
+        tmp = a.d2; tmp += (long long int)carry << 32; carry = tmp  % 10; a.d2 = tmp / 10;
+        tmp = a.d1; tmp += (long long int)carry << 32; carry = tmp  % 10; a.d1 = tmp / 10;
+        tmp = a.d0; tmp += (long long int)carry << 32; carry = tmp  % 10; a.d0 = tmp / 10;
         digit[digits++] = carry;
     }
     // clang-format on
-    if (digits == 0)
+    if (digits == 0) {
         sprintf(buf, "0");
+    }
     else {
         digits--;
         while (digits >= 0) {
@@ -539,15 +551,15 @@ example using M50,000,000 from 2^69-2^70:
     bit_min++;
 
     while (bit_min <= bit_max && bit_min <= 62) {
-        ghzdays += 0.011160 * pow(2.0, (double)bit_min - 48.0);
+        ghzdays += GHZDAYS_MAGIC_TF_BOT * pow(2.0, (double)bit_min - 48.0);
         bit_min++;
     }
     while (bit_min <= bit_max && bit_min <= 64) {
-        ghzdays += 0.017832 * pow(2.0, (double)bit_min - 48.0);
+        ghzdays += GHZDAYS_MAGIC_TF_MID * pow(2.0, (double)bit_min - 48.0);
         bit_min++;
     }
     while (bit_min <= bit_max) {
-        ghzdays += 0.016968 * pow(2.0, (double)bit_min - 48.0);
+        ghzdays += GHZDAYS_MAGIC_TF_TOP * pow(2.0, (double)bit_min - 48.0);
         bit_min++;
     }
 

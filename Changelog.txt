@@ -5,6 +5,8 @@ version 0.24.0
 
 new features:
 - CRC32 checksums in JSON output to reduce invalid results
+- support for CUDA 13.0
+- improved performance with CUDA >= 12.0
 - improved performance on Pascal devices
 - improved checkpoint compatibility between versions
   - file names now contain metadata

@@ -89,7 +89,7 @@ Otherwise, the automated builds could fail in GitHub Actions.
 Please discuss with the community before making changes to version numbers!
 */
 
-#define MFAKTC_VERSION            "0.24.0-beta.5"
+#define MFAKTC_VERSION            "0.24.0-beta.6"
 #define MFAKTC_CHECKPOINT_VERSION "0.24"
 #define MFAKTC_CHECKSUM_VERSION   1
 

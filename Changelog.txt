@@ -11,6 +11,8 @@ bug fixes:
 
 build:
 - added CUDA 13.x support (thanks to NStorm)
+  - this drops support for compute capability 7.2 and below - developers using
+    older CUDA versions should uncomment the relevant lines in the makefile
 
 other changes:
 - code has been revamped to improve formatting and maintain consistent style

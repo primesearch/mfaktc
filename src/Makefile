@@ -12,11 +12,16 @@ CFLAGS_EXTRA_SIEVE = -funroll-all-loops
 NVCC = nvcc
 NVCCFLAGS = $(CUDA_INCLUDE) --ptxas-options=-v -O3 -Wno-deprecated-gpu-targets
 
-# generate code for supported compute capabilities
+# generate code for compute capabilities - see this table for supported
+# versions: https://en.wikipedia.org/wiki/CUDA#GPUs_supported
+
+# deprecated - uncomment to use
 # NVCCFLAGS += --generate-code arch=compute_11,code=sm_11 # mfaktc cannot use 1.0 but supports 1.1 and above
 # NVCCFLAGS += --generate-code arch=compute_20,code=sm_20 # Fermi GPUs
 # NVCCFLAGS += --generate-code arch=compute_30,code=sm_30 # early Kepler GPUs
 # NVCCFLAGS += --generate-code arch=compute_35,code=sm_35 # later Kepler GPUs; funnel shift added in 3.2
+
+# currently supported
 NVCCFLAGS += --generate-code arch=compute_50,code=sm_50 # Maxwell GPUs
 NVCCFLAGS += --generate-code arch=compute_60,code=sm_60
 NVCCFLAGS += --generate-code arch=compute_61,code=sm_61

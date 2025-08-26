@@ -86,6 +86,11 @@ In any case, a 64-bit build is preferred except on some old low-end GPUs.
 Testing on an Intel Core i7 CPU has shown that the performance-critical CPU
 code runs about 33% faster compared to 32 bits.
 
+It should be noted that each CUDA version only supports specific compute
+capabilities. You may have to comment out the appropriate lines in the makefile
+before compiling mfaktc. Use this table to determine which compute capabilities
+are supported: https://en.wikipedia.org/wiki/CUDA#GPUs_supported
+
 #############
 # 2.1 Linux #
 #############

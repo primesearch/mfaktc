@@ -42,7 +42,7 @@ along with mfaktc.  If not, see <http://www.gnu.org/licenses/>.
 #include "signal_handler.h"
 #include "output.h"
 #include "gpusieve.h"
-#include "cuda_basic_stuff.h"
+#include "cuda_utils.h"
 
 unsigned long long int calculate_k(unsigned int exp, int bits)
 /* calculates biggest possible k in "2 * exp * k + 1 < 2^bits" */
@@ -97,7 +97,7 @@ int kernel_possible(int kernel, mystuff_t *mystuff)
 int class_needed(unsigned int exp, unsigned long long int k_min, int c)
 /*   checks whether the class c must be processed or can be ignored at all because
      all factor candidates within the class c are a multiple of 3, 5, 7 or 11 (11
-     only if MORE_CLASSES is definied) or are 3 or 5 mod 8 (Mersenne) or are 5 or 7 mod 8 (Wagstaff)
+     only if MORE_CLASSES is defined) or are 3 or 5 mod 8 (Mersenne) or are 5 or 7 mod 8 (Wagstaff)
      k_min *MUST* be aligned in that way that k_min is in class 0! */
 
 {
@@ -489,14 +489,14 @@ int tf(mystuff_t *mystuff, int class_hint, unsigned long long int k_hint, int ke
 }
 
 int selftest(mystuff_t *mystuff, int type)
-/*  type = 0: full selftest (1557 testcases)
-    type = 1: full selftest (all testcases)
+/*  type = 0: full selftest (1557 test cases)
+    type = 1: full selftest (all test cases)
     type = 1: small selftest (this is executed EACH time mfaktc is started)
 
     return value
     0 selftest passed
     1 selftest failed
-    RET_CUDA_ERROR we might have a serios problem (detected by cudaGetLastError()) */
+    RET_CUDA_ERROR we might have a serious problem (detected by cudaGetLastError()) */
 {
     int i, j, tf_res, st_success = 0, st_nofactor = 0, st_wrongfactor = 0, st_unknown = 0;
 
@@ -524,7 +524,7 @@ int selftest(mystuff_t *mystuff, int type)
 
     if (type == 0) {
         for (i = 0; i < testcases; i++) {
-            logprintf(mystuff, "########## testcase %d/%d ##########\n", i + 1, testcases);
+            logprintf(mystuff, "########## test case %d/%d ##########\n", i + 1, testcases);
             f_class = (int)(st_data[i].k % NUM_CLASSES);
 
             mystuff->exponent           = st_data[i].exp;
@@ -532,7 +532,7 @@ int selftest(mystuff_t *mystuff, int type)
             mystuff->bit_max_assignment = mystuff->bit_min + 1;
             mystuff->bit_max_stage      = mystuff->bit_max_assignment;
 
-            /* create a list which kernels can handle this testcase */
+            /* create a list which kernels can handle this test case */
             // clang-format off
             j = 0;
                   if(kernel_possible(BARRETT92_MUL32,    mystuff)) kernels[j++] = BARRETT92_MUL32;
@@ -933,7 +933,7 @@ int main(int argc, char **argv)
         logprintf(&mystuff, "  number of multiprocessors %d\n", deviceinfo.multiProcessorCount);
 
         /* map deviceinfo.major + deviceinfo.minor to number of CUDA cores per MP.
-           This is just information, I doesn't matter whether it is correct or not */
+           This is just information, doesn't matter whether it is correct or not */
         i = 0;
         if (deviceinfo.major == 1)
             i = 8;

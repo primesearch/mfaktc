@@ -5,8 +5,6 @@ version 0.24.0
 
 new features:
 - CRC32 checksums in JSON output to reduce invalid results
-- support for CUDA 13.0
-- improved performance with CUDA >= 12.0
 - improved performance on Pascal devices
 - improved checkpoint compatibility between versions
   - file names now contain metadata
@@ -14,6 +12,8 @@ new features:
 enhancements:
 - merged in file locking code from mfakto to reduce concurrency (thanks to
   James Heinrich)
+- updated mul_96() to use 64-bit integers (thanks to NStorm)
+  - users should see a small performance increase with CUDA 12.x and above
 
 bug fixes:
 - fixed typos and formatting in output
@@ -32,6 +32,8 @@ build:
   - code analysis with CodeQL
 - improved visual appearance and clarity of release information (thanks to
   Danny Chia)
+- added CUDA 13.x support (thanks to NStorm)
+  - breaking change: compute capability 7.2 and below are unsupported
 
 other changes:
 - dropped support for compute capability 1.x and 32-bit builds
@@ -44,6 +46,49 @@ other changes:
   - please use results.json.txt for submissions
   - set LegacyResultsTxt=1 in mfaktc.ini to restore old behavior and re-enable
     logging to results.txt
+- re-organized mfaktc.ini to be more user-friendly (thanks to James Heinrich)
+- changed the key "subversion" to "kernel" in the JSON output
+  - PrimeNet should still accept results with "subversion"
+- renamed the source files cuda_basic_stuff.* to cuda_utils.*
+
+version 0.23.6
+==============================
+- includes changes backported from mfaktc 0.24.0
+
+enhancements:
+- updated mul_96() to use 64-bit integers (thanks to NStorm)
+  - users should see a small performance increase with CUDA 12.x and above
+
+bug fixes:
+- fixed some typos in code comments and program output
+
+other changes:
+- code has been revamped to improve formatting and maintain consistent style
+  (thanks to NStorm)
+- updated print_dez96() to use int96 data type (thanks to NStorm)
+  - converted some hard-coded values to macros
+
+version 0.23.5
+==============================
+- includes changes backported from mfaktc 0.24.0
+
+bug fixes:
+- added build flags to enable support for Blackwell devices by default in
+  Makefile.win (thanks to yellowbeeblackbee)
+
+build:
+- enabled more compiler optimizations by default for a slight performance gain
+  (thanks to NStorm)
+- various improvements to GitHub Actions workflows (thanks to NStorm)
+  - support for additional CUDA versions
+  - removed dependency on deprecated windows-2019 images
+  - code analysis with CodeQL
+- improved visual appearance and clarity of release information (thanks to
+  Danny Chia)
+- added CUDA 13.x support (thanks to NStorm)
+  - breaking change: compute capability 7.2 and below are unsupported
+
+other changes:
 - re-organized mfaktc.ini to be more user-friendly (thanks to James Heinrich)
 
 version 0.23.4
@@ -66,8 +111,8 @@ other changes:
 version 0.23.3
 ==============================
 bug fixes:
-- self-tests could fail on Blackwell devices due to a "random offset" error
-  (thanks to Dmitry Bolshakov)
+- fixed "random self-test offset" errors at startup; Blackwell devices are now
+  correctly supported (thanks to Dmitry Bolshakov)
 
 build:
 - updated CUDA version to 12.8.1 in GitHub Actions

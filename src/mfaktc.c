@@ -528,8 +528,8 @@ k_max and k_min are used as 64bit temporary integers here...
 
 int selftest(mystuff_t *mystuff, int type)
 /*
-type = 0: full selftest (1557 testcases)
-type = 1: full selftest (all testcases)
+type = 0: full selftest (1557 test cases)
+type = 1: full selftest (all test cases)
 type = 1: small selftest (this is executed EACH time mfaktc is started)
 
 return value
@@ -972,7 +972,7 @@ int main(int argc, char **argv)
         logprintf(&mystuff, "  number of multiprocessors %d\n", deviceinfo.multiProcessorCount);
 
         /* map deviceinfo.major + deviceinfo.minor to number of CUDA cores per MP.
-   This is just information, I doesn't matter whether it is correct or not */
+   This is just information, doesn't matter whether it is correct or not */
         i = 0;
         if (deviceinfo.major == 1)
             i = 8;

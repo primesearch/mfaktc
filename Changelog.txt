@@ -4,15 +4,10 @@ version 0.23.6
 
 enhancements:
 - updated mul_96() to use 64-bit integers (thanks to NStorm)
-  - users should see a small performance improvement on newer devices
+  - users should see a small performance increase with CUDA 12.x and above
 
 bug fixes:
 - fixed some typos in code comments and program output
-
-build:
-- added CUDA 13.x support (thanks to NStorm)
-  - this drops support for compute capability 7.2 and below - developers using
-    older CUDA versions should uncomment the relevant lines in the makefile
 
 other changes:
 - code has been revamped to improve formatting and maintain consistent style
@@ -38,6 +33,7 @@ build:
 - improved visual appearance and clarity of release information (thanks to
   Danny Chia)
 - added CUDA 13.x support (thanks to NStorm)
+  - breaking change: compute capability 7.2 and below are unsupported
 
 other changes:
 - re-organized mfaktc.ini to be more user-friendly (thanks to James Heinrich)
@@ -64,6 +60,9 @@ version 0.23.3
 bug fixes:
 - fixed "random self-test offset" errors at startup; Blackwell devices are now
   correctly supported (thanks to Dmitry Bolshakov)
+
+build:
+- updated CUDA version to 12.8.1 in GitHub Actions
 
 version 0.23.2
 ==============================

@@ -15,13 +15,13 @@ NVCCFLAGS = $(CUDA_INCLUDE) --ptxas-options=-v -O3 -Wno-deprecated-gpu-targets
 # generate code for compute capabilities - see this table for supported
 # versions: https://en.wikipedia.org/wiki/CUDA#GPUs_supported
 
-# deprecated since CUDA 12.x - uncomment to use
+# older deprecated versions - uncomment to enable
 # NVCCFLAGS += --generate-code arch=compute_11,code=sm_11 # mfaktc cannot use 1.0 but supports 1.1 and above
 # NVCCFLAGS += --generate-code arch=compute_20,code=sm_20 # Fermi GPUs
 # NVCCFLAGS += --generate-code arch=compute_30,code=sm_30 # early Kepler GPUs
 # NVCCFLAGS += --generate-code arch=compute_35,code=sm_35 # later Kepler GPUs; funnel shift added in 3.2
 
-# deprecated since CUDA 13.x - uncomment to use
+# removed in CUDA 13.x - uncomment to enable
 # NVCCFLAGS += --generate-code arch=compute_50,code=sm_50 # Maxwell GPUs
 # NVCCFLAGS += --generate-code arch=compute_60,code=sm_60
 # NVCCFLAGS += --generate-code arch=compute_61,code=sm_61

@@ -9,7 +9,7 @@ CUFLAGS = -DWIN64 -Xcompiler "/EHsc /W3 /nologo /O2" $(NVCCFLAGS)
 # generate code for compute capabilities - see this table for supported
 # versions: https://en.wikipedia.org/wiki/CUDA#GPUs_supported
 
-# deprecated since CUDA 13.x - uncomment to use
+# removed in CUDA 13.x - uncomment to enable
 # NVCCFLAGS += --generate-code arch=compute_50,code=sm_50
 # NVCCFLAGS += --generate-code arch=compute_60,code=sm_60
 # NVCCFLAGS += --generate-code arch=compute_61,code=sm_61

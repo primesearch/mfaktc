@@ -23,7 +23,7 @@ echo
 
 for FILE in checkpoint.c output.c parse.c read_config.c sieve.c \
             signal_handler.c timer.c tf_96bit.cu tf_barrett96.cu \
-            tf_barrett96_gs.cu gpusieve.cu cuda_basic_stuff.cu crc.c
+            tf_barrett96_gs.cu gpusieve.cu cuda_utils.cu crc.c
 do
   cpp -D CUDART_VERSION=6050 -MM ${FILE}
   echo

@@ -42,7 +42,7 @@ along with mfaktc.  If not, see <http://www.gnu.org/licenses/>.
 #include "signal_handler.h"
 #include "output.h"
 #include "gpusieve.h"
-#include "cuda_basic_stuff.h"
+#include "cuda_utils.h"
 
 unsigned long long int calculate_k(unsigned int exp, int bits)
 /* calculates biggest possible k in "2 * exp * k + 1 < 2^bits" */

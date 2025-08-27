@@ -33,7 +33,7 @@ build:
 - improved visual appearance and clarity of release information (thanks to
   Danny Chia)
 - added CUDA 13.x support (thanks to NStorm)
-  - breaking change: compute capability 7.2 and below are unsupported
+  - breaking change: compute capability 7.2 and below are dropped
 
 other changes:
 - dropped support for compute capability 1.x and 32-bit builds
@@ -62,6 +62,10 @@ enhancements:
 bug fixes:
 - fixed some typos in code comments and program output
 
+build:
+- added CUDA 13.x support (thanks to NStorm)
+  - breaking change: compute capability 7.2 and below are dropped
+
 other changes:
 - code has been revamped to improve formatting and maintain consistent style
   (thanks to NStorm)
@@ -85,8 +89,7 @@ build:
   - code analysis with CodeQL
 - improved visual appearance and clarity of release information (thanks to
   Danny Chia)
-- added CUDA 13.x support (thanks to NStorm)
-  - breaking change: compute capability 7.2 and below are unsupported
+- added CUDA 12.9 support in GitHub Actions (thanks to NStorm)
 
 other changes:
 - re-organized mfaktc.ini to be more user-friendly (thanks to James Heinrich)

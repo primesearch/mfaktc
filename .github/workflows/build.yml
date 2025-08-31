@@ -180,7 +180,8 @@ jobs:
         # Available CUDA versions can be viewed at the Jimver/cuda-toolkit action sources:
         # https://github.com/Jimver/cuda-toolkit/blob/v0.2.24/src/links/windows-links.ts
         sys:
-          - { cuda_version: '12.9.0' }
+          - { cuda_version: '13.0.0' }
+          - { cuda_version: '12.9.1' }
           - { cuda_version: '12.8.1' }
           - { cuda_version: '12.6.3' }
           - { cuda_version: '12.5.1' }
@@ -217,10 +218,10 @@ jobs:
 
       - name: Install CUDA Toolkit
         id: cuda-toolkit
-        uses: Jimver/cuda-toolkit@v0.2.24
+        uses: N-Storm/cuda-toolkit@v0.2.27m
         with:
           cuda: ${{ matrix.sys.cuda_version }}
-          sub-packages: ${{ startsWith(matrix.sys.cuda_version, '8.') && '[]' || '[ "nvcc", "cudart" ]' }}
+          sub-packages: ${{ startsWith(matrix.sys.cuda_version, '8.') && '[]' || startsWith(matrix.sys.cuda_version, '13.') &&'[ "nvcc", "crt", "cudart", "nvvm", "nvptxcompiler" ]' || '[ "nvcc", "cudart" ]' }}
           use-local-cache: false
           use-github-cache: false
 

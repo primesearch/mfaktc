@@ -43,7 +43,7 @@ along with mfaktc.  If not, see <http://www.gnu.org/licenses/>.
 
 void print_help(char *string)
 {
-    printf("mfaktc v%s\n", MFAKTC_VERSION);
+    printf("mfaktc %s\n", MFAKTC_VERSION);
     printf("Copyright (c) 2009-2015, 2018, 2019, 2024 Oliver Weihe (o.weihe@t-online.de)\n\n", MFAKTC_VERSION);
     printf("This program comes with ABSOLUTELY NO WARRANTY; for details see COPYING.\n");
     printf("This is free software, and you are welcome to redistribute it\n");

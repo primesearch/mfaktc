@@ -84,8 +84,11 @@ code runs about 33% faster compared to 32 bits.
 
 It should be noted that each CUDA version only supports specific compute
 capabilities. You may have to enable or disable certain flags in the makefile
-before compiling mfaktc. Use this table to determine which compute capabilities
-are supported: https://en.wikipedia.org/wiki/CUDA#GPUs_supported
+before compiling mfaktc, or nvcc may exit due to an "unsupported gpu
+architecture" error.
+
+Use this table to determine which compute capabilities are supported:
+https://en.wikipedia.org/wiki/CUDA#GPUs_supported
 
 #############
 # 2.1 Linux #
@@ -99,10 +102,7 @@ Steps:
 - optional: run "make clean" to remove any build artifacts
 - make
 
-nvcc may exit due to an "unsupported gpu architecture" error. If this happens,
-simply comment out the corresponding "NVCCFLAGS += ..." line in the makefile.
-You may have to do this more than once. Otherwise, the binary "mfaktc" should
-appear in the parent folder.
+If compilation succeeds, the binary "mfaktc" should appear in the root folder.
 
 mfaktc was originally compiled with:
 - OpenSUSE 12.2 x86_64

@@ -198,6 +198,6 @@ The following lines define the min, default and max value.
 #define MAX_BUFFER_LENGTH              (MAX_FACTOR_BUFFER_LENGTH + 100)
 #define MAX_CHECKPOINT_FILENAME_LENGTH 40
 
-#define GHZDAYS_MAGIC_TF_TOP           0.016968 // magic constant for TF to 65-bit and above
-#define GHZDAYS_MAGIC_TF_MID           0.017832 // magic constant for 63-and 64-bit
-#define GHZDAYS_MAGIC_TF_BOT           0.011160 // magic constant for 62-bit and below
+#define GHZDAYS_MAGIC_TF_TOP           0.016968 // magic constant for TF to 65 bits and above
+#define GHZDAYS_MAGIC_TF_MID           0.017832 // magic constant for 63 and 64 bits
+#define GHZDAYS_MAGIC_TF_BOT           0.011160 // magic constant for 62 bits and below

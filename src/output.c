@@ -1,6 +1,6 @@
 /*
 This file is part of mfaktc.
-Copyright (C) 2009-2015, 2018, 2019, 2024  Oliver Weihe (o.weihe@t-online.de)
+Copyright (c) 2009-2015, 2018, 2019, 2024  Oliver Weihe (o.weihe@t-online.de)
                                            Bertram Franz (bertramf@gmx.net)
 
 mfaktc is free software: you can redistribute it and/or modify
@@ -43,23 +43,25 @@ along with mfaktc.  If not, see <http://www.gnu.org/licenses/>.
 
 void print_help(char *string)
 {
-    printf("mfaktc v%s Copyright (C) 2009-2015, 2018, 2019, 2024 Oliver Weihe (o.weihe@t-online.de)\n", MFAKTC_VERSION);
+    printf("mfaktc %s\n", MFAKTC_VERSION);
+    printf("Copyright (c) 2009-2015, 2018, 2019, 2024 Oliver Weihe (o.weihe@t-online.de)\n\n", MFAKTC_VERSION);
     printf("This program comes with ABSOLUTELY NO WARRANTY; for details see COPYING.\n");
     printf("This is free software, and you are welcome to redistribute it\n");
     printf("under certain conditions; see COPYING for details.\n\n\n");
 
     printf("Usage: %s [options]\n", string);
-    printf("  -h                     display this help and exit\n");
-    printf("  -d <device number>     specify the device number used by this program\n");
-    printf("  -tf <exp> <min> <max>  trial factor %s<exp> from 2^<min> to 2^<max> and exit\n", NAME_NUMBERS);
-    printf("                         instead of parsing the worktodo file\n");
+    printf("  -h                     display this help\n");
+    printf("  -d <device number>     specify device to use\n");
+    printf("  -tf <exp> <min> <max>  trial factor %s<exp> from <min> to <max> bits,\n", NAME_NUMBERS);
+    printf("                         ignores worktodo file\n");
     printf("  -st                    run built-in self-test and exit\n");
-    printf("  -st2                   same as -st but extended range for k_min and k_max\n");
-    printf("  -v <number>            set verbosity (min = 0, default = 1, more = 2, max = 3)\n");
+    printf("  -st2                   same as -st but use extended range for k_min and k_max\n");
+    printf("  -v <number>            verbosity level: terse = 0, default = 1, more = 2,\n");
+    printf("                                          maximum = 3\n");
     printf("\n");
     printf("options for debugging purposes\n");
-    printf("  --timertest            run test of timer functions and exit\n");
-    printf("  --sleeptest            run test of sleep functions and exit\n");
+    printf("  --timertest            test timer functions\n");
+    printf("  --sleeptest            test sleep functions\n");
 }
 
 void logprintf(mystuff_t *mystuff, const char *fmt, ...)

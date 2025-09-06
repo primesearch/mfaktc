@@ -11,7 +11,7 @@ mfaktc is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
-                                
+
 You should have received a copy of the GNU General Public License
 along with mfaktc.  If not, see <http://www.gnu.org/licenses/>.
 */
@@ -74,11 +74,11 @@ extern "C" __host__ int check_subcc_bug(mystuff_t *mystuff)
         else {
             printf("  ERROR: output != input\n");
             printf("\n");
-            printf("  could be caused by bad software environment (CUDA toolkit and/or graphics driver)\n");
-            printf("  Known bad:\n");
-            printf("    - CUDA 5.0.7RC + 302.06.03 with all supported GPUs\n");
-            printf("      fixed by driver update after reported this issue to nvidia\n");
-            printf("    - CUDA 7.0 + 346.47, 346.59, 346.72 and 349.16 346.72 with Maxwell GPUs\n");
+            printf("  could be due to a bad software environment (CUDA Toolkit or graphics driver, or both)\n");
+            printf("  Configurations known to be bad:\n");
+            printf("    - CUDA 5.0 + 302.06.03 on all supported GPUs\n");
+            printf("      fixed in driver update after issue reported to Nvidia\n");
+            printf("    - CUDA 7.0 + 346.47, 346.59, 346.72 and 349.16 on Maxwell GPUs\n");
         }
         printf("\n");
     }

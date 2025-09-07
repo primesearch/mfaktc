@@ -21,6 +21,19 @@ along with mfaktc (mfakto).  If not, see <http://www.gnu.org/licenses/>.
 extern "C" {
 #endif
 
+/**
+ * @brief Creates a temporary file using the provided template string.
+ *
+ * On Windows (_MSC_VER or __MINGW32__), uses _mktemp_s to generate a unique filename.
+ * On other platforms, uses mkstemp to create and open a unique temporary file, then closes it.
+ *
+ * @param tpl A modifiable string containing the template for the temporary filename.
+ *            The string should contain a sequence of 'X's that will be replaced to
+ *            generate a unique filename.
+ * @return 0 on success, or an error code (e.g., EINVAL) on failure.
+ */
+int make_temp_file(char *tpl);
+
 FILE *fopen_and_lock(const char *path, const char *mode);
 int unlock_and_fclose(FILE *f);
 

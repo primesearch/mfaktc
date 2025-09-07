@@ -19,6 +19,7 @@ along with mfaktc (mfakto).  If not, see <http://www.gnu.org/licenses/>.
 
 #include <fcntl.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <errno.h>
@@ -57,6 +58,21 @@ typedef struct _lockinfo {
 
 static unsigned int num_locked_files = 0;
 static lockinfo locked_files[MAX_LOCKED_FILES];
+
+int make_temp_file(char *tpl)
+{
+#if defined _MSC_VER || defined __MINGW32__
+    return _mktemp_s(tpl, strlen(tpl) + 1);
+#else
+    int _temp_fd = mkstemp(tpl);
+    if (!_temp_fd)
+        return EINVAL;
+    else {
+        close(_temp_fd);
+        return 0;
+    }
+#endif
+}
 
 FILE *fopen_and_lock(const char *path, const char *mode)
 {

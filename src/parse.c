@@ -450,7 +450,7 @@ enum ASSIGNMENT_ERRORS clear_assignment(char *filename, unsigned int exponent, i
   }	// while.....
   unlock_and_fclose(f_in);
   f_in = NULL;
-  unlock_and_fclose(f_out);
+  fclose(f_out);
   f_out = NULL;
   if (!found)
     return ASSIGNMENT_NOT_FOUND;

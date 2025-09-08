@@ -67,10 +67,8 @@ int make_temp_file(char *tpl)
     int _temp_fd = mkstemp(tpl);
     if (!_temp_fd)
         return EINVAL;
-    else {
-        close(_temp_fd);
-        return 0;
-    }
+    close(_temp_fd);
+    return 0;
 #endif
 }
 

@@ -44,7 +44,7 @@ mfaktc 0.07-0.14 to see Luigi's code.
  *     1 - get_next_assignment : cannot open file                                                           *
  *     2 - get_next_assignment : no valid assignment found                                                  *
  *     3 - clear_assignment    : cannot open file <filename>                                                *
- *     4 - clear_assignment    : cannot open file "__worktodo__.tmp"                                        *
+ *     4 - clear_assignment    : cannot open temp file from template "__worktodo__.XXXXXX"                  *
  *     5 - clear_assignment    : assignment not found                                                       *
  *     6 - clear_assignment    : cannot rename temporary workfile to regular workfile                       *
  ************************************************************************************************************/
@@ -55,7 +55,12 @@ mfaktc 0.07-0.14 to see Luigi's code.
 #include <math.h>
 #include <limits.h>
 #include <ctype.h>
+#include <string.h>
 #include <errno.h>
+
+#ifdef _MSC_VER
+#include <io.h>
+#endif
 
 #include "compatibility.h"
 #include "filelocking.h"
@@ -339,7 +344,7 @@ enum ASSIGNMENT_ERRORS get_next_assignment(char *filename, unsigned int *exponen
  *                                                                                                          *
  *     0 - OK                                                                                               *
  *     3 - clear_assignment    : cannot open file <filename>                                                *
- *     4 - clear_assignment    : cannot open file "__worktodo__.tmp"                                        *
+ *     4 - clear_assignment    : cannot open temp file from template "__worktodo__.XXXXXX"                  *
  *     5 - clear_assignment    : assignment not found                                                       *
  *     6 - clear_assignment    : cannot rename temporary workfile to regular workfile                       *
  *                                                                                                          *
@@ -356,12 +361,15 @@ enum ASSIGNMENT_ERRORS clear_assignment(char *filename, unsigned int exponent, i
   unsigned int line_to_drop = UINT_MAX;
   unsigned int current_line;
   struct ASSIGNMENT assignment;	// the found assignment....
+  char temp_file_template[] = "__worktodo__.XXXXXX";
 
   f_in = fopen_and_lock(filename, "r");
   if (NULL == f_in)
     return CANT_OPEN_WORKFILE;
 
-  f_out = fopen("__worktodo__.tmp", "w");
+  if (make_temp_file(temp_file_template) == 0)
+    f_out = fopen(temp_file_template, "w");
+
   if (NULL == f_out)
   {
     unlock_and_fclose(f_in);
@@ -403,7 +411,7 @@ enum ASSIGNMENT_ERRORS clear_assignment(char *filename, unsigned int exponent, i
     f_in = fopen_and_lock(filename, "r");
     if (NULL == f_in)
     {
-      unlock_and_fclose(f_out);
+      fclose(f_out);
       f_out = NULL;
       return CANT_OPEN_WORKFILE;
     }
@@ -442,13 +450,13 @@ enum ASSIGNMENT_ERRORS clear_assignment(char *filename, unsigned int exponent, i
   }	// while.....
   unlock_and_fclose(f_in);
   f_in = NULL;
-  unlock_and_fclose(f_out);
+  fclose(f_out);
   f_out = NULL;
   if (!found)
     return ASSIGNMENT_NOT_FOUND;
   if(remove(filename) != 0)
     return CANT_RENAME;
-  if(rename("__worktodo__.tmp", filename) != 0)
+  if(rename(temp_file_template, filename) != 0)
     return CANT_RENAME;
   return OK;
 }

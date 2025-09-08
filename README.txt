@@ -139,7 +139,6 @@ automatically set this variable.
 
 
 Steps:
-- edit CUDA_DIR in /src/Makefile to point to your CUDA installation
 - open the Visual Studio Developer Command Prompt for the desired architecture
   - for 64 bits: x64 Native Tools Command Prompt
   - for 32 bits: x86 Native Tools Command Prompt

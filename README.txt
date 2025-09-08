@@ -2,7 +2,7 @@
 # mfaktc README #
 #################
 
-Content
+Table of Contents
 
 0   About mfaktc
 1   Supported hardware
@@ -128,7 +128,7 @@ and Visual Studio versions.
 
 You will need a GNU-compatible version of make as the makefiles are not
 compatible with nmake. GnuWin32 provides a native port for 32-bit Windows:
-http://gnuwin32.sourceforge.net/packages/make.htm
+https://gnuwin32.sourceforge.net/packages/make.htm
 
 You can add C:\Program Files (x86)\GnuWin32\bin to the Path system variable so
 that make is always available.
@@ -195,6 +195,8 @@ to 71 bits.
 
 mfaktc works very similarly on Windows. See the above instructions, but run
 "mfaktc" without the "./" to launch the executable.
+If you are using Powershell, also known as Terminal in the search bar,
+then add the "./" at the start of the command.
 
 
 ########################################
@@ -232,6 +234,8 @@ Using the GPU to 72 website:
     GPU to 72 can be accessed here: https://gpu72.com
 
 Using the MISFIT application:
+  DISCLAIMER: MISFIT is no longer in development and using AutoPrimeNet is
+  heavily recommended.
     MISFIT is a Windows tool that automatically requests assignments and
     submits results. You can get it here: https://mersenneforum.org/misfit
 
@@ -339,7 +343,7 @@ Submitting results:
 # 6 Tuning #
 ############
 
-You can find additional settings in the mfakto.ini file. Read it carefully
+You can find additional settings in the mfaktc.ini file. Read it carefully
 before making changes. ;-)
 
 

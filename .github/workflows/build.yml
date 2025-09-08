@@ -279,7 +279,7 @@ jobs:
         run: |
           [ -f src/clversion.log ] && CL_VER="$(grep -Eoe 'Version [\.0-9]+ ' src/clversion.log | cut -d' ' -f2)"
           [ -z "$CL_VER" ] && CL_VER='Unknown'
-          tar -a -c -f "${{ steps.prepare.outputs.BASE_NAME }}.zip" Changelog.txt COPYING mfaktc-win-64.exe mfaktc.ini README.txt
+          7z a -tzip -mx=9 "${{ steps.prepare.outputs.BASE_NAME }}.zip" Changelog.txt COPYING mfaktc-win-64.exe mfaktc.ini README.txt
           echo "[${{ steps.prepare.outputs.BASE_NAME }}.zip](https://github.com/${GITHUB_REPOSITORY}/releases/download/${GITHUB_REF_NAME}/${{ steps.prepare.outputs.BASE_NAME }}.zip) | \
           ${{ matrix.sys.cuda_version }} | ${{ steps.prepare.outputs.CC_MIN }}-${{ steps.prepare.outputs.CC_MAX }} | ${{ steps.prepare.outputs.OS_VER }} | \
           ${CL_VER} (${{ steps.prepare.outputs.COMPILER_VER }}) | ${{ steps.prepare.outputs.NVCC_VER }}" > ${{ steps.prepare.outputs.BASE_NAME }}.txt

@@ -411,7 +411,7 @@ enum ASSIGNMENT_ERRORS clear_assignment(char *filename, unsigned int exponent, i
     f_in = fopen_and_lock(filename, "r");
     if (NULL == f_in)
     {
-      unlock_and_fclose(f_out);
+      fclose(f_out);
       f_out = NULL;
       return CANT_OPEN_WORKFILE;
     }

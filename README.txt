@@ -2,7 +2,7 @@
 # mfaktc README #
 #################
 
-Table of Contents
+Table of contents
 
 0   About mfaktc
 1   Supported hardware
@@ -193,10 +193,12 @@ to 71 bits.
 # 3.2 Windows #
 ###############
 
-mfaktc works very similarly on Windows. See the above instructions, but run
-"mfaktc" without the "./" to launch the executable.
-If you are using Powershell, also known as Terminal in the search bar,
-then add the "./" at the start of the command.
+mfaktc works very similarly on Windows. You can just run "mfaktc-win-64" in
+Command Prompt (cmd.exe) to launch the executable, or simply double-click it in
+File Explorer.
+
+However, you do need to prepend the executable name with ".\" in PowerShell or
+Windows Terminal.
 
 
 ########################################
@@ -234,10 +236,11 @@ Using the GPU to 72 website:
     GPU to 72 can be accessed here: https://gpu72.com
 
 Using the MISFIT application:
-  DISCLAIMER: MISFIT is no longer in development and using AutoPrimeNet is
-  heavily recommended.
     MISFIT is a Windows tool that automatically requests assignments and
     submits results. You can get it here: https://mersenneforum.org/misfit
+
+    Important note: this program has reached end-of-life and is no longer
+    supported. It is highly recommended to use AutoPrimeNet instead.
 
 From mersenne.ca:
     James Heinrich's website mersenne.ca offers assignments for exponents up

@@ -16,7 +16,7 @@ enhancements:
     based on the template "__worktodo__.XXXXXX" (thanks to NStorm)
 - updated mul_96() to use 64-bit integers (thanks to NStorm)
   - users should see a small performance increase with CUDA 12.x and above
-- improved the output of --help
+- improved program output in various places
 
 bug fixes:
 - fixed typos and formatting in output

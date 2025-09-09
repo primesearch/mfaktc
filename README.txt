@@ -2,7 +2,7 @@
 # mfaktc README #
 #################
 
-Table of Contents
+Table of contents
 
 0   About mfaktc
 1   Supported hardware
@@ -236,10 +236,11 @@ Using the GPU to 72 website:
     GPU to 72 can be accessed here: https://gpu72.com
 
 Using the MISFIT application:
-  DISCLAIMER: MISFIT is no longer in development and using AutoPrimeNet is
-  heavily recommended.
     MISFIT is a Windows tool that automatically requests assignments and
     submits results. You can get it here: https://mersenneforum.org/misfit
+
+    Important note: this program has reached end-of-life and is no longer
+    supported. It is highly recommended to use AutoPrimeNet instead.
 
 From mersenne.ca:
     James Heinrich's website mersenne.ca offers assignments for exponents up

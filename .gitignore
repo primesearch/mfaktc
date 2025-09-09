@@ -20,6 +20,12 @@ worktodo.txt
 worktodo.add
 /*.ini
 
+# temporary files
+*.lck
+*.tmp
+__worktodo__.*
+
 # other
 .vs/
 *.zip
+.DS_Store

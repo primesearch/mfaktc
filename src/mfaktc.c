@@ -1158,7 +1158,7 @@ int main(int argc, char **argv)
                                 logprintf(&mystuff, "ERROR: clear_assignment() / modify_assignment(): can't open \"%s\"\n",
                                           mystuff.workfile);
                             else if (parse_ret == CANT_OPEN_TEMPFILE)
-                                logprintf(&mystuff, "ERROR: clear_assignment() / modify_assignment(): can't create temp file\n");
+                                logprintf(&mystuff, "ERROR: clear_assignment() / modify_assignment(): can't create temporary file\n");
                             else if (parse_ret == ASSIGNMENT_NOT_FOUND)
                                 logprintf(&mystuff, "ERROR: clear_assignment() / modify_assignment(): assignment not found in \"%s\"\n",
                                           mystuff.workfile);

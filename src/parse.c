@@ -44,7 +44,7 @@ mfaktc 0.07-0.14 to see Luigi's code.
  *     1 - get_next_assignment : cannot open file                                                           *
  *     2 - get_next_assignment : no valid assignment found                                                  *
  *     3 - clear_assignment    : cannot open file <filename>                                                *
- *     4 - clear_assignment    : cannot open temp file from template "__worktodo__.XXXXXX"                  *
+ *     4 - clear_assignment    : cannot open temporary file from template "__worktodo__.XXXXXX"                  *
  *     5 - clear_assignment    : assignment not found                                                       *
  *     6 - clear_assignment    : cannot rename temporary workfile to regular workfile                       *
  ************************************************************************************************************/
@@ -344,7 +344,7 @@ enum ASSIGNMENT_ERRORS get_next_assignment(char *filename, unsigned int *exponen
  *                                                                                                          *
  *     0 - OK                                                                                               *
  *     3 - clear_assignment    : cannot open file <filename>                                                *
- *     4 - clear_assignment    : cannot open temp file from template "__worktodo__.XXXXXX"                  *
+ *     4 - clear_assignment    : cannot open temporary file from template "__worktodo__.XXXXXX"                  *
  *     5 - clear_assignment    : assignment not found                                                       *
  *     6 - clear_assignment    : cannot rename temporary workfile to regular workfile                       *
  *                                                                                                          *

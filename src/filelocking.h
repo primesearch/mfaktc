@@ -24,8 +24,9 @@ extern "C" {
 /**
  * @brief Creates a temporary file using the provided template string.
  *
- * On Windows (_MSC_VER or __MINGW32__), uses _mktemp_s to generate a unique filename.
- * On other platforms, uses mkstemp to create and open a unique temporary file, then closes it.
+ * Windows (_MSC_VER or __MINGW32__) uses _mktemp_s to generate a unique filename.
+ * Other platforms use mkstemp to create and open a unique temporary file, and
+ * then close it once it is no longer in use.
  *
  * @param tpl A modifiable string containing the template for the temporary filename.
  *            The string should contain a sequence of 'X's that will be replaced to

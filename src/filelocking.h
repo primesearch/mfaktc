@@ -22,15 +22,15 @@ extern "C" {
 #endif
 
 /**
- * @brief Creates a temporary file using the provided template string.
+ * @brief Creates a unique filename using the provided template.
  *
- * Windows (_MSC_VER or __MINGW32__) uses _mktemp_s to generate a unique filename.
- * Other platforms use mkstemp to create and open a unique temporary file, and
- * then close it once it is no longer in use.
+ * Windows (_MSC_VER or __MINGW32__) uses _mktemp_s to generate a unique
+ * filename, and other platforms use mkstemp to create and open a unique file;
+ * the file is closed afterwards.
  *
- * @param tpl A modifiable string containing the template for the temporary filename.
- *            The string should contain a sequence of 'X's that will be replaced to
- *            generate a unique filename.
+ * @param tpl A modifiable string containing the template for the temporary
+ *            filename. It should contain a sequence of 'X's that will be
+ *            replaced to generate a unique filename.
  * @return 0 on success, or an error code (e.g., EINVAL) on failure.
  */
 int make_temp_file(char *tpl);

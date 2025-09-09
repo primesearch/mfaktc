@@ -12,10 +12,11 @@ new features:
 enhancements:
 - merged in file locking code from mfakto to reduce concurrency (thanks to
   James Heinrich)
-- temporary files used to update worktodo.txt now have unique random names
-  based on the template "__worktodo__.XXXXXX" (thanks to NStorm)
+  - temporary files used to update worktodo.txt now have unique random names
+    based on the template "__worktodo__.XXXXXX" (thanks to NStorm)
 - updated mul_96() to use 64-bit integers (thanks to NStorm)
   - users should see a small performance increase with CUDA 12.x and above
+- improved the output of --help
 
 bug fixes:
 - fixed typos and formatting in output

@@ -193,10 +193,12 @@ to 71 bits.
 # 3.2 Windows #
 ###############
 
-mfaktc works very similarly on Windows. See the above instructions, but run
-"mfaktc" without the "./" to launch the executable.
-If you are using Powershell, also known as Terminal in the search bar,
-then add the "./" at the start of the command.
+mfaktc works very similarly on Windows. You can just run "mfaktc-win-64" in
+Command Prompt (cmd.exe) to launch the executable, or simply double-click it in
+File Explorer.
+
+However, you do need to prepend the executable name with ".\" in PowerShell or
+Windows Terminal.
 
 
 ########################################

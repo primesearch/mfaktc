@@ -103,7 +103,7 @@ returns 1 if the assignment is within the supported bounds of mfaktc,
   else if (bit_min >= bit_max) { ret = 0; if (verbosity >= 1) printf("Warning: bit_min >= bit_max doesn't make sense!\n"); }
   else if (bit_max > 95)       { ret = 0; if (verbosity >= 1) printf("Warning: bit_max > 95 is not currently supported.\n"); }
   else if (((double)(bit_max-1) - (log((double)exp) / log(2.0F))) > 63.9F) /* this leave enough room so k_min/k_max won't overflow in tf_XX() */
-                               { ret = 0; if (verbosity >= 1) printf("Warning: k_max > 2^63.9 is not currently supported.\n");}
+                               { ret = 0; if (verbosity >= 1) printf("Warning: k_max > 2^63.9 is not currently supported.\n"); }
     // clang-format on
     if (verbosity >= 1 && ret == 0) printf("         Assignment skipped: TF %s%u from 2^%d to 2^%d.\n", NAME_NUMBERS, exp, bit_min, bit_max);
 
@@ -137,8 +137,10 @@ output
     if (NULL == fgets(line, MAX_LINE_LENGTH + 1, f_in)) {
         return END_OF_FILE;
     }
-    if (linecopy != NULL) // maybe it wasn't needed....
+    // maybe it wasn't needed....
+    if (linecopy != NULL) {
         strcpy(*linecopy, line); // this is what was read...
+    }
     if ((strlen(line) == MAX_LINE_LENGTH) && (!feof(f_in)) && (line[strlen(line) - 1] != '\n')) // long lines disallowed,
     {
         reason = LONG_LINE;
@@ -149,25 +151,32 @@ output
         } while (TRUE);
     }
 
-    if (linecopy != NULL) *endptr = *linecopy; // by default, non-significant content is whole line
-
+    // by default, non-significant content is whole line
+    if (linecopy != NULL) {
+        *endptr = *linecopy;
+    }
     ptr = line;
-    while (('\0' != ptr[0]) && isspace(ptr[0])) // skip leading spaces
+    while (('\0' != ptr[0]) && isspace(ptr[0])) { // skip leading spaces
         ptr++;
-    if ('\0' == ptr[0]) // blank line...
+    }
+    if ('\0' == ptr[0]) {       // blank line...
         return BLANK_LINE;
-    if (('\\' == ptr[0]) && ('\\' == ptr[1])) return NONBLANK_LINE; // it's a comment, so ignore....don't care about long lines either..
-    if (('/' == ptr[0]) && ('/' == ptr[1])) return NONBLANK_LINE; // it's a comment, so ignore....don't care about long lines either..
-    if (strncasecmp("Factor=", ptr, 7) != 0) // does the line start with "Factor="? (case-insensitive)
+    }
+    if ((('\\' == ptr[0]) && ('\\' == ptr[1])) || (('/' == ptr[0]) && ('/' == ptr[1]))) {
+        return NONBLANK_LINE;   // it's a comment, so ignore....don't care about long lines either..
+    }
+    if (strncasecmp("Factor=", ptr, 7) != 0) {  // does the line start with "Factor="? (case-insensitive)
         return NO_FACTOR_EQUAL;
+    }
     ptr = 1 + strstr(ptr, "="); // don't rescan..
     while (('\0' != ptr[0]) && isspace(ptr[0])) // ignore blanks...
         ptr++;
     number_of_commas = 0;
     for (scanpos = 0; scanpos < strlen(ptr); scanpos++) {
         if (ptr[scanpos] == ',') number_of_commas++; // count the number of ',' in the line
-        if ((ptr[scanpos] == '\\') && (ptr[scanpos + 1] == '\\')) break; // comment delimiter
-        if ((ptr[scanpos] == '/') && (ptr[scanpos + 1] == '/')) break; // //comment delimiter
+        if (((ptr[scanpos] == '\\') && (ptr[scanpos + 1] == '\\')) || ((ptr[scanpos] == '/') && (ptr[scanpos + 1] == '/'))) {
+            break; // comment delimiter
+        }
     }
     if ((2 != number_of_commas) && (3 != number_of_commas)) // must have 2 or 3 commas...
         return INVALID_FORMAT;
@@ -181,38 +190,56 @@ output
     }
     // ptr now points at exponent...in the future, the expression....
     ptr_start = ptr;
-    while ((isspace(*ptr_start)) && ('\0' != *ptr_start))
+    while ((isspace(*ptr_start)) && ('\0' != *ptr_start)) {
         ptr_start++;
-    if ('M' == *ptr_start) // M means Mersenne exponent...
+    }
+    if ('M' == *ptr_start) { // M means Mersenne exponent...
         ptr_start++;
+    }
     errno             = 0;
     proposed_exponent = strtoul(ptr_start, &ptr_end, 10);
     if (ptr_start == ptr_end) return INVALID_FORMAT; // no conversion
-    if ((0 != errno) || (proposed_exponent > UINT_MAX)) return INVALID_DATA; // for example, too many digits.
+    if ((0 != errno) || (proposed_exponent > UINT_MAX)) {
+        return INVALID_DATA; // for example, too many digits.
+    }
     ptr = ptr_end;
 
     // ptr now points at bit_min
     ptr_start        = 1 + strstr(ptr, ",");
     errno            = 0;
     proposed_bit_min = strtoul(ptr_start, &ptr_end, 10);
-    if (ptr_start == ptr_end) return INVALID_FORMAT;
-    if ((0 != errno) || (proposed_bit_min > UCHAR_MAX)) return INVALID_DATA;
+    if (ptr_start == ptr_end) {
+        return INVALID_FORMAT;
+    }
+    if ((0 != errno) || (proposed_bit_min > UCHAR_MAX)) {
+        return INVALID_DATA;
+    }
     ptr = ptr_end;
 
     // ptr now points at bit_max
     ptr_start        = 1 + strstr(ptr, ",");
     errno            = 0;
     proposed_bit_max = strtoul(ptr_start, &ptr_end, 10);
-    if (ptr_start == ptr_end) return INVALID_FORMAT;
-    if ((0 != errno) || (proposed_bit_max > UCHAR_MAX) || (proposed_bit_max <= proposed_bit_min)) return INVALID_DATA;
+    if (ptr_start == ptr_end) {
+        return INVALID_FORMAT;
+    }
+    if ((0 != errno) || (proposed_bit_max > UCHAR_MAX) || (proposed_bit_max <= proposed_bit_min)) {
+        return INVALID_DATA;
+    }
     ptr = ptr_end;
-    while (('\0' != ptr[0]) && isspace(ptr[0])) // ignore blanks...
+    while (('\0' != ptr[0]) && isspace(ptr[0])) {   // ignore blanks...
         ptr++;
-    if (NULL != strstr(ptr, "\n")) // kill off any trailing newlines...
+    }
+    if (NULL != strstr(ptr, "\n")) {                // kill off any trailing newlines...
         *strstr(ptr, "\n") = '\0';
-    if (*ptr != '\0') strcpy(assignment->comment, ptr);
+    }
+    if (*ptr != '\0') {
+        strcpy(assignment->comment, ptr);
+    }
 
-    if (linecopy != NULL) *endptr = *linecopy + (ptr_end - line);
+    if (linecopy != NULL) {
+        *endptr = *linecopy + (ptr_end - line);
+    }
 
     assignment->exponent = proposed_exponent;
     assignment->bit_min  = proposed_bit_min;
@@ -332,9 +359,13 @@ enum ASSIGNMENT_ERRORS clear_assignment(char *filename, unsigned int exponent, i
     char temp_file_template[] = "__worktodo__.XXXXXX";
 
     f_in = fopen_and_lock(filename, "r");
-    if (NULL == f_in) return CANT_OPEN_WORKFILE;
+    if (NULL == f_in) {
+        return CANT_OPEN_WORKFILE;
+    }
 
-    if (make_temp_file(temp_file_template) == 0) f_out = fopen(temp_file_template, "w");
+    if (make_temp_file(temp_file_template) == 0) {
+        f_out = fopen(temp_file_template, "w");
+    }
 
     if (NULL == f_out) {
         unlock_and_fclose(f_in);
@@ -342,8 +373,9 @@ enum ASSIGNMENT_ERRORS clear_assignment(char *filename, unsigned int exponent, i
         return CANT_OPEN_TEMPFILE;
     }
 
-    if ((bit_min_new > bit_min) && (bit_min_new < bit_max)) // modify only
+    if ((bit_min_new > bit_min) && (bit_min_new < bit_max)) { // modify only
         line_to_drop = UINT_MAX;
+    }
     else {
         current_line = 0;
         while (END_OF_FILE != (value = parse_worktodo_line(f_in, &assignment, &line, &tail))) {
@@ -352,7 +384,9 @@ enum ASSIGNMENT_ERRORS clear_assignment(char *filename, unsigned int exponent, i
                 if ((exponent == assignment.exponent) && (bit_min == assignment.bit_min) &&
                     (bit_max == assignment.bit_max)) // make final decision
                 {
-                    if (line_to_drop > current_line) line_to_drop = current_line;
+                    if (line_to_drop > current_line) {
+                        line_to_drop = current_line;
+                    }
                     break;
                 } else {
                     line_to_drop = current_line + 1; // found different assignment, can drop no earlier than next line
@@ -400,9 +434,15 @@ enum ASSIGNMENT_ERRORS clear_assignment(char *filename, unsigned int exponent, i
     f_in = NULL;
     fclose(f_out);
     f_out = NULL;
-    if (!found) return ASSIGNMENT_NOT_FOUND;
-    if (remove(filename) != 0) return CANT_RENAME;
-    if (rename(temp_file_template, filename) != 0) return CANT_RENAME;
+    if (!found) {
+        return ASSIGNMENT_NOT_FOUND;
+        }
+    if (remove(filename) != 0) {
+        return CANT_RENAME;
+    }
+    if (rename(temp_file_template, filename) != 0) {
+        return CANT_RENAME;
+    }
     return OK;
 }
 
@@ -416,10 +456,14 @@ int process_add_file(char *workfilename, char *addfilename, int *addfilesstatus,
 
     addfile = fopen_and_lock(addfilename, "r");
     if (addfile == NULL) {
-        if (verbosity >= 2) printf("not found\n");
+        if (verbosity >= 2) {
+            printf("not found\n");
+        }
         (*addfilesstatus) = 0; /* just in case addfile was detected once (but not processed) */
     } else {
-        if (verbosity >= 2) printf("found!\n");
+        if (verbosity >= 2) {
+            printf("found!\n");
+        }
         (*addfilesstatus)++;
 
         if ((*addfilesstatus) >= 2) {
@@ -458,7 +502,9 @@ int process_add_file(char *workfilename, char *addfilename, int *addfilesstatus,
             }
         } else // (*addfilesstatus) < 2
         {
-            if (verbosity >= 2) printf("  -> will wait until next check of \"%s\"\n", addfilename);
+            if (verbosity >= 2) {
+                printf("  -> will wait until next check of \"%s\"\n", addfilename);
+            }
         }
         unlock_and_fclose(addfile);
         addfile = NULL;

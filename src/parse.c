@@ -110,7 +110,18 @@ returns 1 if the assignment is within the supported bounds of mfaktc,
     return ret;
 }
 
-enum PARSE_WARNINGS { NO_WARNING = 0, END_OF_FILE, LONG_LINE, NO_FACTOR_EQUAL, INVALID_FORMAT, INVALID_DATA, BLANK_LINE, NONBLANK_LINE };
+enum PARSE_WARNINGS {
+    // clang-format off
+    NO_WARNING = 0,
+    END_OF_FILE,
+    LONG_LINE,
+    NO_FACTOR_EQUAL,
+    INVALID_FORMAT,
+    INVALID_DATA,
+    BLANK_LINE,
+    NONBLANK_LINE
+    // clang-format on
+};
 
 // note:  parse_worktodo_line() is a function that
 //	returns the text of the line, the assignment data structure, and a success code.

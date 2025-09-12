@@ -1,6 +1,6 @@
 /*
 This file is part of mfaktc.
-Copyright (C) 2009, 2010, 2011, 2012, 2013, 2014  Oliver Weihe (o.weihe@t-online.de)
+Copyright (c) 2009-2014  Oliver Weihe (o.weihe@t-online.de)
 This file has been written by Luigi Morelli (L.Morelli@mclink.it) *1
 
 mfaktc is free software: you can redistribute it and/or modify
@@ -12,7 +12,7 @@ mfaktc is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
-                                
+
 You should have received a copy of the GNU General Public License
 along with mfaktc.  If not, see <http://www.gnu.org/licenses/>.
 */
@@ -22,7 +22,7 @@ along with mfaktc.  If not, see <http://www.gnu.org/licenses/>.
 clear_assignment() after we (Luigi and myself (Oliver)) have discussed the
 interface. Luigi was so nice to write those functions so I had time to focus
 on other parts, this made early (mfaktc 0.07) worktodo parsing possible.
-For mfakc 0.15 I've completely rewritten those two functions. The rewritten
+For mfaktc 0.15, I've completely rewritten those two functions. The rewritten
 functions should be more robust against malformed input. Grab the sources of
 mfaktc 0.07-0.14 to see Luigi's code.
 */
@@ -90,18 +90,17 @@ returns 1 if the assignment is within the supported bounds of mfaktc,
     int ret = 1;
 
     // clang-format off
-  
-       if (exp < 100000 )      { ret = 0; if(verbosity >= 1)printf("WARNING: exponents < 100000 are not supported!\n"); }
-  else if (!isprime(exp))      { ret = 0; if(verbosity >= 1)printf("WARNING: exponent is not prime!\n"); }
-  else if (bit_min < 1 )       { ret = 0; if(verbosity >= 1)printf("WARNING: bit_min < 1 doesn't make sense!\n"); }
-  else if (bit_min > 94)       { ret = 0; if(verbosity >= 1)printf("WARNING: bit_min > 94 is not supported!\n"); }
-  else if (bit_min >= bit_max) { ret = 0; if(verbosity >= 1)printf("WARNING: bit_min >= bit_max doesn't make sense!\n"); }
-  else if (bit_max > 95)       { ret = 0; if(verbosity >= 1)printf("WARNING: bit_max > 95 is not supported!\n"); }
-  else if (((double)(bit_max-1) - (log((double)exp) / log(2.0F))) > 63.9F) /* this leave enough room so k_min/k_max won't overflow in tf_XX() */
-                               { ret = 0; if(verbosity >= 1)printf("WARNING: k_max > 2^63.9 is not supported!\n"); }
-    // clang-format on
+        if (exp < 100000 )      { ret = 0; if (verbosity >= 1) printf("Warning: exponents < 100000 are not currently supported.\n"); }
+   else if (!isprime(exp))      { ret = 0; if (verbosity >= 1) printf("Warning: exponent is not prime.\n"); }
+   else if (bit_min < 1 )       { ret = 0; if (verbosity >= 1) printf("Warning: bit_min < 1 doesn't make sense!\n"); }
+   else if (bit_min > 94)       { ret = 0; if (verbosity >= 1) printf("Warning: bit_min > 94 is not currently supported.\n"); }
+   else if (bit_min >= bit_max) { ret = 0; if (verbosity >= 1) printf("Warning: bit_min >= bit_max doesn't make sense!\n"); }
+   else if (bit_max > 95)       { ret = 0; if (verbosity >= 1) printf("Warning: bit_max > 95 is not currently supported.\n"); }
+   else if (((double)(bit_max-1) - (log((double)exp) / log(2.0F))) > 63.9F) /* this leave enough room so k_min/k_max won't overflow in tf_XX() */
+                                { ret = 0; if (verbosity >= 1) printf("Warning: k_max > 2^63.9 is not currently supported.\n"); }
+     // clang-format on
+     if (verbosity >= 1 && ret == 0) printf("         Assignment skipped: TF %s%u from 2^%d to 2^%d.\n", NAME_NUMBERS, exp, bit_min, bit_max);
 
-    if (verbosity >= 1 && ret == 0) printf("         Ignoring TF %s%u from 2^%d to 2^%d!\n", NAME_NUMBERS, exp, bit_min, bit_max);
 
     return ret;
 }
@@ -258,7 +257,7 @@ enum ASSIGNMENT_ERRORS get_next_assignment(char *filename, unsigned int *exponen
 
         if (END_OF_FILE == value) break;
         if (verbosity >= 1) {
-            printf("WARNING: ignoring line %u in \"%s\"! Reason: ", linecount, filename);
+            printf("Warning: ignoring line %u in \"%s\"! Reason: ", linecount, filename);
             switch (value) {
             case LONG_LINE:
                 printf("line is too long\n");
@@ -423,7 +422,7 @@ int process_add_file(char *workfilename, char *addfilename, int *addfilesstatus,
             if (workfile == NULL) {
                 fclose(addfile);
                 addfile = NULL;
-                printf("WARNING: process_add_file() could not open \"%s\"", workfilename);
+                printf("Warning: process_add_file() could not open \"%s\"", workfilename);
                 printf("         Disabled worktodo.add feature until restart of mfaktc!\n");
                 return CANT_OPEN_WORKFILE;
             } else {
@@ -433,7 +432,7 @@ int process_add_file(char *workfilename, char *addfilename, int *addfilesstatus,
                         workfile = NULL;
                         fclose(addfile);
                         addfile = NULL;
-                        printf("WARNING: process_add_file() could not write to \"%s\"", workfilename);
+                        printf("Warning: process_add_file() could not write to \"%s\"", workfilename);
                         printf("         Disabled worktodo.add feature until restart of mfaktc!\n");
                         return CANT_WRITE;
                     }
@@ -443,7 +442,7 @@ int process_add_file(char *workfilename, char *addfilename, int *addfilesstatus,
                     workfile = NULL;
                     fclose(addfile);
                     addfile = NULL;
-                    printf("WARNING: process_add_file() could not read from \"%s\"", addfilename);
+                    printf("Warning: process_add_file() could not read from \"%s\"", addfilename);
                     printf("         Disabled worktodo.add feature until restart of mfaktc!\n");
                     return CANT_READ;
                 }
@@ -459,7 +458,7 @@ int process_add_file(char *workfilename, char *addfilename, int *addfilesstatus,
         if ((*addfilesstatus) == 0) /* status was 2 before and is 0 now, try to delete addfile! */
         {
             if (remove(addfilename) != 0) {
-                printf("WARNING: process_add_file() could delete \"%s\"", addfilename);
+                printf("Warning: process_add_file() could delete \"%s\"", addfilename);
                 printf("         Disabled worktodo.add feature until restart of mfaktc!\n");
                 return CANT_RENAME;
             }

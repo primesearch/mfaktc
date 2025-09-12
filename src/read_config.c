@@ -1,7 +1,7 @@
 /*
 This file is part of mfaktc.
-Copyright (C) 2009, 2010, 2011, 2012  Oliver Weihe (o.weihe@t-online.de)
-                                      Bertram Franz (bertramf@gmx.net)
+Copyright (c) 2009-2012  Oliver Weihe (o.weihe@t-online.de)
+                         Bertram Franz (bertramf@gmx.net)
 
 mfaktc is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -85,14 +85,14 @@ int read_config(mystuff_t *mystuff)
     /*****************************************************************************/
 
     if (my_read_int("mfaktc.ini", "SievePrimes", &i)) {
-        logprintf(mystuff, "WARNING: Cannot read SievePrimes from mfaktc.ini, using default value (%d)\n", SIEVE_PRIMES_DEFAULT);
+        logprintf(mystuff, "Warning: Cannot read SievePrimes from mfaktc.ini, using default value (%d)\n", SIEVE_PRIMES_DEFAULT);
         i = SIEVE_PRIMES_DEFAULT;
     } else {
         if (i > SIEVE_PRIMES_MAX) {
-            logprintf(mystuff, "WARNING: Read SievePrimes=%d from mfaktc.ini, using max value (%d)\n", i, SIEVE_PRIMES_MAX);
+            logprintf(mystuff, "Warning: Read SievePrimes=%d from mfaktc.ini, using max value (%d)\n", i, SIEVE_PRIMES_MAX);
             i = SIEVE_PRIMES_MAX;
         } else if (i < SIEVE_PRIMES_MIN) {
-            logprintf(mystuff, "WARNING: Read SievePrimes=%d from mfaktc.ini, using min value (%d)\n", i, SIEVE_PRIMES_MIN);
+            logprintf(mystuff, "Warning: Read SievePrimes=%d from mfaktc.ini, using min value (%d)\n", i, SIEVE_PRIMES_MIN);
             i = SIEVE_PRIMES_MIN;
         }
     }
@@ -102,10 +102,10 @@ int read_config(mystuff_t *mystuff)
     /*****************************************************************************/
 
     if (my_read_int("mfaktc.ini", "SievePrimesAdjust", &i)) {
-        logprintf(mystuff, "WARNING: Cannot read SievePrimesAdjust from mfaktc.ini, using default value (1)\n");
+        logprintf(mystuff, "Warning: Cannot read SievePrimesAdjust from mfaktc.ini, using default value (1)\n");
         i = 1;
     } else if (i != 0 && i != 1) {
-        logprintf(mystuff, "WARNING: SievePrimesAdjust must be 0 or 1, using default value (1)\n");
+        logprintf(mystuff, "Warning: SievePrimesAdjust must be 0 or 1, using default value (1)\n");
         i = 1;
     }
     if (mystuff->verbosity >= 1) logprintf(mystuff, "  SievePrimesAdjust         %d\n", i);
@@ -114,11 +114,11 @@ int read_config(mystuff_t *mystuff)
     /*****************************************************************************/
 
     if (my_read_int("mfaktc.ini", "SievePrimesMin", &i)) {
-        logprintf(mystuff, "WARNING: Cannot read SievePrimesMin from mfaktc.ini, using min value (%d)\n", SIEVE_PRIMES_MIN);
+        logprintf(mystuff, "Warning: Cannot read SievePrimesMin from mfaktc.ini, using min value (%d)\n", SIEVE_PRIMES_MIN);
         i = SIEVE_PRIMES_MIN;
     } else {
         if (i < SIEVE_PRIMES_MIN || i >= SIEVE_PRIMES_MAX || i > mystuff->sieve_primes) {
-            logprintf(mystuff, "WARNING: Read SievePrimesMin=%d from mfaktc.ini, using min value (%d)\n", i, SIEVE_PRIMES_MIN);
+            logprintf(mystuff, "Warning: Read SievePrimesMin=%d from mfaktc.ini, using min value (%d)\n", i, SIEVE_PRIMES_MIN);
             i = SIEVE_PRIMES_MIN;
         }
     }
@@ -128,11 +128,11 @@ int read_config(mystuff_t *mystuff)
     /*****************************************************************************/
 
     if (my_read_int("mfaktc.ini", "SievePrimesMax", &i)) {
-        logprintf(mystuff, "WARNING: Cannot read SievePrimesMax from mfaktc.ini, using max value (%d)\n", SIEVE_PRIMES_MAX);
+        logprintf(mystuff, "Warning: Cannot read SievePrimesMax from mfaktc.ini, using max value (%d)\n", SIEVE_PRIMES_MAX);
         i = SIEVE_PRIMES_MAX;
     } else {
         if (i <= SIEVE_PRIMES_MIN || i > SIEVE_PRIMES_MAX || i < mystuff->sieve_primes) {
-            logprintf(mystuff, "WARNING: Read SievePrimesMax=%d from mfaktc.ini, using max value (%d)\n", i, SIEVE_PRIMES_MAX);
+            logprintf(mystuff, "Warning: Read SievePrimesMax=%d from mfaktc.ini, using max value (%d)\n", i, SIEVE_PRIMES_MAX);
             i = SIEVE_PRIMES_MAX;
         }
     }
@@ -142,14 +142,14 @@ int read_config(mystuff_t *mystuff)
     /*****************************************************************************/
 
     if (my_read_int("mfaktc.ini", "NumStreams", &i)) {
-        logprintf(mystuff, "WARNING: Cannot read NumStreams from mfaktc.ini, using default value (%d)\n", NUM_STREAMS_DEFAULT);
+        logprintf(mystuff, "Warning: Cannot read NumStreams from mfaktc.ini, using default value (%d)\n", NUM_STREAMS_DEFAULT);
         i = NUM_STREAMS_DEFAULT;
     } else {
         if (i > NUM_STREAMS_MAX) {
-            logprintf(mystuff, "WARNING: Read NumStreams=%d from mfaktc.ini, using max value (%d)\n", i, NUM_STREAMS_MAX);
+            logprintf(mystuff, "Warning: Read NumStreams=%d from mfaktc.ini, using max value (%d)\n", i, NUM_STREAMS_MAX);
             i = NUM_STREAMS_MAX;
         } else if (i < NUM_STREAMS_MIN) {
-            logprintf(mystuff, "WARNING: Read NumStreams=%d from mfaktc.ini, using min value (%d)\n", i, NUM_STREAMS_MIN);
+            logprintf(mystuff, "Warning: Read NumStreams=%d from mfaktc.ini, using min value (%d)\n", i, NUM_STREAMS_MIN);
             i = NUM_STREAMS_MIN;
         }
     }
@@ -159,14 +159,14 @@ int read_config(mystuff_t *mystuff)
     /*****************************************************************************/
 
     if (my_read_int("mfaktc.ini", "CPUStreams", &i)) {
-        logprintf(mystuff, "WARNING: Cannot read CPUStreams from mfaktc.ini, using default value (%d)\n", CPU_STREAMS_DEFAULT);
+        logprintf(mystuff, "Warning: Cannot read CPUStreams from mfaktc.ini, using default value (%d)\n", CPU_STREAMS_DEFAULT);
         i = CPU_STREAMS_DEFAULT;
     } else {
         if (i > CPU_STREAMS_MAX) {
-            logprintf(mystuff, "WARNING: Read CPUStreams=%d from mfaktc.ini, using max value (%d)\n", i, CPU_STREAMS_MAX);
+            logprintf(mystuff, "Warning: Read CPUStreams=%d from mfaktc.ini, using max value (%d)\n", i, CPU_STREAMS_MAX);
             i = CPU_STREAMS_MAX;
         } else if (i < CPU_STREAMS_MIN) {
-            logprintf(mystuff, "WARNING: Read CPUStreams=%d from mfaktc.ini, using min value (%d)\n", i, CPU_STREAMS_MIN);
+            logprintf(mystuff, "Warning: Read CPUStreams=%d from mfaktc.ini, using min value (%d)\n", i, CPU_STREAMS_MIN);
             i = CPU_STREAMS_MIN;
         }
     }
@@ -176,14 +176,14 @@ int read_config(mystuff_t *mystuff)
     /*****************************************************************************/
 
     if (my_read_int("mfaktc.ini", "GridSize", &i)) {
-        logprintf(mystuff, "WARNING: Cannot read GridSize from mfaktc.ini, using default value (3)\n");
+        logprintf(mystuff, "Warning: Cannot read GridSize from mfaktc.ini, using default value (3)\n");
         i = 3;
     } else {
         if (i > 3) {
-            logprintf(mystuff, "WARNING: Read GridSize=%d from mfaktc.ini, using max value (3)\n", i);
+            logprintf(mystuff, "Warning: Read GridSize=%d from mfaktc.ini, using max value (3)\n", i);
             i = 3;
         } else if (i < 0) {
-            logprintf(mystuff, "WARNING: Read GridSize=%d from mfaktc.ini, using min value (0)\n", i);
+            logprintf(mystuff, "Warning: Read GridSize=%d from mfaktc.ini, using min value (0)\n", i);
             i = 0;
         }
     }
@@ -199,11 +199,11 @@ int read_config(mystuff_t *mystuff)
 
     /*****************************************************************************/
     if (my_read_int("mfaktc.ini", "SieveOnGPU", &i)) {
-        logprintf(mystuff, "WARNING: Cannot read SieveOnGPU from mfaktc.ini, enabled by default\n");
+        logprintf(mystuff, "Warning: Cannot read SieveOnGPU from mfaktc.ini, enabled by default\n");
         i = 1;
     } else {
         if (i < 0 || i > 1) {
-            logprintf(mystuff, "WARNING: Read SieveOnGPU=%d from mfaktc.ini, enabled by default\n", i);
+            logprintf(mystuff, "Warning: Read SieveOnGPU=%d from mfaktc.ini, enabled by default\n", i);
             i = 1;
         }
     }
@@ -216,14 +216,14 @@ int read_config(mystuff_t *mystuff)
         /*****************************************************************************/
 
         if (my_read_int("mfaktc.ini", "GPUSievePrimes", &i)) {
-            logprintf(mystuff, "WARNING: Cannot read GPUSievePrimes from mfaktc.ini, using default value (%d)\n", GPU_SIEVE_PRIMES_DEFAULT);
+            logprintf(mystuff, "Warning: Cannot read GPUSievePrimes from mfaktc.ini, using default value (%d)\n", GPU_SIEVE_PRIMES_DEFAULT);
             i = GPU_SIEVE_PRIMES_DEFAULT;
         } else {
             if (i > GPU_SIEVE_PRIMES_MAX) {
-                logprintf(mystuff, "WARNING: Read GPUSievePrimes=%d from mfaktc.ini, using max value (%d)\n", i, GPU_SIEVE_PRIMES_MAX);
+                logprintf(mystuff, "Warning: Read GPUSievePrimes=%d from mfaktc.ini, using max value (%d)\n", i, GPU_SIEVE_PRIMES_MAX);
                 i = GPU_SIEVE_PRIMES_MAX;
             } else if (i < GPU_SIEVE_PRIMES_MIN) {
-                logprintf(mystuff, "WARNING: Read GPUSievePrimes=%d from mfaktc.ini, using min value (%d)\n", i, GPU_SIEVE_PRIMES_MIN);
+                logprintf(mystuff, "Warning: Read GPUSievePrimes=%d from mfaktc.ini, using min value (%d)\n", i, GPU_SIEVE_PRIMES_MIN);
                 i = GPU_SIEVE_PRIMES_MIN;
             }
         }
@@ -233,14 +233,14 @@ int read_config(mystuff_t *mystuff)
         /*****************************************************************************/
 
         if (my_read_int("mfaktc.ini", "GPUSieveSize", &i)) {
-            logprintf(mystuff, "WARNING: Cannot read GPUSieveSize from mfaktc.ini, using default value (%d)\n", GPU_SIEVE_SIZE_DEFAULT);
+            logprintf(mystuff, "Warning: Cannot read GPUSieveSize from mfaktc.ini, using default value (%d)\n", GPU_SIEVE_SIZE_DEFAULT);
             i = GPU_SIEVE_SIZE_DEFAULT;
         } else {
             if (i > GPU_SIEVE_SIZE_MAX) {
-                logprintf(mystuff, "WARNING: Read GPUSieveSize=%d from mfaktc.ini, using max value (%d)\n", i, GPU_SIEVE_SIZE_MAX);
+                logprintf(mystuff, "Warning: Read GPUSieveSize=%d from mfaktc.ini, using max value (%d)\n", i, GPU_SIEVE_SIZE_MAX);
                 i = GPU_SIEVE_SIZE_MAX;
             } else if (i < GPU_SIEVE_SIZE_MIN) {
-                logprintf(mystuff, "WARNING: Read GPUSieveSize=%d from mfaktc.ini, using min value (%d)\n", i, GPU_SIEVE_SIZE_MIN);
+                logprintf(mystuff, "Warning: Read GPUSieveSize=%d from mfaktc.ini, using min value (%d)\n", i, GPU_SIEVE_SIZE_MIN);
                 i = GPU_SIEVE_SIZE_MIN;
             }
         }
@@ -250,27 +250,27 @@ int read_config(mystuff_t *mystuff)
         /*****************************************************************************/
 
         if (my_read_int("mfaktc.ini", "GPUSieveProcessSize", &i)) {
-            logprintf(mystuff, "WARNING: Cannot read GPUSieveProcessSize from mfaktc.ini, using default value (%d)\n",
+            logprintf(mystuff, "Warning: Cannot read GPUSieveProcessSize from mfaktc.ini, using default value (%d)\n",
                       GPU_SIEVE_PROCESS_SIZE_DEFAULT);
             i = GPU_SIEVE_PROCESS_SIZE_DEFAULT;
         } else {
             if (i % 8 != 0) {
-                logprintf(mystuff, "WARNING: GPUSieveProcessSize must be a multiple of 8\n");
+                logprintf(mystuff, "Warning: GPUSieveProcessSize must be a multiple of 8\n");
                 i &= 0xFFFFFFF0;
                 if (i == 0) i = 8;
                 logprintf(mystuff, "         --> changed GPUSieveProcessSize to %d\n", i);
             }
             if (i > GPU_SIEVE_PROCESS_SIZE_MAX) {
-                logprintf(mystuff, "WARNING: Read GPUSieveProcessSize=%d from mfaktc.ini, using max value (%d)\n", i,
+                logprintf(mystuff, "Warning: Read GPUSieveProcessSize=%d from mfaktc.ini, using max value (%d)\n", i,
                           GPU_SIEVE_PROCESS_SIZE_MAX);
                 i = GPU_SIEVE_PROCESS_SIZE_MAX;
             } else if (i < GPU_SIEVE_PROCESS_SIZE_MIN) {
-                logprintf(mystuff, "WARNING: Read GPUSieveProcessSize=%d from mfaktc.ini, using min value (%d)\n", i,
+                logprintf(mystuff, "Warning: Read GPUSieveProcessSize=%d from mfaktc.ini, using min value (%d)\n", i,
                           GPU_SIEVE_PROCESS_SIZE_MIN);
                 i = GPU_SIEVE_PROCESS_SIZE_MIN;
             }
             if (mystuff->gpu_sieve_size % (i * 1024) != 0) {
-                logprintf(mystuff, "WARNING: GPUSieveSize must be a multiple of GPUSieveProcessSize, using default value (%d)!\n",
+                logprintf(mystuff, "Warning: GPUSieveSize must be a multiple of GPUSieveProcessSize, using default value (%d)!\n",
                           GPU_SIEVE_PROCESS_SIZE_DEFAULT);
                 i = GPU_SIEVE_PROCESS_SIZE_DEFAULT;
             }
@@ -282,10 +282,10 @@ int read_config(mystuff_t *mystuff)
     /*****************************************************************************/
 
     if (my_read_int("mfaktc.ini", "Checkpoints", &i)) {
-        logprintf(mystuff, "WARNING: Cannot read Checkpoints from mfaktc.ini, enabled by default\n");
+        logprintf(mystuff, "Warning: Cannot read Checkpoints from mfaktc.ini, enabled by default\n");
         i = 1;
     } else if (i != 0 && i != 1) {
-        logprintf(mystuff, "WARNING: Checkpoints must be 0 or 1, enabled by default\n");
+        logprintf(mystuff, "Warning: Checkpoints must be 0 or 1, enabled by default\n");
         i = 1;
     }
     if (mystuff->verbosity >= 1) {
@@ -299,15 +299,15 @@ int read_config(mystuff_t *mystuff)
     /*****************************************************************************/
 
     if (my_read_int("mfaktc.ini", "CheckpointDelay", &i)) {
-        logprintf(mystuff, "WARNING: Cannot read CheckpointDelay from mfaktc.ini, set to 30 s by default\n");
+        logprintf(mystuff, "Warning: Cannot read CheckpointDelay from mfaktc.ini, set to 30 s by default\n");
         i = 30;
     }
     if (i > 900) {
-        logprintf(mystuff, "WARNING: CheckpointDelay cannot exceed 900 s\n");
+        logprintf(mystuff, "Warning: CheckpointDelay cannot exceed 900 s\n");
         i = 900;
     }
     if (i < 0) {
-        logprintf(mystuff, "WARNING: CheckpointDelay must be at least 0 s\n");
+        logprintf(mystuff, "Warning: CheckpointDelay must be at least 0 s\n");
         i = 0;
     }
     if (mystuff->verbosity >= 1) logprintf(mystuff, "  CheckpointDelay           %d s\n", i);
@@ -316,15 +316,15 @@ int read_config(mystuff_t *mystuff)
     /*****************************************************************************/
 
     if (my_read_int("mfaktc.ini", "WorkFileAddDelay", &i)) {
-        logprintf(mystuff, "WARNING: Cannot read WorkFileAddDelay from mfaktc.ini, set to 600 s by default\n");
+        logprintf(mystuff, "Warning: Cannot read WorkFileAddDelay from mfaktc.ini, set to 600 s by default\n");
         i = 600;
     }
     if (i > 3600) {
-        logprintf(mystuff, "WARNING: WorkFileAddDelay cannot exceed 3600 s\n");
+        logprintf(mystuff, "Warning: WorkFileAddDelay cannot exceed 3600 s\n");
         i = 3600;
     }
     if (i != 0 && i < 30) {
-        logprintf(mystuff, "WARNING: WorkFileAddDelay must be at least 30 s\n");
+        logprintf(mystuff, "Warning: WorkFileAddDelay must be at least 30 s\n");
         i = 30;
     }
     if (mystuff->verbosity >= 1) {
@@ -338,10 +338,10 @@ int read_config(mystuff_t *mystuff)
     /*****************************************************************************/
 
     if (my_read_int("mfaktc.ini", "Stages", &i)) {
-        logprintf(mystuff, "WARNING: Cannot read Stages from mfaktc.ini, enabled by default\n");
+        logprintf(mystuff, "Warning: Cannot read Stages from mfaktc.ini, enabled by default\n");
         i = 1;
     } else if (i != 0 && i != 1) {
-        logprintf(mystuff, "WARNING: Stages must be 0 or 1, enabled by default\n");
+        logprintf(mystuff, "Warning: Stages must be 0 or 1, enabled by default\n");
         i = 1;
     }
     if (mystuff->verbosity >= 1) {
@@ -355,10 +355,10 @@ int read_config(mystuff_t *mystuff)
     /*****************************************************************************/
 
     if (my_read_int("mfaktc.ini", "StopAfterFactor", &i)) {
-        logprintf(mystuff, "WARNING: Cannot read StopAfterFactor from mfaktc.ini, set to 1 by default\n");
+        logprintf(mystuff, "Warning: Cannot read StopAfterFactor from mfaktc.ini, set to 1 by default\n");
         i = 1;
     } else if ((i < 0) || (i > 2)) {
-        logprintf(mystuff, "WARNING: StopAfterFactor must be 0, 1 or 2, set to 1 by default\n");
+        logprintf(mystuff, "Warning: StopAfterFactor must be 0, 1 or 2, set to 1 by default\n");
         i = 1;
     }
     if (mystuff->verbosity >= 1) {
@@ -374,10 +374,10 @@ int read_config(mystuff_t *mystuff)
     /*****************************************************************************/
 
     if (my_read_int("mfaktc.ini", "PrintMode", &i)) {
-        logprintf(mystuff, "WARNING: Cannot read PrintMode from mfaktc.ini, set to 0 by default\n");
+        logprintf(mystuff, "Warning: Cannot read PrintMode from mfaktc.ini, set to 0 by default\n");
         i = 0;
     } else if (i != 0 && i != 1) {
-        logprintf(mystuff, "WARNING: PrintMode must be 0 or 1, set to 0 by default\n");
+        logprintf(mystuff, "Warning: PrintMode must be 0 or 1, set to 0 by default\n");
         i = 0;
     }
     if (mystuff->verbosity >= 1) {
@@ -391,10 +391,10 @@ int read_config(mystuff_t *mystuff)
     /*****************************************************************************/
 
     if (my_read_int("mfaktc.ini", "Logging", &i)) {
-        logprintf(mystuff, "WARNING: Cannot read Logging from mfaktc.ini, set to 0 by default\n");
+        logprintf(mystuff, "Warning: Cannot read Logging from mfaktc.ini, set to 0 by default\n");
         i = 0;
     } else if (i != 0 && i != 1) {
-        logprintf(mystuff, "WARNING: Logging must be 0 or 1, set to 0 by default\n");
+        logprintf(mystuff, "Warning: Logging must be 0 or 1, set to 0 by default\n");
         i = 0;
     }
     if (mystuff->verbosity >= 1) {
@@ -407,7 +407,7 @@ int read_config(mystuff_t *mystuff)
     if (mystuff->logging == 1 && mystuff->logfileptr == NULL) {
         mystuff->logfileptr = fopen(mystuff->logfile, "a");
         if (mystuff->logfileptr == NULL) {
-            logprintf(mystuff, "WARNING: Cannot open %s for appending, error: %d", mystuff->logfile, errno);
+            logprintf(mystuff, "Warning: Cannot open %s for appending, error: %d", mystuff->logfile, errno);
         }
     }
 
@@ -438,7 +438,7 @@ int read_config(mystuff_t *mystuff)
     if (my_read_string("mfaktc.ini", "ProgressHeader", mystuff->stats.progressheader, 250)) {
         //    sprintf(mystuff->stats.progressheader, "    class | candidates |    time |    ETA | avg. rate | SievePrimes | CPU wait");
         sprintf(mystuff->stats.progressheader, "Date   Time     Pct    ETA | Exponent    Bits | GHz-d/day    Sieve     Wait");
-        logprintf(mystuff, "WARNING, no ProgressHeader specified in mfaktc.ini, using default\n");
+        logprintf(mystuff, "Warning: no ProgressHeader specified in mfaktc.ini, using default\n");
     }
     if (mystuff->verbosity >= 2) logprintf(mystuff, "  ProgressHeader            \"%s\"\n", mystuff->stats.progressheader);
 
@@ -449,17 +449,17 @@ int read_config(mystuff_t *mystuff)
     if (my_read_string("mfaktc.ini", "ProgressFormat", mystuff->stats.progressformat, 250)) {
         //    sprintf(mystuff->stats.progressformat, "%%C/%4d |    %%n | %%ts | %%e | %%rM/s |     %%s |  %%W%%%%", NUM_CLASSES);
         sprintf(mystuff->stats.progressformat, "%%d %%T  %%p %%e | %%M %%l-%%u |   %%g  %%s  %%W%%%%");
-        logprintf(mystuff, "WARNING, no ProgressFormat specified in mfaktc.ini, using default\n");
+        logprintf(mystuff, "Warning: no ProgressFormat specified in mfaktc.ini, using default\n");
     }
     if (mystuff->verbosity >= 2) logprintf(mystuff, "  ProgressFormat            \"%s\"\n", mystuff->stats.progressformat);
 
     /*****************************************************************************/
 
     if (my_read_int("mfaktc.ini", "AllowSleep", &i)) {
-        logprintf(mystuff, "WARNING: Cannot read AllowSleep from mfaktc.ini, set to 0 by default\n");
+        logprintf(mystuff, "Warning: Cannot read AllowSleep from mfaktc.ini, set to 0 by default\n");
         i = 0;
     } else if (i < 0 || i > 1) {
-        logprintf(mystuff, "WARNING: AllowSleep must be 0 or 1, set to 0 by default\n");
+        logprintf(mystuff, "Warning: AllowSleep must be 0 or 1, set to 0 by default\n");
         i = 0;
     }
     if (mystuff->verbosity >= 1) {
@@ -473,10 +473,10 @@ int read_config(mystuff_t *mystuff)
     /*****************************************************************************/
 
     if (my_read_int("mfaktc.ini", "TimeStampInResults", &i)) {
-        logprintf(mystuff, "WARNING: Cannot read TimeStampInResults from mfaktc.ini, set to 0 by default\n");
+        logprintf(mystuff, "Warning: Cannot read TimeStampInResults from mfaktc.ini, set to 0 by default\n");
         i = 0;
     } else if (i < 0 || i > 1) {
-        logprintf(mystuff, "WARNING: TimeStampInResults must be 0 or 1, set to 0 by default\n");
+        logprintf(mystuff, "Warning: TimeStampInResults must be 0 or 1, set to 0 by default\n");
         i = 0;
     }
     if (mystuff->verbosity >= 1) {
@@ -488,10 +488,10 @@ int read_config(mystuff_t *mystuff)
     mystuff->print_timestamp = i;
 
     if (my_read_int("mfaktc.ini", "TimestampOnSameLine", &i)) {
-        logprintf(mystuff, "WARNING: Cannot read TimestampOnSameLine from mfaktc.ini, set to 0 by default\n");
+        logprintf(mystuff, "Warning: Cannot read TimestampOnSameLine from mfaktc.ini, set to 0 by default\n");
         i = 0;
     } else if (i < 0 || i > 1) {
-        logprintf(mystuff, "WARNING: TimestampOnSameLine must be 0 or 1, set to 0 by default\n");
+        logprintf(mystuff, "Warning: TimestampOnSameLine must be 0 or 1, set to 0 by default\n");
         i = 0;
     }
     if (mystuff->verbosity >= 1) {
@@ -503,10 +503,10 @@ int read_config(mystuff_t *mystuff)
     mystuff->timestamp_on_same_line = i;
 
     if (my_read_int("mfaktc.ini", "ResultsFileTimestampInterval", &i)) {
-        logprintf(mystuff, "WARNING: Cannot read ResultsFileTimestampInterval from mfaktc.ini, set to 1 by default\n");
+        logprintf(mystuff, "Warning: Cannot read ResultsFileTimestampInterval from mfaktc.ini, set to 1 by default\n");
         i = 1;
     } else if (i < 0 || i > 86400) {
-        logprintf(mystuff, "WARNING: ResultsFileTimestampInterval must be between 0 and 86400, set to 1 by default\n");
+        logprintf(mystuff, "Warning: ResultsFileTimestampInterval must be between 0 and 86400, set to 1 by default\n");
         i = 1;
     }
     if (mystuff->verbosity >= 1 && mystuff->print_timestamp == 1 && mystuff->timestamp_on_same_line == 0) {

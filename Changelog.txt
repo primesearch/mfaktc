@@ -7,6 +7,9 @@ new features:
   - ResultsFileTimestampInterval configures how many seconds must pass before
     mfaktc records a new timestamp, similar to Prime95
 
+enhancements:
+- improved program output in various places
+
 version 0.23.6
 ==============================
 - includes changes backported from mfaktc 0.24.0

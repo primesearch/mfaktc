@@ -78,7 +78,7 @@ code path */
  complies with the semantic versioning scheme: https://semver.org
 
  Otherwise, the automated builds could fail in GitHub Actions.
- 
+
  Do not update this value until a new release is ready to be created. Please
  discuss with the community before making changes to version numbers!
  */
@@ -184,6 +184,6 @@ The following lines define the min, default and max value.
 #define MAX_DEZ_96_STRING_LENGTH       30 // max value of int96 (unsigned) has 29 digits + 1 byte for NUL
 #define MAX_DEZ_192_STRING_LENGTH      59 // max value of int192 (unsigned) has 58 digits + 1 byte for NUL
 
-#define GHZDAYS_MAGIC_TF_TOP           0.016968 // magic constant for TF to 65-bit and above
-#define GHZDAYS_MAGIC_TF_MID           0.017832 // magic constant for 63-and 64-bit
-#define GHZDAYS_MAGIC_TF_BOT           0.011160 // magic constant for 62-bit and below
+#define GHZDAYS_MAGIC_TF_TOP           0.016968 // magic constant for TF to 65 bits and above
+#define GHZDAYS_MAGIC_TF_MID           0.017832 // magic constant for 63 and 64 bits
+#define GHZDAYS_MAGIC_TF_BOT           0.011160 // magic constant for 62 bits and below

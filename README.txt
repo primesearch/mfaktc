@@ -2,7 +2,7 @@
 # mfaktc README #
 #################
 
-Content
+Table of contents
 
 0   About mfaktc
 1   Supported hardware
@@ -88,8 +88,11 @@ code runs about 33% faster compared to 32 bits.
 
 It should be noted that each CUDA version only supports specific compute
 capabilities. You may have to enable or disable certain flags in the makefile
-before compiling mfaktc. Use this table to determine which compute capabilities
-are supported: https://en.wikipedia.org/wiki/CUDA#GPUs_supported
+before compiling mfaktc, or nvcc may exit due to an "unsupported gpu
+architecture" error.
+
+Use this table to determine which compute capabilities are supported:
+https://en.wikipedia.org/wiki/CUDA#GPUs_supported
 
 #############
 # 2.1 Linux #
@@ -103,10 +106,7 @@ Steps:
 - optional: run "make clean" to remove any build artifacts
 - make
 
-nvcc may exit due to an "unsupported gpu architecture" error. If this happens,
-simply comment out the corresponding "NVCCFLAGS += ..." line in the makefile.
-You may have to do this more than once. Otherwise, the binary "mfaktc" should
-appear in the parent folder.
+If compilation succeeds, the binary "mfaktc" should appear in the root folder.
 
 mfaktc was originally compiled with:
 - OpenSUSE 12.2 x86_64
@@ -132,7 +132,7 @@ and Visual Studio versions.
 
 You will need a GNU-compatible version of make as the makefiles are not
 compatible with nmake. GnuWin32 provides a native port for 32-bit Windows:
-http://gnuwin32.sourceforge.net/packages/make.htm
+https://gnuwin32.sourceforge.net/packages/make.htm
 
 You can add C:\Program Files (x86)\GnuWin32\bin to the Path system variable so
 that make is always available.
@@ -197,8 +197,12 @@ to 71 bits.
 # 3.2 Windows #
 ###############
 
-mfaktc works very similarly on Windows. See the above instructions, but run
-"mfaktc" without the "./" to launch the executable.
+mfaktc works very similarly on Windows. You can just run "mfaktc-win-64" or
+"mfaktc-win-632" in Command Prompt (cmd.exe) to launch the executable, or
+simply double-click it in File Explorer.
+
+However, you do need to prepend the executable name with ".\" in PowerShell or
+Windows Terminal.
 
 
 ########################################
@@ -238,6 +242,9 @@ Using the GPU to 72 website:
 Using the MISFIT application:
     MISFIT is a Windows tool that automatically requests assignments and
     submits results. You can get it here: https://mersenneforum.org/misfit
+
+    Important note: this program has reached end-of-life and is no longer
+    supported. It is highly recommended to use AutoPrimeNet instead.
 
 From mersenne.ca:
     James Heinrich's website mersenne.ca offers assignments for exponents up
@@ -343,7 +350,7 @@ Submitting results:
 # 6 Tuning #
 ############
 
-You can find additional settings in the mfakto.ini file. Read it carefully
+You can find additional settings in the mfaktc.ini file. Read it carefully
 before making changes. ;-)
 
 

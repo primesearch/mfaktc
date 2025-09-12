@@ -181,14 +181,23 @@ void print_dez192(int192 a, char *buf)
     }
 }
 
-void print_timestamp(FILE *outfile)
+void print_timestamp(mystuff_t *mystuff, FILE *outfile)
 {
     char *ptr;
     const time_t now = time(NULL);
+    static time_t previous_time = 0;
 
     ptr     = asctime(gmtime(&now));
     ptr[24] = '\0'; // cut off the newline
-    fprintf(outfile, "[%s]\n", ptr);
+
+    if (mystuff->timestamp_on_same_line == 1) {
+        fprintf(outfile, "[%s] ", ptr);
+    } else {
+        if (previous_time + mystuff->timestamp_interval < now) {
+            fprintf(outfile, "[%s]\n", ptr);
+        }
+    }
+    previous_time = now;
 }
 
 void print_status_line(mystuff_t *mystuff)
@@ -454,7 +463,7 @@ void print_result_line(mystuff_t *mystuff, int factorsfound)
 #ifndef WAGSTAFF
         jsonresultfile = fopen(mystuff->jsonresultfile, "a");
 #endif
-        if (mystuff->print_timestamp == 1) print_timestamp(txtresultfile);
+        if (mystuff->print_timestamp == 1) print_timestamp(mystuff, txtresultfile);
     }
 #ifndef MORE_CLASSES
     bool partialresult = (mystuff->mode == MODE_NORMAL) && (mystuff->stats.class_counter < 96);
@@ -503,7 +512,7 @@ void print_factor(mystuff_t *mystuff, int factor_number, char *factor)
 
     if (mystuff->mode == MODE_NORMAL) {
         resultfile = fopen(mystuff->resultfile, "a");
-        if (mystuff->print_timestamp == 1 && factor_number == 0) print_timestamp(resultfile);
+        if (mystuff->print_timestamp == 1 && factor_number == 0) print_timestamp(mystuff, resultfile);
     }
 
     if (factor_number < 10) {

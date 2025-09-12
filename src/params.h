@@ -78,11 +78,12 @@ code path */
  complies with the semantic versioning scheme: https://semver.org
 
  Otherwise, the automated builds could fail in GitHub Actions.
-
- Please discuss with the community before making changes to version numbers!
+ 
+ Do not update this value until a new release is ready to be created. Please
+ discuss with the community before making changes to version numbers!
  */
 
-#define MFAKTC_VERSION "0.23.7"
+#define MFAKTC_VERSION "0.23.6"
 
 /*
 THREADS_PER_BLOCK has a hardware limit, 512 on GPUs with compute capability

@@ -1,5 +1,7 @@
 version 0.23.7
 ==============================
+- includes changes backported from mfaktc 0.24.0
+
 new features:
 - added two new configuration options
   - TimestampOnSameLine allows the timestamp to be printed on the same line

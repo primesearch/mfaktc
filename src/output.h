@@ -30,6 +30,7 @@ void print_dez192(int192 a, char *buf);
 void print_status_line(mystuff_t *mystuff);
 void print_result_line(mystuff_t *mystuff, int factorsfound);
 void print_factor(mystuff_t *mystuff, int factor_number, char *factor);
+void print_timestamp(mystuff_t *mystuff, FILE *outfile);
 double primenet_ghzdays(unsigned int exp, int bit_min, int bit_max);
 #if defined(NVCC_EXTERN) && !defined(_MSC_VER)
 }

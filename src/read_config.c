@@ -211,7 +211,7 @@ int read_config(mystuff_t *mystuff)
     mystuff->gpu_sieving = i;
 
     if (mystuff->gpu_sieving) {
-        if (mystuff->verbosity == 1) logprintf(mystuff, "  GPU Sieving               enabled\n");
+        if (mystuff->verbosity == 1) logprintf(mystuff, "  GPU sieving               enabled\n");
 
         /*****************************************************************************/
 
@@ -486,6 +486,33 @@ int read_config(mystuff_t *mystuff)
             logprintf(mystuff, "  TimeStampInResults        yes\n");
     }
     mystuff->print_timestamp = i;
+
+    if (my_read_int("mfaktc.ini", "TimestampOnSameLine", &i)) {
+        logprintf(mystuff, "WARNING: Cannot read TimestampOnSameLine from mfaktc.ini, set to 0 by default\n");
+        i = 0;
+    } else if (i < 0 || i > 1) {
+        logprintf(mystuff, "WARNING: TimestampOnSameLine must be 0 or 1, set to 0 by default\n");
+        i = 0;
+    }
+    if (mystuff->verbosity >= 1) {
+        if (i == 0)
+            logprintf(mystuff, "  TimestampOnSameLine       no\n");
+        else
+            logprintf(mystuff, "  TimestampOnSameLine       yes\n");
+    }
+    mystuff->timestamp_on_same_line = i;
+
+    if (my_read_int("mfaktc.ini", "ResultsFileTimestampInterval", &i)) {
+        logprintf(mystuff, "WARNING: Cannot read ResultsFileTimestampInterval from mfaktc.ini, set to 1 by default\n");
+        i = 1;
+    } else if (i < 0 || i > 86400) {
+        logprintf(mystuff, "WARNING: ResultsFileTimestampInterval must be between 0 and 86400, set to 1 by default\n");
+        i = 1;
+    }
+    if (mystuff->verbosity >= 1 && mystuff->print_timestamp == 1 && mystuff->timestamp_on_same_line == 0) {
+        logprintf(mystuff, "  timestamp interval        %d s\n", i);
+    }
+    mystuff->timestamp_interval = i;
 
     return 0;
 }

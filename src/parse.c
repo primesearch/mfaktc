@@ -67,19 +67,16 @@ mfaktc 0.07-0.14 to see Luigi's code.
 #include "params.h"
 #include "parse.h"
 
-int isprime(unsigned int n)
 /*
 returns
 0 if n is composite
 1 if n is prime
 */
+int isprime(unsigned int n)
 {
     unsigned int i;
 
-    if (n <= 1) {
-        return 0;
-    }
-    if (n > 2 && n % 2 == 0) {
+    if (n <= 1 || (n > 2 && n % 2 == 0)) {
         return 0;
     }
 

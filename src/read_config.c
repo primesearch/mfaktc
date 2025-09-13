@@ -33,15 +33,21 @@ int my_read_int(char *inifile, char *name, int *value)
     int found = 0;
 
     in = fopen(inifile, "r");
-    if (!in) return 1;
+    if (!in) {
+        return 1;
+    }
     while (fgets(buf, 100, in) && !found) {
         if (!strncmp(buf, name, strlen(name)) && buf[strlen(name)] == '=') {
-            if (sscanf(&(buf[strlen(name) + 1]), "%d", value) == 1) found = 1;
+            if (sscanf(&(buf[strlen(name) + 1]), "%d", value) == 1) {
+                found = 1;
+            }
         }
     }
     fclose(in);
     in = NULL;
-    if (found) return 0;
+    if (found) {
+        return 0;
+    }
     return 1;
 }
 
@@ -52,25 +58,32 @@ int my_read_string(char *inifile, char *name, char *string, unsigned int len)
     unsigned int found = 0;
     unsigned int idx   = strlen(name);
 
-    if (len > 250) len = 250;
+    if (len > 250) {
+        len = 250;
+    }
 
     in = fopen(inifile, "r");
-    if (!in) return 1;
+    if (!in) {
+        return 1;
+    }
     while (fgets(buf, 250, in) && !found) {
         if (!strncmp(buf, name, idx) && buf[idx] == '=') {
             found = strlen(buf + idx + 1);
             found = (len > found ? found : len) - 1;
             if (found) {
                 strncpy(string, buf + idx + 1, found);
-                if (string[found - 1] == '\r')
-                    found--; //remove '\r' from string, this happens when reading a DOS/Windows formatted file on Linux
+                if (string[found - 1] == '\r') {
+                    found--;    // remove '\r' from string, this happens when reading a DOS/Windows formatted file on Linux
+                }
             }
             string[found] = '\0';
         }
     }
     fclose(in);
     in = NULL;
-    if (found >= 1) return 0;
+    if (found >= 1) {
+        return 0;
+    }
     return 1;
 }
 
@@ -573,6 +586,7 @@ int read_config(mystuff_t *mystuff)
     }
     mystuff->timestamp_on_same_line = i;
 
+    /*****************************************************************************/
 
     if (my_read_int("mfaktc.ini", "ResultsFileTimestampInterval", &i)) {
         logprintf(mystuff, "Warning: Cannot read ResultsFileTimestampInterval from mfaktc.ini, set to 1 by default\n");

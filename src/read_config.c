@@ -80,7 +80,9 @@ int read_config(mystuff_t *mystuff)
 
     /*****************************************************************************/
 
-    if (mystuff->verbosity >= 1) logprintf(mystuff, "\nRuntime options\n");
+    if (mystuff->verbosity >= 1) {
+        logprintf(mystuff, "\nRuntime options\n");
+    }
 
     /*****************************************************************************/
 
@@ -96,7 +98,9 @@ int read_config(mystuff_t *mystuff)
             i = SIEVE_PRIMES_MIN;
         }
     }
-    if (mystuff->verbosity >= 1) logprintf(mystuff, "  SievePrimes               %d\n", i);
+    if (mystuff->verbosity >= 1) {
+        logprintf(mystuff, "  SievePrimes               %d\n", i);
+    }
     mystuff->sieve_primes = i;
 
     /*****************************************************************************/
@@ -108,7 +112,9 @@ int read_config(mystuff_t *mystuff)
         logprintf(mystuff, "Warning: SievePrimesAdjust must be 0 or 1, using default value (1)\n");
         i = 1;
     }
-    if (mystuff->verbosity >= 1) logprintf(mystuff, "  SievePrimesAdjust         %d\n", i);
+    if (mystuff->verbosity >= 1) {
+        logprintf(mystuff, "  SievePrimesAdjust         %d\n", i);
+    }
     mystuff->sieve_primes_adjust = i;
 
     /*****************************************************************************/
@@ -122,7 +128,9 @@ int read_config(mystuff_t *mystuff)
             i = SIEVE_PRIMES_MIN;
         }
     }
-    if (mystuff->verbosity >= 1) logprintf(mystuff, "  SievePrimesMin            %d\n", i);
+    if (mystuff->verbosity >= 1) {
+        logprintf(mystuff, "  SievePrimesMin            %d\n", i);
+    }
     mystuff->sieve_primes_min = i;
 
     /*****************************************************************************/
@@ -136,7 +144,9 @@ int read_config(mystuff_t *mystuff)
             i = SIEVE_PRIMES_MAX;
         }
     }
-    if (mystuff->verbosity >= 1) logprintf(mystuff, "  SievePrimesMax            %d\n", i);
+    if (mystuff->verbosity >= 1) {
+        logprintf(mystuff, "  SievePrimesMax            %d\n", i);
+    }
     mystuff->sieve_primes_max = i;
 
     /*****************************************************************************/
@@ -153,7 +163,9 @@ int read_config(mystuff_t *mystuff)
             i = NUM_STREAMS_MIN;
         }
     }
-    if (mystuff->verbosity >= 1) logprintf(mystuff, "  NumStreams                %d\n", i);
+    if (mystuff->verbosity >= 1) {
+        logprintf(mystuff, "  NumStreams                %d\n", i);
+    }
     mystuff->num_streams = i;
 
     /*****************************************************************************/
@@ -170,7 +182,9 @@ int read_config(mystuff_t *mystuff)
             i = CPU_STREAMS_MIN;
         }
     }
-    if (mystuff->verbosity >= 1) logprintf(mystuff, "  CPUStreams                %d\n", i);
+    if (mystuff->verbosity >= 1) {
+        logprintf(mystuff, "  CPUStreams                %d\n", i);
+    }
     mystuff->cpu_streams = i;
 
     /*****************************************************************************/
@@ -187,7 +201,9 @@ int read_config(mystuff_t *mystuff)
             i = 0;
         }
     }
-    if (mystuff->verbosity >= 1) logprintf(mystuff, "  GridSize                  %d\n", i);
+    if (mystuff->verbosity >= 1) {
+        logprintf(mystuff, "  GridSize                  %d\n", i);
+    }
     if (i == 0)
         mystuff->threads_per_grid_max = 131072;
     else if (i == 1)
@@ -211,7 +227,9 @@ int read_config(mystuff_t *mystuff)
     mystuff->gpu_sieving = i;
 
     if (mystuff->gpu_sieving) {
-        if (mystuff->verbosity == 1) logprintf(mystuff, "  GPU sieving               enabled\n");
+        if (mystuff->verbosity == 1) {
+            logprintf(mystuff, "  GPU sieving               enabled\n");
+        }
 
         /*****************************************************************************/
 
@@ -227,7 +245,9 @@ int read_config(mystuff_t *mystuff)
                 i = GPU_SIEVE_PRIMES_MIN;
             }
         }
-        if (mystuff->verbosity >= 1) logprintf(mystuff, "  GPUSievePrimes            %d\n", i);
+        if (mystuff->verbosity >= 1) {
+            logprintf(mystuff, "  GPUSievePrimes            %d\n", i);
+        }
         mystuff->gpu_sieve_primes = i;
 
         /*****************************************************************************/
@@ -244,7 +264,9 @@ int read_config(mystuff_t *mystuff)
                 i = GPU_SIEVE_SIZE_MIN;
             }
         }
-        if (mystuff->verbosity >= 1) logprintf(mystuff, "  GPUSieveSize              %d Mib\n", i);
+        if (mystuff->verbosity >= 1) {
+            logprintf(mystuff, "  GPUSieveSize              %d Mib\n", i);
+        }
         mystuff->gpu_sieve_size = i * 1024 * 1024;
 
         /*****************************************************************************/
@@ -275,7 +297,9 @@ int read_config(mystuff_t *mystuff)
                 i = GPU_SIEVE_PROCESS_SIZE_DEFAULT;
             }
         }
-        if (mystuff->verbosity >= 1) logprintf(mystuff, "  GPUSieveProcessSize       %d Kib\n", i);
+        if (mystuff->verbosity >= 1) {
+            logprintf(mystuff, "  GPUSieveProcessSize       %d Kib\n", i);
+        }
         mystuff->gpu_sieve_processing_size = i * 1024;
     }
 
@@ -311,7 +335,9 @@ int read_config(mystuff_t *mystuff)
         logprintf(mystuff, "Warning: CheckpointDelay must be at least 0 s\n");
         i = 0;
     }
-    if (mystuff->verbosity >= 1) logprintf(mystuff, "  CheckpointDelay           %d s\n", i);
+    if (mystuff->verbosity >= 1) {
+        logprintf(mystuff, "  CheckpointDelay           %d s\n", i);
+    }
     mystuff->checkpointdelay = i;
 
     /*****************************************************************************/
@@ -371,6 +397,9 @@ int read_config(mystuff_t *mystuff)
             logprintf(mystuff, "  StopAfterFactor           bit level\n");
         } else if (i == 2) {
             logprintf(mystuff, "  StopAfterFactor           class\n");
+        } else {
+            // should not be reachable
+            logprintf(mystuff, "  StopAfterFactor           invalid value!\n");
         }
     }
     mystuff->stopafterfactor = i;

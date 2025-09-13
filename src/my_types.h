@@ -116,6 +116,8 @@ typedef struct {
     int allowsleep;
 
     int print_timestamp;
+    int timestamp_on_same_line;
+    int timestamp_interval;
 
     int quit;
     int verbosity; /* 0 = reduced number of screen printfs, 1 = default, >= 2 = some additional printfs */

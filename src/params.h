@@ -86,7 +86,8 @@ complies with the semantic versioning scheme: https://semver.org
 
 Otherwise, the automated builds could fail in GitHub Actions.
 
-Please discuss with the community before making changes to version numbers!
+Do not update this value until a new release is ready to be created. Please
+discuss with the community before making changes to version numbers!
 */
 
 #define MFAKTC_VERSION            "0.24.0-beta.6"

@@ -289,10 +289,11 @@ int read_config(mystuff_t *mystuff)
         i = 1;
     }
     if (mystuff->verbosity >= 1) {
-        if (i == 0)
+        if (i == 0) {
             logprintf(mystuff, "  Checkpoints               disabled\n");
-        else
+        } else {
             logprintf(mystuff, "  Checkpoints               enabled\n");
+        }
     }
     mystuff->checkpoints = i;
 
@@ -328,10 +329,11 @@ int read_config(mystuff_t *mystuff)
         i = 30;
     }
     if (mystuff->verbosity >= 1) {
-        if (i > 0)
+        if (i > 0) {
             logprintf(mystuff, "  WorkFileAddDelay          %d s\n", i);
-        else
+        } else {
             logprintf(mystuff, "  WorkFileAddDelay          disabled\n");
+        }
     }
     mystuff->addfiledelay = i;
 
@@ -345,10 +347,11 @@ int read_config(mystuff_t *mystuff)
         i = 1;
     }
     if (mystuff->verbosity >= 1) {
-        if (i == 0)
+        if (i == 0) {
             logprintf(mystuff, "  Stages                    disabled\n");
-        else
+        } else {
             logprintf(mystuff, "  Stages                    enabled\n");
+        }
     }
     mystuff->stages = i;
 
@@ -357,17 +360,18 @@ int read_config(mystuff_t *mystuff)
     if (my_read_int("mfaktc.ini", "StopAfterFactor", &i)) {
         logprintf(mystuff, "Warning: Cannot read StopAfterFactor from mfaktc.ini, set to 1 by default\n");
         i = 1;
-    } else if ((i < 0) || (i > 2)) {
+    } else if (i < 0 || i > 2) {
         logprintf(mystuff, "Warning: StopAfterFactor must be 0, 1 or 2, set to 1 by default\n");
         i = 1;
     }
     if (mystuff->verbosity >= 1) {
-        if (i == 0)
+        if (i == 0) {
             logprintf(mystuff, "  StopAfterFactor           disabled\n");
-        else if (i == 1)
+        } else if (i == 1) {
             logprintf(mystuff, "  StopAfterFactor           bit level\n");
-        else if (i == 2)
+        } else if (i == 2) {
             logprintf(mystuff, "  StopAfterFactor           class\n");
+        }
     }
     mystuff->stopafterfactor = i;
 
@@ -398,10 +402,11 @@ int read_config(mystuff_t *mystuff)
         i = 0;
     }
     if (mystuff->verbosity >= 1) {
-        if (i == 0)
+        if (i == 0) {
             logprintf(mystuff, "  Logging                   disabled\n");
-        else
+        } else {
             logprintf(mystuff, "  Logging                   enabled\n");
+        }
     }
     mystuff->logging = i;
     if (mystuff->logging == 1 && mystuff->logfileptr == NULL) {
@@ -415,20 +420,28 @@ int read_config(mystuff_t *mystuff)
 
     if (my_read_string("mfaktc.ini", "V5UserID", mystuff->V5UserID, 50)) {
         /* no problem, don't use any */
-        if (mystuff->verbosity >= 1) logprintf(mystuff, "  V5UserID                  (none)\n");
+        if (mystuff->verbosity >= 1) {
+            logprintf(mystuff, "  V5UserID                  (none)\n");
+        }
         mystuff->V5UserID[0] = '\0';
     } else {
-        if (mystuff->verbosity >= 1) logprintf(mystuff, "  V5UserID                  %s\n", mystuff->V5UserID);
+        if (mystuff->verbosity >= 1) {
+            logprintf(mystuff, "  V5UserID                  %s\n", mystuff->V5UserID);
+        }
     }
 
     /*****************************************************************************/
 
     if (my_read_string("mfaktc.ini", "ComputerID", mystuff->ComputerID, 50)) {
         /* no problem, don't use any */
-        if (mystuff->verbosity >= 1) logprintf(mystuff, "  ComputerID                (none)\n");
+        if (mystuff->verbosity >= 1) {
+            logprintf(mystuff, "  ComputerID                (none)\n");
+        }
         mystuff->ComputerID[0] = '\0';
     } else {
-        if (mystuff->verbosity >= 1) logprintf(mystuff, "  ComputerID                %s\n", mystuff->ComputerID);
+        if (mystuff->verbosity >= 1) {
+            logprintf(mystuff, "  ComputerID                %s\n", mystuff->ComputerID);
+        }
     }
 
     /*****************************************************************************/
@@ -440,7 +453,9 @@ int read_config(mystuff_t *mystuff)
         sprintf(mystuff->stats.progressheader, "Date   Time     Pct    ETA | Exponent    Bits | GHz-d/day    Sieve     Wait");
         logprintf(mystuff, "Warning: no ProgressHeader specified in mfaktc.ini, using default\n");
     }
-    if (mystuff->verbosity >= 2) logprintf(mystuff, "  ProgressHeader            \"%s\"\n", mystuff->stats.progressheader);
+    if (mystuff->verbosity >= 2) {
+        logprintf(mystuff, "  ProgressHeader            \"%s\"\n", mystuff->stats.progressheader);
+    }
 
     /*****************************************************************************/
 
@@ -451,7 +466,9 @@ int read_config(mystuff_t *mystuff)
         sprintf(mystuff->stats.progressformat, "%%d %%T  %%p %%e | %%M %%l-%%u |   %%g  %%s  %%W%%%%");
         logprintf(mystuff, "Warning: no ProgressFormat specified in mfaktc.ini, using default\n");
     }
-    if (mystuff->verbosity >= 2) logprintf(mystuff, "  ProgressFormat            \"%s\"\n", mystuff->stats.progressformat);
+    if (mystuff->verbosity >= 2) {
+        logprintf(mystuff, "  ProgressFormat            \"%s\"\n", mystuff->stats.progressformat);
+    }
 
     /*****************************************************************************/
 
@@ -463,10 +480,11 @@ int read_config(mystuff_t *mystuff)
         i = 0;
     }
     if (mystuff->verbosity >= 1) {
-        if (i == 0)
+        if (i == 0) {
             logprintf(mystuff, "  AllowSleep                no\n");
-        else
+        } else {
             logprintf(mystuff, "  AllowSleep                yes\n");
+        }
     }
     mystuff->allowsleep = i;
 
@@ -480,10 +498,11 @@ int read_config(mystuff_t *mystuff)
         i = 0;
     }
     if (mystuff->verbosity >= 1) {
-        if (i == 0)
+        if (i == 0) {
             logprintf(mystuff, "  TimeStampInResults        no\n");
-        else
+        } else {
             logprintf(mystuff, "  TimeStampInResults        yes\n");
+        }
     }
     mystuff->print_timestamp = i;
 
@@ -495,10 +514,11 @@ int read_config(mystuff_t *mystuff)
         i = 0;
     }
     if (mystuff->verbosity >= 1) {
-        if (i == 0)
+        if (i == 0) {
             logprintf(mystuff, "  TimestampOnSameLine       no\n");
-        else
+        } else {
             logprintf(mystuff, "  TimestampOnSameLine       yes\n");
+        }
     }
     mystuff->timestamp_on_same_line = i;
 

@@ -1,7 +1,7 @@
 /*
 This file is part of mfaktc.
 Copyright (c) 2009-2014  Oliver Weihe (o.weihe@t-online.de)
-                                                  Bertram Franz (bertramf@gmx.net)
+                         Bertram Franz (bertramf@gmx.net)
 
 mfaktc is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -466,7 +466,9 @@ void print_result_line(mystuff_t *mystuff, int factorsfound)
 #ifndef WAGSTAFF
         jsonresultfile = fopen(mystuff->jsonresultfile, "a");
 #endif
-        if (mystuff->print_timestamp == 1) print_timestamp(mystuff, txtresultfile);
+        if (mystuff->print_timestamp == 1) {
+            print_timestamp(mystuff, txtresultfile);
+        }
     }
 #ifndef MORE_CLASSES
     bool partialresult = (mystuff->mode == MODE_NORMAL) && (mystuff->stats.class_counter < 96);
@@ -515,7 +517,9 @@ void print_factor(mystuff_t *mystuff, int factor_number, char *factor)
 
     if (mystuff->mode == MODE_NORMAL) {
         resultfile = fopen(mystuff->resultfile, "a");
-        if (mystuff->print_timestamp == 1 && factor_number == 0) print_timestamp(mystuff, resultfile);
+        if (mystuff->print_timestamp == 1 && factor_number == 0) {
+            print_timestamp(mystuff, resultfile);
+        }
     }
 
     if (factor_number < 10) {

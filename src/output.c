@@ -437,7 +437,7 @@ void print_result_line(mystuff_t *mystuff, int factorsfound)
 // Prints JSON string to the jsonresultfile for Mersenne numbers as well.
 {
     char UID[110]; /* 50 (V5UserID) + 50 (ComputerID) + 8 + spare */
-    int string_length = 0, factors_list_length = 0, factors_quote_list_length = 0, checksum, json_checksum;
+    int string_length = 0, factors_list_length = 0, factors_quote_list_length = 0, json_checksum;
     char aidjson[MAX_LINE_LENGTH + 11];
     char userjson[62]; /* 50 (V5UserID) + 11 spare + null character */
     char computerjson[66]; /* 50 (ComputerID) + 15 spare + null character */
@@ -546,9 +546,6 @@ void print_result_line(mystuff_t *mystuff, int factorsfound)
     sprintf(details, "CUDA %d.%d arch %d.%d", cuda_major, cuda_minor, arch_major, arch_minor);
 
     string_length += sprintf(txtstring + string_length, " [mfaktc %s %s %s]", MFAKTC_VERSION, mystuff->stats.kernelname, details);
-
-    checksum = crc32_checksum(txtstring, string_length);
-    sprintf(txtstring + string_length, " CRC32: %08X", checksum);
 #ifndef WAGSTAFF
     snprintf(json_checksum_string, sizeof(json_checksum_string), "%u;TF;%s;;%d;%d;%u;;;mfaktc;%s;%s;%s;%s;%s;%s", mystuff->exponent,
              factors_list, mystuff->bit_min, mystuff->bit_max_stage, !partialresult, MFAKTC_VERSION, mystuff->stats.kernelname, details,

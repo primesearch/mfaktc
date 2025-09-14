@@ -457,26 +457,30 @@ void print_result_line(mystuff_t *mystuff, int factorsfound)
     FILE *jsonresultfile = NULL;
 #endif
 
-    if (mystuff->V5UserID[0] && mystuff->ComputerID[0])
+    if (mystuff->V5UserID[0] && mystuff->ComputerID[0]) {
         sprintf(UID, "UID: %s/%s, ", mystuff->V5UserID, mystuff->ComputerID);
-    else
+    } else {
         UID[0] = 0;
+    }
 
     if (mystuff->assignment_key[0] && strspn(mystuff->assignment_key, "0123456789abcdefABCDEF") == 32 &&
-        strlen(mystuff->assignment_key) == 32)
+        strlen(mystuff->assignment_key) == 32) {
         sprintf(aidjson, ", \"aid\":\"%s\"", mystuff->assignment_key);
-    else
+    } else {
         aidjson[0] = 0;
+    }
 
-    if (mystuff->V5UserID[0])
+    if (mystuff->V5UserID[0]) {
         snprintf(userjson, sizeof(userjson), ", \"user\":\"%s\"", mystuff->V5UserID);
-    else
+    } else {
         userjson[0] = 0;
+    }
 
-    if (mystuff->ComputerID[0])
+    if (mystuff->ComputerID[0]) {
         snprintf(computerjson, sizeof(computerjson), ", \"computer\":\"%s\"", mystuff->ComputerID);
-    else
+    } else {
         computerjson[0] = 0;
+    }
 
     if (factorsfound) {
         int i = 0;
@@ -527,9 +531,9 @@ void print_result_line(mystuff_t *mystuff, int factorsfound)
     bool partialresult = (mystuff->mode == MODE_NORMAL) && (mystuff->stats.class_counter < 960);
 #endif
     if (factorsfound) {
-        string_length = sprintf(txtstring, "found %d factor%s for %s%u from 2^%2d to 2^%2d %s", factorsfound, (factorsfound > 1) ? "s" : "",
+        string_length = sprintf(txtstring, "found %d factor%s for %s%u from 2^%2d to 2^%2d%s", factorsfound, (factorsfound > 1) ? "s" : "",
                                 NAME_NUMBERS, mystuff->exponent, mystuff->bit_min, mystuff->bit_max_stage,
-                                partialresult ? "(partially tested) " : "");
+                                partialresult ? " (partially tested)" : "");
     } else {
         string_length = sprintf(txtstring, "no factor for %s%u from 2^%d to 2^%d", NAME_NUMBERS, mystuff->exponent, mystuff->bit_min,
                                 mystuff->bit_max_stage);
@@ -544,7 +548,7 @@ void print_result_line(mystuff_t *mystuff, int factorsfound)
     string_length += sprintf(txtstring + string_length, " [mfaktc %s %s %s]", MFAKTC_VERSION, mystuff->stats.kernelname, details);
 
     checksum = crc32_checksum(txtstring, string_length);
-    sprintf(txtstring + string_length, " %08X", checksum);
+    sprintf(txtstring + string_length, " CRC32: %08X", checksum);
 #ifndef WAGSTAFF
     snprintf(json_checksum_string, sizeof(json_checksum_string), "%u;TF;%s;;%d;%d;%u;;;mfaktc;%s;%s;%s;%s;%s;%s", mystuff->exponent,
              factors_list, mystuff->bit_min, mystuff->bit_max_stage, !partialresult, MFAKTC_VERSION, mystuff->stats.kernelname, details,
@@ -577,8 +581,9 @@ void print_result_line(mystuff_t *mystuff, int factorsfound)
 void print_factor(mystuff_t *mystuff, int factor_number, char *factor)
 {
     char UID[110]; /* 50 (V5UserID) + 50 (ComputerID) + 8 + spare */
-    char string[200];
-    int max_class_counter, string_length = 0, checksum;
+    char factor_str_base[60];
+    char factor_str[200];
+    int max_class_counter, factor_str_length = 0, checksum;
     FILE *txtresultfile = NULL;
 
 #ifndef MORE_CLASSES
@@ -587,10 +592,11 @@ void print_factor(mystuff_t *mystuff, int factor_number, char *factor)
     max_class_counter = 960;
 #endif
 
-    if (mystuff->V5UserID[0] && mystuff->ComputerID[0])
+    if (mystuff->V5UserID[0] && mystuff->ComputerID[0]) {
         sprintf(UID, "UID: %s/%s, ", mystuff->V5UserID, mystuff->ComputerID);
-    else
+    } else {
         UID[0] = 0;
+    }
 
     if (mystuff->mode == MODE_NORMAL && mystuff->legacy_results_txt == 1) {
         txtresultfile = fopen_and_lock(mystuff->resultfile, "a");
@@ -604,29 +610,32 @@ void print_factor(mystuff_t *mystuff, int factor_number, char *factor)
         int cuda_minor = (mystuff->cuda_toolkit % 1000) / 10;
         int arch_major = mystuff->cuda_arch / 100;
         int arch_minor = (mystuff->cuda_arch % 100) / 10;
-        string_length  = sprintf(string, "%s%u has a factor: %s [TF:%d:%d%s:mfaktc %s %s CUDA %d.%d arch %d.%d]", NAME_NUMBERS,
-                                 mystuff->exponent, factor, mystuff->bit_min, mystuff->bit_max_stage,
-                                ((mystuff->stopafterfactor == 2) && (mystuff->stats.class_counter < max_class_counter)) ? "*" : "",
-                                 MFAKTC_VERSION, mystuff->stats.kernelname, cuda_major, cuda_minor, arch_major, arch_minor);
-
-        checksum = crc32_checksum(string, string_length);
-        sprintf(string + string_length, " %08X", checksum);
+        sprintf(factor_str_base, "%s%u has a factor: %s", NAME_NUMBERS, mystuff->exponent, factor);
+        factor_str_length = sprintf(factor_str, "%s [TF:%d:%d%s:mfaktc %s %s CUDA %d.%d arch %d.%d]", factor_str_base, mystuff->bit_min,
+                                    mystuff->bit_max_stage,
+                                    (mystuff->stopafterfactor == 2 && mystuff->stats.class_counter < max_class_counter) ? "*" : "",
+                                    MFAKTC_VERSION, mystuff->stats.kernelname, cuda_major, cuda_minor, arch_major, arch_minor);
 
         if (mystuff->mode != MODE_SELFTEST_SHORT) {
             if (mystuff->printmode == 1 && factor_number == 0) {
                 printf("\n");
             }
-            printf("%s\n", string);
+            printf("%s\n", factor_str_base);
         }
         if (mystuff->mode == MODE_NORMAL && mystuff->legacy_results_txt == 1) {
-            fprintf(txtresultfile, "%s%s\n", UID, string);
+            fprintf(txtresultfile, "%s%s\n", UID, factor_str);
         }
     } else /* factor_number >= 10 */
     {
-        if (mystuff->mode != MODE_SELFTEST_SHORT)
-            printf("%s%u: %d additional factors not shown\n", NAME_NUMBERS, mystuff->exponent, factor_number - 10);
-        if (mystuff->mode == MODE_NORMAL && mystuff->legacy_results_txt == 1)
-            fprintf(txtresultfile, "%s%s%u: %d additional factors not shown\n", UID, NAME_NUMBERS, mystuff->exponent, factor_number - 10);
+        int extra_factors = factor_number - 10;
+        if (mystuff->mode != MODE_SELFTEST_SHORT) {
+            printf("%s%u: %d additional factor%s not shown\n", NAME_NUMBERS, mystuff->exponent, extra_factors,
+                   (extra_factors == 1) ? "" : "s");
+        }
+        if (mystuff->mode == MODE_NORMAL && mystuff->legacy_results_txt == 1) {
+            fprintf(txtresultfile, "%s%s%u: %d additional factor%s not shown\n", UID, NAME_NUMBERS, mystuff->exponent, extra_factors,
+                    (extra_factors == 1) ? "" : "s");
+        }
     }
 
     if (mystuff->mode == MODE_NORMAL && mystuff->legacy_results_txt == 1) {

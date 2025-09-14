@@ -542,10 +542,15 @@ void print_factor(mystuff_t *mystuff, int factor_number, char *factor)
         }
     } else /* factor_number >= 10 */
     {
-        if (mystuff->mode != MODE_SELFTEST_SHORT)
-            printf("%s%u: %d additional factors not shown\n", NAME_NUMBERS, mystuff->exponent, factor_number - 10);
-        if (mystuff->mode == MODE_NORMAL)
-            fprintf(resultfile, "%s%s%u: %d additional factors not shown\n", UID, NAME_NUMBERS, mystuff->exponent, factor_number - 10);
+        int extra_factors = factor_number - 10;
+        if (mystuff->mode != MODE_SELFTEST_SHORT) {
+            printf("%s%u: %d additional factor%s not shown\n", NAME_NUMBERS, mystuff->exponent, extra_factors,
+                   (extra_factors == 1) ? "" : "s");
+        }
+        if (mystuff->mode == MODE_NORMAL) {
+            fprintf(resultfile, "%s%s%u: %d additional factor%s not shown\n", UID, NAME_NUMBERS, mystuff->exponent, extra_factors,
+                    (extra_factors == 1) ? "" : "s");
+        }
     }
 
     if (mystuff->mode == MODE_NORMAL) fclose(resultfile);

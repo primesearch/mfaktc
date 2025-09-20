@@ -119,19 +119,20 @@ this may not give the best performance.
 ###############
 
 OS-specific requirements:
-- Microsoft Visual Studio
+- Visual Studio 2012 or later, any edition
 - make for Windows
 
-mfaktc was originally built using Visual Studio 2012 Professional on a 64-bit
+mfaktc was originally built in Visual Studio 2012 Professional on a 64-bit
 Windows 7 machine. However, these instructions will work for all recent Windows
 and Visual Studio versions.
 
 You will need a GNU-compatible version of make as the makefiles are not
-compatible with nmake. GnuWin32 provides a native port for 32-bit Windows:
+compatible with nmake. GnuWin32 provides a native Windows version:
 https://gnuwin32.sourceforge.net/packages/make.htm
 
 You can add C:\Program Files (x86)\GnuWin32\bin to the Path system variable so
-that make is always available.
+that make is always available. It is a 32-bit executable but can be used to
+create 64-bit builds.
 
 Before attempting to compile mfaktc, be sure the system variable CUDA_PATH
 points to your CUDA installation. In most cases, the CUDA installer should
@@ -139,20 +140,13 @@ automatically set this variable.
 
 
 Steps:
-- open the Visual Studio Developer Command Prompt for the desired architecture
-  - for 64 bits: x64 Native Tools Command Prompt
-  - for 32 bits: x86 Native Tools Command Prompt
+- open the x64 Native Tools Command Prompt
 - navigate to the mfaktc root folder
 - cd src
-- optional: clean up any build artifacts
-  - for 64 bits: make -f Makefile.win clean
-  - for 32 bits: make -f Makefile.win32 clean
-- start the build
-  - for 64 bits: make -f Makefile.win
-  - for 32 bits: make -f Makefile.win32
+- optional: run 'make -f Makefile.win clean' to clean up any build artifacts
+- run 'make -f Makefile.win' to start the build
 
-You should see the binary "mfaktc-win-64.exe" or "mfaktc-win-32.exe" in the
-mfaktc root folder.
+You should see the binary "mfaktc-win-64.exe" in the mfaktc root folder.
 
 
 ####################

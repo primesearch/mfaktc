@@ -273,7 +273,7 @@ int tf(mystuff_t *mystuff, int class_hint, unsigned long long int k_hint, int ke
                 logprintf(mystuff, "  last finished class was: %d\n", cur_class);
                 if (factorsfound > 0) {
                     factorindex = factorsfound;
-                    logprintf(mystuff, "  found %d factor(s) already: ", factorsfound);
+                    logprintf(mystuff, "  found %d factor%s so far: ", factorsfound, factorsfound == 1 ? "" : "s");
                     for (i = 0; i < MAX_FACTORS_PER_JOB; i++) {
                         if (mystuff->factors[i].d0 || mystuff->factors[i].d1 || mystuff->factors[i].d2) {
                             char factor[MAX_DEZ_96_STRING_LENGTH];
@@ -283,7 +283,7 @@ int tf(mystuff_t *mystuff, int class_hint, unsigned long long int k_hint, int ke
                     }
                     logprintf(mystuff, "\n");
                 } else {
-                    logprintf(mystuff, "  found no factors yet.\n");
+                    logprintf(mystuff, "  no factors found so far.\n");
                 }
                 logprintf(mystuff, "  previous work took %llu ms\n\n", mystuff->stats.bit_level_time);
             } else
@@ -365,7 +365,7 @@ int tf(mystuff_t *mystuff, int class_hint, unsigned long long int k_hint, int ke
 
                             mystuff->factors[factorindex++] = factor;
                             if (factorindex >= MAX_FACTORS_PER_JOB) {
-                                logprintf(mystuff, "ERROR: Too many factors found for this job, (>%u), TF a smaller range",
+                                logprintf(mystuff, "ERROR: reached limit of %u factors for this job, try a different range\n",
                                           MAX_FACTORS_PER_JOB);
                                 return RET_QUIT;
                             }
@@ -387,7 +387,7 @@ int tf(mystuff_t *mystuff, int class_hint, unsigned long long int k_hint, int ke
                             mystuff->addfiledelay = 0; /* disable for until exit at least... */
                         }
                     }
-                    if ((mystuff->stopafterfactor >= 2) && (factorsfound > 0) && (cur_class != max_class)) cur_class = max_class + 1;
+                    if (mystuff->stopafterfactor >= 2 && factorsfound > 0 && cur_class != max_class) cur_class = max_class + 1;
                 }
             }
             fflush(NULL);
@@ -816,12 +816,12 @@ int main(int argc, char **argv)
             i++;
 
             if (tmp > 3) {
-                logprintf(&mystuff, "WARNING: maximum verbosity level is 3\n");
+                logprintf(&mystuff, "Warning: maximum verbosity level is 3\n");
                 tmp = 3;
             }
 
             if (tmp < 0) {
-                logprintf(&mystuff, "WARNING: minimum verbosity level is 0\n");
+                logprintf(&mystuff, "Warning: minimum verbosity level is 0\n");
                 tmp = 0;
             }
 

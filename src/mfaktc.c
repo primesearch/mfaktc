@@ -1,6 +1,6 @@
 /*
 This file is part of mfaktc.
-Copyright (C) 2009-2015  Oliver Weihe (o.weihe@t-online.de)
+Copyright (c) 2009-2015  Oliver Weihe (o.weihe@t-online.de)
 
 mfaktc is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -302,8 +302,8 @@ see benchmarks in src/kernel_benchmarks.txt */
             logprintf(mystuff, "\nfound a valid checkpoint file!\n");
             if (mystuff->verbosity >= 1) logprintf(mystuff, "  last finished class was: %d\n", cur_class);
             if (mystuff->verbosity >= 1)
-                logprintf(mystuff, "  found %d factor(s) already%s%s\n", factorsfound, factorsfound > 0 ? ": " : "",
-                          mystuff->factors_string);
+                logprintf(mystuff, "  found %d factor%s so far%s%s\n", factorsfound, factorsfound == 1 ? "" : "s",
+                          factorsfound > 0 ? ": " : "", mystuff->factors_string);
             if (mystuff->verbosity >= 1)
                 logprintf(mystuff, "  previous work took %llu ms\n\n", mystuff->stats.bit_level_time);
             else
@@ -852,12 +852,12 @@ int main(int argc, char **argv)
             i++;
 
             if (tmp > 3) {
-                logprintf(&mystuff, "WARNING: maximum verbosity level is 3\n");
+                logprintf(&mystuff, "Warning: maximum verbosity level is 3\n");
                 tmp = 3;
             }
 
             if (tmp < 0) {
-                logprintf(&mystuff, "WARNING: minimum verbosity level is 0\n");
+                logprintf(&mystuff, "Warning: minimum verbosity level is 0\n");
                 tmp = 0;
             }
 

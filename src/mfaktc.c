@@ -1,6 +1,6 @@
 /*
 This file is part of mfaktc.
-Copyright (C) 2009-2015  Oliver Weihe (o.weihe@t-online.de)
+Copyright (c) 2009-2015  Oliver Weihe (o.weihe@t-online.de)
 
 mfaktc is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -852,12 +852,12 @@ int main(int argc, char **argv)
             i++;
 
             if (tmp > 3) {
-                logprintf(&mystuff, "WARNING: maximum verbosity level is 3\n");
+                logprintf(&mystuff, "Warning: maximum verbosity level is 3\n");
                 tmp = 3;
             }
 
             if (tmp < 0) {
-                logprintf(&mystuff, "WARNING: minimum verbosity level is 0\n");
+                logprintf(&mystuff, "Warning: minimum verbosity level is 0\n");
                 tmp = 0;
             }
 

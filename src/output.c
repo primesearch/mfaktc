@@ -400,17 +400,35 @@ const char *getArchitectureJSON()
 #endif
 }
 
-void getOSJSON(char *string)
+const char *getArchitecture()
+{
+#if defined(__x86_64__) || defined(_M_X64)
+    return "x86_64";
+#elif defined(i386) || defined(__i386__) || defined(__i386) || defined(_M_IX86)
+    return "x86_32";
+#elif defined(__aarch64__) || defined(_M_ARM64)
+    return "ARM64";
+#else
+    return "";
+#endif
+}
+
+const char *getOS()
 {
 #if defined(_WIN32) || defined(_WIN64)
-    sprintf(string, ", \"os\":{\"os\": \"Windows\"%s}", getArchitectureJSON());
+    return "Windows";
 #elif defined(__APPLE__)
-    sprintf(string, ", \"os\":{\"os\": \"Darwin\"%s}", getArchitectureJSON());
+    return "macOS";
 #elif defined(__linux__)
-    sprintf(string, ", \"os\":{\"os\": \"Linux\"%s}", getArchitectureJSON());
+    return "Linux";
 #elif defined(__unix__)
-    sprintf(string, ", \"os\":{\"os\": \"Unix\"%s}", getArchitectureJSON());
+    return "Unix";
 #endif
+}
+
+void getOSJSON(char *string)
+{
+    sprintf(string, ", \"os\":{\"os\": \"%s\", \"architecture\": \"%s\"}", getOS(), getArchitecture());
 }
 
 void print_result_line(mystuff_t *mystuff, int factorsfound)

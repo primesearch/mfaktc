@@ -129,8 +129,8 @@ typedef struct
 
     stats_t stats; /* stuff for statistics, etc. */
 
-    char V5UserID[51]; /* primenet V5UserID and ComputerID */
-    char ComputerID[51]; /* currently only used for screen/result output */
+    char V5UserID[51]; /* PrimeNet user ID and computer ID */
+    char ComputerID[51];
     char assignment_key[MAX_LINE_LENGTH + 1]; /* the assignment ID */
     char factors_string[500]; /* store factors in global state */
 

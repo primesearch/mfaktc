@@ -387,19 +387,6 @@ void get_utc_timestamp(char *timestamp)
     strftime(timestamp, sizeof(char[50]), "%Y-%m-%d %H:%M:%S", utc_time);
 }
 
-const char *getArchitectureJSON()
-{
-#if defined(__x86_64__) || defined(_M_X64)
-    return ", \"architecture\": \"x86_64\"";
-#elif defined(i386) || defined(__i386__) || defined(__i386) || defined(_M_IX86)
-    return ", \"architecture\": \"x86_32\"";
-#elif defined(__aarch64__) || defined(_M_ARM64)
-    return ", \"architecture\": \"ARM64\"";
-#else
-    return "";
-#endif
-}
-
 const char *getArchitecture()
 {
 #if defined(__x86_64__) || defined(_M_X64)

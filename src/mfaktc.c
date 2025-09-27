@@ -302,8 +302,8 @@ see benchmarks in src/kernel_benchmarks.txt */
             logprintf(mystuff, "\nfound a valid checkpoint file!\n");
             if (mystuff->verbosity >= 1) logprintf(mystuff, "  last finished class was: %d\n", cur_class);
             if (mystuff->verbosity >= 1)
-                logprintf(mystuff, "  found %d factor(s) already%s%s\n", factorsfound, factorsfound > 0 ? ": " : "",
-                          mystuff->factors_string);
+                logprintf(mystuff, "  found %d factor%s so far%s%s\n", factorsfound, factorsfound == 1 ? "" : "s",
+                          factorsfound > 0 ? ": " : "", mystuff->factors_string);
             if (mystuff->verbosity >= 1)
                 logprintf(mystuff, "  previous work took %llu ms\n\n", mystuff->stats.bit_level_time);
             else

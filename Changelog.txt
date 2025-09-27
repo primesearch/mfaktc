@@ -67,6 +67,11 @@ new features:
 
 enhancements:
 - improved program output in various places
+- getOSJSON() has been made more robust
+
+other changes:
+- macOS is now detected as "macOS" rather than the kernel name "Darwin"
+  - note: mfaktc is not currently supported on macOS
 
 version 0.23.6
 ==============================

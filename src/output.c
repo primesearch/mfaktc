@@ -402,7 +402,7 @@ const char *getOS()
 #if defined(_WIN32) || defined(_WIN64)
     return "Windows";
 #elif defined(__APPLE__)
-    return "Darwin";
+    return "macOS";
 #elif defined(__linux__)
     return "Linux";
 #elif defined(__unix__)

@@ -56,7 +56,7 @@ checkpoint_write() writes the checkpoint file.
 
     f = fopen(filename, "w");
     if (f == NULL) {
-        printf("WARNING, could not write checkpoint file \"%s\"\n", filename);
+        printf("Warning: could not write checkpoint file \"%s\"\n", filename);
     } else {
         sprintf(buffer, "%s%u %d %d %d %s: %d %d %s %llu", NAME_NUMBERS, exp, bit_min, bit_max, NUM_CLASSES, MFAKTC_CHECKPOINT_VERSION,
                 cur_class, num_factors, strlen(factors_buffer) ? factors_buffer : "0", bit_level_time);
@@ -155,7 +155,7 @@ tries to delete the checkpoint file
     if (remove(filename)) {
         if (errno != ENOENT) /* ENOENT = "No such file or directory" -> there was no checkpoint file */
         {
-            printf("WARNING: can't delete the checkpoint file \"%s\"\n", filename);
+            printf("Warning: can't delete the checkpoint file \"%s\"\n", filename);
         }
     }
 }

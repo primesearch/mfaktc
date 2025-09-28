@@ -108,7 +108,7 @@ returns 0 otherwise
             sprintf(buffer2, "%s%u %d %d %d %s: %d %d %s %llu", NAME_NUMBERS, exp, bit_min, bit_max, NUM_CLASSES, MFAKTC_CHECKPOINT_VERSION,
                     *cur_class, num_factors_ckp, factors_buffer, *bit_level_time);
             chksum = crc32_checksum(buffer2, strlen(buffer2));
-            if (chksum != chksum_ckp) printf("Warning: checkpoint file checksum mismatch (%08X != %08X)\n", chksum_ckp, chksum);
+            if (chksum != chksum_ckp) printf("Warning: checkpoint file checksum mismatch\n");
 
             sprintf(buffer2, "%s%u %d %d %d %s: %d %d %s %llu %08X", NAME_NUMBERS, exp, bit_min, bit_max, NUM_CLASSES,
                     MFAKTC_CHECKPOINT_VERSION, *cur_class, num_factors_ckp, factors_buffer, *bit_level_time, chksum);

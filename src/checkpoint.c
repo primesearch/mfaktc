@@ -134,7 +134,7 @@ returns 0 otherwise
                         }
                     }
                     if (*num_factors != num_factors_ckp)
-                        printf("Warning: checkpoint file num_factors and the actual number of factors stored mismatch (%d != %d)\n",
+                        printf("Warning: checkpoint file reports %d factors, but %d are actually stored\n",
                                num_factors_ckp, *num_factors);
                 }
             }

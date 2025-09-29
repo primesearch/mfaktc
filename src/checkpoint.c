@@ -81,7 +81,7 @@ returns 0 otherwise
 */
 {
     FILE *f;
-    int ret = 0, i, chksum;
+    int ret = 0, i, chksum, chksum_ckp, num_factors_ckp;
     char buffer[600], buffer2[600], *ptr, filename[40], factors_buffer[500];
 
     for (i = 0; i < 600; i++)
@@ -104,39 +104,40 @@ returns 0 otherwise
         i = strlen(buffer2);
         if (i < 70) {
             ptr = &(buffer[i]);
-            sscanf(ptr, "%d %d %s %llu", cur_class, num_factors, factors_buffer, bit_level_time);
+            sscanf(ptr, "%d %d %s %llu %08X", cur_class, &num_factors_ckp, factors_buffer, bit_level_time, &chksum_ckp);
             sprintf(buffer2, "%s%u %d %d %d %s: %d %d %s %llu", NAME_NUMBERS, exp, bit_min, bit_max, NUM_CLASSES, MFAKTC_CHECKPOINT_VERSION,
-                    *cur_class, *num_factors, factors_buffer, *bit_level_time);
+                    *cur_class, num_factors_ckp, factors_buffer, *bit_level_time);
             chksum = crc32_checksum(buffer2, strlen(buffer2));
-            sprintf(buffer2, "%s%u %d %d %d %s: %d %d %s %llu %08X", NAME_NUMBERS, exp, bit_min, bit_max, NUM_CLASSES,
-                    MFAKTC_CHECKPOINT_VERSION, *cur_class, *num_factors, factors_buffer, *bit_level_time, chksum);
-            if (*cur_class >= 0 && *cur_class < NUM_CLASSES && *num_factors >= 0 && strlen(buffer) == strlen(buffer2) &&
-                strstr(buffer, buffer2) == buffer &&
-                ((*num_factors == 0 && strlen(factors_buffer) == 1) || (*num_factors >= 1 && strlen(factors_buffer) > 1))) {
-                ret = 1;
-            }
+            if (chksum != chksum_ckp) printf("Warning: checkpoint file checksum mismatch\n");
 
-            // clang-format off
-            if (factors_buffer[0] == '0') {
+            sprintf(buffer2, "%s%u %d %d %d %s: %d %d %s %llu %08X", NAME_NUMBERS, exp, bit_min, bit_max, NUM_CLASSES,
+                    MFAKTC_CHECKPOINT_VERSION, *cur_class, num_factors_ckp, factors_buffer, *bit_level_time, chksum);
+            if (*cur_class >= 0 && *cur_class < NUM_CLASSES && num_factors_ckp >= 0 && strlen(buffer) == strlen(buffer2) &&
+                strstr(buffer, buffer2) == buffer &&
+                ((num_factors_ckp == 0 && strlen(factors_buffer) == 1) || (num_factors_ckp >= 1 && strlen(factors_buffer) > 1))) {
+                ret = 1;
+
+                // Reset factors
                 for (i = 0; i < MAX_FACTORS_PER_JOB; i++) {
                     factors[i].d0 = 0;
                     factors[i].d1 = 0;
                     factors[i].d2 = 0;
                 }
-            } else {
-                char *tok = strtok(factors_buffer, ",");
-                for (i = 0; i < MAX_FACTORS_PER_JOB; i++) {
-                    if (tok == NULL) {
-                        factors[i].d0 = 0;
-                        factors[i].d1 = 0;
-                        factors[i].d2 = 0;
-                    } else {
-                        factors[i] = parse_dez96(tok);
-                        tok = strtok(NULL, ",");
+
+                if (factors_buffer[0] != '0') {
+                    char *tok = strtok(factors_buffer, ",");
+                    for (i = 0; i < MAX_FACTORS_PER_JOB; i++) {
+                        if (tok != NULL) {
+                            factors[i] = parse_dez96(tok);
+                            (*num_factors)++;
+                            tok = strtok(NULL, ",");
+                        }
                     }
+                    if (*num_factors != num_factors_ckp)
+                        printf("Warning: checkpoint file reports %d factors, but %d are actually stored\n",
+                               num_factors_ckp, *num_factors);
                 }
             }
-            // clang-format on
         }
     }
     fclose(f);

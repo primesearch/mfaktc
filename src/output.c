@@ -583,7 +583,7 @@ void print_factor(mystuff_t *mystuff, int factor_number, char *factor)
     char UID[110]; /* 50 (V5UserID) + 50 (ComputerID) + 8 + spare */
     char factor_str_base[60];
     char factor_str[200];
-    int max_class_counter, factor_str_length = 0, checksum;
+    int max_class_counter;
     FILE *txtresultfile = NULL;
 
 #ifndef MORE_CLASSES
@@ -611,10 +611,9 @@ void print_factor(mystuff_t *mystuff, int factor_number, char *factor)
         int arch_major = mystuff->cuda_arch / 100;
         int arch_minor = (mystuff->cuda_arch % 100) / 10;
         sprintf(factor_str_base, "%s%u has a factor: %s", NAME_NUMBERS, mystuff->exponent, factor);
-        factor_str_length = sprintf(factor_str, "%s [TF:%d:%d%s:mfaktc %s %s CUDA %d.%d arch %d.%d]", factor_str_base, mystuff->bit_min,
-                                    mystuff->bit_max_stage,
-                                    (mystuff->stopafterfactor == 2 && mystuff->stats.class_counter < max_class_counter) ? "*" : "",
-                                    MFAKTC_VERSION, mystuff->stats.kernelname, cuda_major, cuda_minor, arch_major, arch_minor);
+        sprintf(factor_str, "%s [TF:%d:%d%s:mfaktc %s %s CUDA %d.%d arch %d.%d]", factor_str_base, mystuff->bit_min, mystuff->bit_max_stage,
+                (mystuff->stopafterfactor == 2 && mystuff->stats.class_counter < max_class_counter) ? "*" : "", MFAKTC_VERSION,
+                mystuff->stats.kernelname, cuda_major, cuda_minor, arch_major, arch_minor);
 
         if (mystuff->mode != MODE_SELFTEST_SHORT) {
             if (mystuff->printmode == 1 && factor_number == 0) {

@@ -446,6 +446,7 @@ void print_result_line(mystuff_t *mystuff, int factorsfound)
     char factors_quote_list[500];
     char osjson[200];
     char details[50];
+    char res_base_str[70];
     char txtstring[200];
     char json_checksum_string[750];
     char timestamp[50];
@@ -531,13 +532,15 @@ void print_result_line(mystuff_t *mystuff, int factorsfound)
     bool partialresult = (mystuff->mode == MODE_NORMAL) && (mystuff->stats.class_counter < 960);
 #endif
     if (factorsfound) {
-        string_length = sprintf(txtstring, "found %d factor%s for %s%u from 2^%2d to 2^%2d%s", factorsfound, (factorsfound > 1) ? "s" : "",
+        string_length = sprintf(res_base_str, "found %d factor%s for %s%u from 2^%2d to 2^%2d%s", factorsfound, (factorsfound > 1) ? "s" : "",
                                 NAME_NUMBERS, mystuff->exponent, mystuff->bit_min, mystuff->bit_max_stage,
                                 partialresult ? " (partially tested)" : "");
     } else {
-        string_length = sprintf(txtstring, "no factor for %s%u from 2^%d to 2^%d", NAME_NUMBERS, mystuff->exponent, mystuff->bit_min,
+        string_length = sprintf(res_base_str, "no factor for %s%u from 2^%d to 2^%d", NAME_NUMBERS, mystuff->exponent, mystuff->bit_min,
                                 mystuff->bit_max_stage);
     }
+
+    strcpy(txtstring, res_base_str);
 
     int cuda_major = mystuff->cuda_toolkit / 1000;
     int cuda_minor = (mystuff->cuda_toolkit % 1000) / 10;
@@ -559,7 +562,7 @@ void print_result_line(mystuff_t *mystuff, int factorsfound)
         MFAKTC_CHECKSUM_VERSION, json_checksum);
 #endif
     if (mystuff->mode != MODE_SELFTEST_SHORT) {
-        printf("%s\n", txtstring);
+        printf("%s\n", res_base_str);
     }
     if (mystuff->mode == MODE_NORMAL) {
 #ifndef WAGSTAFF

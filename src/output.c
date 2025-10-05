@@ -446,6 +446,7 @@ void print_result_line(mystuff_t *mystuff, int factorsfound)
     char factors_quote_list[500];
     char osjson[200];
     char details[50];
+    char res_base_str[70];
     char txtstring[200];
     char json_checksum_string[750];
     char timestamp[50];
@@ -531,13 +532,15 @@ void print_result_line(mystuff_t *mystuff, int factorsfound)
     bool partialresult = (mystuff->mode == MODE_NORMAL) && (mystuff->stats.class_counter < 960);
 #endif
     if (factorsfound) {
-        string_length = sprintf(txtstring, "found %d factor%s for %s%u from 2^%2d to 2^%2d%s", factorsfound, (factorsfound > 1) ? "s" : "",
+        string_length = sprintf(res_base_str, "found %d factor%s for %s%u from 2^%2d to 2^%2d%s", factorsfound, (factorsfound > 1) ? "s" : "",
                                 NAME_NUMBERS, mystuff->exponent, mystuff->bit_min, mystuff->bit_max_stage,
                                 partialresult ? " (partially tested)" : "");
     } else {
-        string_length = sprintf(txtstring, "no factor for %s%u from 2^%d to 2^%d", NAME_NUMBERS, mystuff->exponent, mystuff->bit_min,
+        string_length = sprintf(res_base_str, "no factor for %s%u from 2^%d to 2^%d", NAME_NUMBERS, mystuff->exponent, mystuff->bit_min,
                                 mystuff->bit_max_stage);
     }
+
+    strcpy(txtstring, res_base_str);
 
     int cuda_major = mystuff->cuda_toolkit / 1000;
     int cuda_minor = (mystuff->cuda_toolkit % 1000) / 10;
@@ -559,7 +562,7 @@ void print_result_line(mystuff_t *mystuff, int factorsfound)
         MFAKTC_CHECKSUM_VERSION, json_checksum);
 #endif
     if (mystuff->mode != MODE_SELFTEST_SHORT) {
-        printf("%s\n", txtstring);
+        printf("%s\n", res_base_str);
     }
     if (mystuff->mode == MODE_NORMAL) {
 #ifndef WAGSTAFF
@@ -580,7 +583,7 @@ void print_factor(mystuff_t *mystuff, int factor_number, char *factor)
     char UID[110]; /* 50 (V5UserID) + 50 (ComputerID) + 8 + spare */
     char factor_str_base[60];
     char factor_str[200];
-    int max_class_counter, factor_str_length = 0, checksum;
+    int max_class_counter;
     FILE *txtresultfile = NULL;
 
 #ifndef MORE_CLASSES
@@ -608,10 +611,9 @@ void print_factor(mystuff_t *mystuff, int factor_number, char *factor)
         int arch_major = mystuff->cuda_arch / 100;
         int arch_minor = (mystuff->cuda_arch % 100) / 10;
         sprintf(factor_str_base, "%s%u has a factor: %s", NAME_NUMBERS, mystuff->exponent, factor);
-        factor_str_length = sprintf(factor_str, "%s [TF:%d:%d%s:mfaktc %s %s CUDA %d.%d arch %d.%d]", factor_str_base, mystuff->bit_min,
-                                    mystuff->bit_max_stage,
-                                    (mystuff->stopafterfactor == 2 && mystuff->stats.class_counter < max_class_counter) ? "*" : "",
-                                    MFAKTC_VERSION, mystuff->stats.kernelname, cuda_major, cuda_minor, arch_major, arch_minor);
+        sprintf(factor_str, "%s [TF:%d:%d%s:mfaktc %s %s CUDA %d.%d arch %d.%d]", factor_str_base, mystuff->bit_min, mystuff->bit_max_stage,
+                (mystuff->stopafterfactor == 2 && mystuff->stats.class_counter < max_class_counter) ? "*" : "", MFAKTC_VERSION,
+                mystuff->stats.kernelname, cuda_major, cuda_minor, arch_major, arch_minor);
 
         if (mystuff->mode != MODE_SELFTEST_SHORT) {
             if (mystuff->printmode == 1 && factor_number == 0) {

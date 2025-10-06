@@ -35,6 +35,8 @@ CSRC  = sieve.c timer.c parse.c read_config.c mfaktc.c checkpoint.c \
 	filelocking.c signal_handler.c output.c crc.c
 CUSRC = tf_96bit.cu tf_barrett96.cu tf_barrett96_gs.cu gpusieve.cu \
         cuda_utils.cu
+RC    = mfaktc.rc
+RES   = $(RC:.rc=.res)
 
 CUOBJS = $(CUSRC:.cu=.obj) tf_75bit.obj
 COBJS  = $(CSRC:.c=.obj)
@@ -47,16 +49,19 @@ INSTALL = copy
 
 all : ..\mfaktc-win-64.exe ..\mfaktc.ini
 
-..\mfaktc-win-64.exe : $(COBJS) $(CUOBJS)
+..\mfaktc-win-64.exe : $(COBJS) $(CUOBJS) $(RES)
 	$(LINK) $(LFLAGS) $^ $(LIBS) /out:$@
 
 clean :
-	del *.obj
+	del *.obj $(RES)
 
 ############################################################################################################
 
 %.obj : %.c
 	$(CC) $(CFLAGS) /c /Tp $<
+
+%.res : %.rc
+	rc /fo $@ $<
 
 tf_75bit.obj : tf_96bit.cu
 	nvcc -c $< -o $@ $(CUFLAGS) -DSHORTCUT_75BIT
@@ -66,5 +71,8 @@ tf_75bit.obj : tf_96bit.cu
 
 ..\\%.ini : %.ini
 	$(INSTALL) $< ..
+
+icon : 
+	magick convert icons/mfaktc_16x16.png icons/mfaktc_24x24.png icons/mfaktc_32x32.png icons/mfaktc_48x48.png icons/mfaktc_256x256.png mfaktc.ico
 
 .PHONY: all clean

@@ -242,7 +242,7 @@ jobs:
         shell: cmd
         run: |
           ${{ env.MSVC_ADD_PKG_CMD }}
-          "${{ env.VCVARS_PATH }}" x64 ${{ env.VCVARS_VER }} & cd src & copy mfaktc.ini .. & make SHELL="powershell.exe" -j%NUMBER_OF_PROCESSORS% -f Makefile.win & cl /? 2>&1 | findstr /C:"Version" > clversion.log & echo Build finished
+          "${{ env.VCVARS_PATH }}" x64 ${{ env.VCVARS_VER }} & cd src & copy mfaktc.ini .. & make SHELL="cmd.exe" -j%NUMBER_OF_PROCESSORS% -f Makefile.win & cl /? 2>&1 | findstr /C:"Version" > clversion.log & echo Build finished
         env:
           VCVARS_PATH: 'C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\vcvars64.bat'
           # vcvars_ver=14.x enables Build Tools for previous MSVC versions:

@@ -49,9 +49,9 @@ INSTALL = copy
 
 ############################################################################################################
 
-all : ..\mfaktc-win-64.exe ..\mfaktc.ini
+all : ..\mfaktc-win-64.exe ..\mfaktc.ini $(ICON)
 
-..\mfaktc-win-64.exe : $(COBJS) $(CUOBJS) $(RES) $(ICON)
+..\mfaktc-win-64.exe : $(COBJS) $(CUOBJS) $(RES)
 	$(LINK) $(LFLAGS) $^ $(LIBS) /out:$@
 
 clean :

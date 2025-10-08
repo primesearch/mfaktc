@@ -39,24 +39,34 @@ CUSRC = tf_96bit.cu tf_barrett96.cu tf_barrett96_gs.cu gpusieve.cu \
 CUOBJS = $(CUSRC:.cu=.obj) tf_75bit.obj
 COBJS  = $(CSRC:.c=.obj)
 
+RC    = mfaktc.rc
+RES   = $(RC:.rc=.res)
+ICON  = mfaktc.ico
+
 LIBS = "$(CUDA_PATH)\lib\x64\cudart_static.lib"
 
 INSTALL = copy
 
 ############################################################################################################
 
-all : ..\mfaktc-win-64.exe ..\mfaktc.ini
+all : ..\mfaktc-win-64.exe ..\mfaktc.ini $(ICON)
 
-..\mfaktc-win-64.exe : $(COBJS) $(CUOBJS)
+..\mfaktc-win-64.exe : $(COBJS) $(CUOBJS) $(RES)
 	$(LINK) $(LFLAGS) $^ $(LIBS) /out:$@
 
 clean :
-	del *.obj
+	del *.obj $(RC) $(RES) $(ICON)
 
 ############################################################################################################
 
 %.obj : %.c
 	$(CC) $(CFLAGS) /c /Tp $<
+
+%.rc : assets\\%.rc
+	$(INSTALL) $< .
+
+%.res : %.rc
+	rc /fo $@ $<
 
 tf_75bit.obj : tf_96bit.cu
 	nvcc -c $< -o $@ $(CUFLAGS) -DSHORTCUT_75BIT
@@ -66,5 +76,11 @@ tf_75bit.obj : tf_96bit.cu
 
 ..\\%.ini : %.ini
 	$(INSTALL) $< ..
+
+assets\\icons\\mfaktc.ico : assets\\icons\\mfaktc_16x16.png assets\\icons\\mfaktc_24x24.png assets\\icons\\mfaktc_32x32.png assets\\icons\\mfaktc_48x48.png assets\\icons\\mfaktc_256x256.png
+	magick convert $^ $@
+
+$(ICON) : assets\\icons\\mfaktc.ico
+	$(INSTALL) $< .
 
 .PHONY: all clean

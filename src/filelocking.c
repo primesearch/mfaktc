@@ -157,7 +157,6 @@ int unlock_and_fclose(FILE *f)
         }
     }
     if (f) {
-        //fprintf(stderr, "File was not locked!\n");
         ret = fclose(f);
     }
     return ret;

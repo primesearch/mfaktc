@@ -1,5 +1,5 @@
 #!/bin/bash
-#
+
 # This file is part of mfaktc.
 # Copyright (c) 2025        NStorm (https://github.com/N-Storm)
 # Copyright (c) 2009-2011   Oliver Weihe (o.weihe@t-online.de)

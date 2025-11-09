@@ -28,14 +28,14 @@ along with mfaktc.  If not, see <http://www.gnu.org/licenses/>.
 #include "crc.h"
 #include "compatibility.h"
 
-void checkpoint_write(unsigned int exp, int bit_min, int bit_max, int cur_class, int num_factors, int96 factors[MAX_FACTORS_PER_JOB],
-                      unsigned long long int bit_level_time)
 /*
 checkpoint_write() writes the checkpoint file.
 */
+void checkpoint_write(unsigned int exp, int bit_min, int bit_max, int cur_class, int num_factors, int96 factors[MAX_FACTORS_PER_JOB],
+                      unsigned long long int bit_level_time)
 {
     FILE *f;
-    char buffer[MAX_BUFFER_LENGTH], filename[MAX_CHECKPOINT_FILENAME_LENGTH], factors_buffer[MAX_FACTOR_BUFFER_LENGTH];
+    char ckp_buffer[MAX_BUFFER_LENGTH], filename[MAX_CHECKPOINT_FILENAME_LENGTH], factors_buffer[MAX_FACTOR_BUFFER_LENGTH];
     unsigned int i, factors_buffer_length;
 
     snprintf(filename, MAX_CHECKPOINT_FILENAME_LENGTH, "%s%u_%d-%d_%d.ckp", NAME_NUMBERS, exp, bit_min, bit_max, NUM_CLASSES);
@@ -58,9 +58,9 @@ checkpoint_write() writes the checkpoint file.
     if (f == NULL) {
         printf("Warning: could not write checkpoint file \"%s\"\n", filename);
     } else {
-        sprintf(buffer, "%s%u %d %d %d %s: %d %d %s %llu", NAME_NUMBERS, exp, bit_min, bit_max, NUM_CLASSES, MFAKTC_CHECKPOINT_VERSION,
+        sprintf(ckp_buffer, "%s%u %d %d %d %s: %d %d %s %llu", NAME_NUMBERS, exp, bit_min, bit_max, NUM_CLASSES, MFAKTC_CHECKPOINT_VERSION,
                 cur_class, num_factors, strlen(factors_buffer) ? factors_buffer : "0", bit_level_time);
-        i = crc32_checksum(buffer, strlen(buffer));
+        i = crc32_checksum(ckp_buffer, strlen(ckp_buffer));
         fprintf(f, "%s%u %d %d %d %s: %d %d %s %llu %08X", NAME_NUMBERS, exp, bit_min, bit_max, NUM_CLASSES, MFAKTC_CHECKPOINT_VERSION,
                 cur_class, num_factors, strlen(factors_buffer) ? factors_buffer : "0", bit_level_time, i);
         fclose(f);
@@ -68,8 +68,6 @@ checkpoint_write() writes the checkpoint file.
     }
 }
 
-int checkpoint_read(unsigned int exp, int bit_min, int bit_max, int *cur_class, int *num_factors, int96 factors[MAX_FACTORS_PER_JOB],
-                    unsigned long long int *bit_level_time)
 /*
 checkpoint_read() reads the checkpoint file and compares values for exp,
 bit_min, bit_max, NUM_CLASSES read from file with current values.
@@ -79,13 +77,16 @@ factors, and class_time to the values from the checkpoint file.
 returns 1 on success (valid checkpoint file)
 returns 0 otherwise
 */
+int checkpoint_read(unsigned int exp, int bit_min, int bit_max, int *cur_class, int *num_factors, int96 factors[MAX_FACTORS_PER_JOB],
+                    unsigned long long int *bit_level_time)
 {
     FILE *f;
     int ret = 0, i, chksum, chksum_ckp, num_factors_ckp;
-    char buffer[600], buffer2[600], *ptr, filename[40], factors_buffer[500];
+    char ckp_buffer[MAX_BUFFER_LENGTH] = { 0 }, cur_buffer[MAX_BUFFER_LENGTH], *ptr, filename[MAX_CHECKPOINT_FILENAME_LENGTH],
+        factors_buffer[MAX_FACTOR_BUFFER_LENGTH];
 
     for (i = 0; i < 600; i++)
-        buffer[i] = 0;
+        ckp_buffer[i] = 0;
 
     *cur_class   = -1;
     *num_factors = 0;
@@ -96,24 +97,26 @@ returns 0 otherwise
     if (f == NULL) {
         return 0;
     }
-    i = fread(buffer, sizeof(char), 599, f);
-    sprintf(buffer2, "%s%u %d %d %d %s: ", NAME_NUMBERS, exp, bit_min, bit_max, NUM_CLASSES, MFAKTC_CHECKPOINT_VERSION);
+    i = fread(ckp_buffer, sizeof(char), 599, f);
+    sprintf(cur_buffer, "%s%u %d %d %d %s: ", NAME_NUMBERS, exp, bit_min, bit_max, NUM_CLASSES, MFAKTC_CHECKPOINT_VERSION);
 
-    ptr = strstr(buffer, buffer2);
-    if (ptr == buffer) {
-        i = strlen(buffer2);
+    ptr = strstr(ckp_buffer, cur_buffer);
+    if (ptr == ckp_buffer) {
+        i = strlen(cur_buffer);
         if (i < 70) {
-            ptr = &(buffer[i]);
+            ptr = &(ckp_buffer[i]);
             sscanf(ptr, "%d %d %s %llu %08X", cur_class, &num_factors_ckp, factors_buffer, bit_level_time, &chksum_ckp);
-            sprintf(buffer2, "%s%u %d %d %d %s: %d %d %s %llu", NAME_NUMBERS, exp, bit_min, bit_max, NUM_CLASSES, MFAKTC_CHECKPOINT_VERSION,
+            sprintf(cur_buffer, "%s%u %d %d %d %s: %d %d %s %llu", NAME_NUMBERS, exp, bit_min, bit_max, NUM_CLASSES, MFAKTC_CHECKPOINT_VERSION,
                     *cur_class, num_factors_ckp, factors_buffer, *bit_level_time);
-            chksum = crc32_checksum(buffer2, strlen(buffer2));
-            if (chksum != chksum_ckp) printf("Warning: checkpoint file checksum mismatch\n");
+            chksum = crc32_checksum(cur_buffer, strlen(cur_buffer));
+            if (chksum != chksum_ckp) {
+                printf("Warning: checkpoint file checksum mismatch\n");
+            }
 
-            sprintf(buffer2, "%s%u %d %d %d %s: %d %d %s %llu %08X", NAME_NUMBERS, exp, bit_min, bit_max, NUM_CLASSES,
+            sprintf(cur_buffer, "%s%u %d %d %d %s: %d %d %s %llu %08X", NAME_NUMBERS, exp, bit_min, bit_max, NUM_CLASSES,
                     MFAKTC_CHECKPOINT_VERSION, *cur_class, num_factors_ckp, factors_buffer, *bit_level_time, chksum);
-            if (*cur_class >= 0 && *cur_class < NUM_CLASSES && num_factors_ckp >= 0 && strlen(buffer) == strlen(buffer2) &&
-                strstr(buffer, buffer2) == buffer &&
+            if (*cur_class >= 0 && *cur_class < NUM_CLASSES && num_factors_ckp >= 0 && strlen(ckp_buffer) == strlen(cur_buffer) &&
+                strstr(ckp_buffer, cur_buffer) == ckp_buffer &&
                 ((num_factors_ckp == 0 && strlen(factors_buffer) == 1) || (num_factors_ckp >= 1 && strlen(factors_buffer) > 1))) {
                 ret = 1;
 
@@ -134,8 +137,8 @@ returns 0 otherwise
                         }
                     }
                     if (*num_factors != num_factors_ckp)
-                        printf("Warning: checkpoint file reports %d factors, but %d are actually stored\n",
-                               num_factors_ckp, *num_factors);
+                        printf("Warning: checkpoint file reports %d factor%s, but %d %s actually stored\n", num_factors_ckp,
+                               num_factors_ckp == 1 ? "" : "s", *num_factors, *num_factors == 1 ? "is" : "are");
                 }
             }
         }
@@ -145,12 +148,12 @@ returns 0 otherwise
     return ret;
 }
 
-void checkpoint_delete(unsigned int exp, int bit_min, int bit_max)
 /*
 tries to delete the checkpoint file
 */
+void checkpoint_delete(unsigned int exp, int bit_min, int bit_max)
 {
-    char filename[40];
+    char filename[MAX_CHECKPOINT_FILENAME_LENGTH];
     sprintf(filename, "%s%u_%d-%d_%d.ckp", NAME_NUMBERS, exp, bit_min, bit_max, NUM_CLASSES);
 
     if (remove(filename)) {

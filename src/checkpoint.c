@@ -85,9 +85,6 @@ int checkpoint_read(unsigned int exp, int bit_min, int bit_max, int *cur_class, 
     char ckp_buffer[MAX_BUFFER_LENGTH] = { 0 }, cur_buffer[MAX_BUFFER_LENGTH], *ptr, filename[MAX_CHECKPOINT_FILENAME_LENGTH],
         factors_buffer[MAX_FACTOR_BUFFER_LENGTH];
 
-    for (i = 0; i < 600; i++)
-        ckp_buffer[i] = 0;
-
     *cur_class   = -1;
     *num_factors = 0;
 

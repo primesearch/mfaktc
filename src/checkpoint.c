@@ -94,7 +94,7 @@ int checkpoint_read(unsigned int exp, int bit_min, int bit_max, int *cur_class, 
     if (f == NULL) {
         return 0;
     }
-    i = fread(ckp_buffer, sizeof(char), 599, f);
+    i = fread(ckp_buffer, sizeof(char), MAX_BUFFER_LENGTH - 1, f);
     sprintf(cur_buffer, "%s%u %d %d %d %s: ", NAME_NUMBERS, exp, bit_min, bit_max, NUM_CLASSES, MFAKTC_CHECKPOINT_VERSION);
 
     ptr = strstr(ckp_buffer, cur_buffer);

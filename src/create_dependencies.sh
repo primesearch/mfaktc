@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # This file is part of mfaktc.
-# Copyright (c) 2025        NStorm (https://github.com/N-Storm)
+# Copyright (C) 2009-2025  Oliver Weihe (o.weihe@t-online.de)
 #
 # mfaktc is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by

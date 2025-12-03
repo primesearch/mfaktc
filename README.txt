@@ -121,6 +121,8 @@ this may not give the best performance.
 OS-specific requirements:
 - Visual Studio 2012 or later, any edition
 - make for Windows
+- optional: ImageMagick
+  - used to create the .ico file from PNGs
 
 mfaktc was originally built in Visual Studio 2012 Professional on a 64-bit
 Windows 7 machine. However, these instructions will work for all recent Windows

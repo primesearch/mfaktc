@@ -17,7 +17,8 @@ enhancements:
 - updated mul_96() to use 64-bit integers (thanks to NStorm)
   - users should see a small performance increase with CUDA 12.x and above
 - improved program output in various places
-- added a program logo, Windows builds include it as the application icon
+- Windows builds now have an application icon
+  - design and implementation by NStorm
 
 bug fixes:
 - fixed typos and formatting in output
@@ -38,8 +39,8 @@ build:
 - improved visual appearance and clarity of release information (thanks to
   Danny Chia)
 - added CUDA 13.x support (thanks to NStorm)
-  - breaking change: compute capability < 7.5 are no longer supported when
-    the build is linked against the CUDA 13.x runtime
+  - breaking change: compute capability < 7.5 are no longer supported when the
+    build is linked against the CUDA 13.x runtime
 
 other changes:
 - dropped support for compute capability 1.x and 32-bit builds
@@ -55,7 +56,7 @@ other changes:
 - re-organized mfaktc.ini to be more user-friendly (thanks to James Heinrich)
 - changed the key "subversion" to "kernel" in the JSON output
   - PrimeNet should still accept results with "subversion"
-- renamed the source files cuda_basic_stuff.* to cuda_utils.*
+- added a new cuda_utils.cu file containing sanity checks
 
 version 0.23.7
 ==============================

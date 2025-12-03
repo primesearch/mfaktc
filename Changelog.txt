@@ -17,6 +17,7 @@ enhancements:
 - updated mul_96() to use 64-bit integers (thanks to NStorm)
   - users should see a small performance increase with CUDA 12.x and above
 - improved program output in various places
+- added a program logo, Windows builds include it as the application icon
 
 bug fixes:
 - fixed typos and formatting in output
@@ -24,6 +25,7 @@ bug fixes:
 - the maximum number of threads per SM should no longer exceed the limit for
   certain architectures
 - CUDA versions are now correctly detected
+- fixed several issues related to checkpoint restore (thanks to NStorm)
 
 build:
 - made the build scripts more robust
@@ -36,7 +38,8 @@ build:
 - improved visual appearance and clarity of release information (thanks to
   Danny Chia)
 - added CUDA 13.x support (thanks to NStorm)
-  - breaking change: compute capability 7.2 and below are dropped
+  - breaking change: compute capability < 7.5 are no longer supported when
+    the build is linked against the CUDA 13.x runtime
 
 other changes:
 - dropped support for compute capability 1.x and 32-bit builds

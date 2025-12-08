@@ -65,9 +65,13 @@ run_on_device() {
     fi
 
     # create symbolic links
+    if [[ -e $APP ]]; then
+        echo "error: a file named 'mfaktc' already exists. Stopped to prevent data loss"
+        exit 1
+    fi
     ln -s ../$APP .
 
-    # don't overwrite custom INI files
+    # don't overwrite custom settings
     ! test -e $APP_SETTINGS && ln -s ../$APP_SETTINGS .
 
     # run mfaktc on specified device
@@ -76,7 +80,7 @@ run_on_device() {
     # clean up
     rm -f $APP $LOCK
 
-    # don't delete custom INI files
+    # don't delete mfaktc.ini unless it's a symbolic link
     test -L $APP_SETTINGS && rm $APP_SETTINGS
 }
 

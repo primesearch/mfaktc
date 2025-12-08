@@ -29,8 +29,9 @@
 #
 # Device ID provided:
 #   Uses symbolic links to launch an mfaktc instance from a device-specific
-#   folder. You will need to manually add a worktodo.txt file each time you
-#   start a new batch of assignments.
+#   folder. It is recommended to use AutoPrimeNet to distribute assignments to
+#   each worker. Otherwise, you will need to manually add a worktodo.txt file
+#   each time you start a new batch of assignments.
 #
 #   Device-specific settings are supported. You can simply add an mfaktc.ini
 #   file to the device-specific folder as the script will not attempt to
@@ -57,11 +58,11 @@ run_on_device() {
     fi
 
     # don't run if device is in use
-    if [[ -e $LOCK ]]; then
-        echo "error: lock file $LOCK exists, mfaktc may already be running on device $1"
+    exec 200 > "$LOCK"
+
+    if ! flock -n 200; then
+        echo "error: lock file $LOCK exists, mfaktc may already be running on device $1" >&2
         exit 1
-    else
-        touch $LOCK
     fi
 
     # create symbolic links
@@ -70,7 +71,7 @@ run_on_device() {
         echo "       with that name already exists. Stopped to prevent potential data loss"
         exit 1
     fi
-    ln -s ../$APP .
+    ln -s ../$APP . && app_created=1
 
     # don't overwrite custom settings
     ! test -e $APP_SETTINGS && ln -s ../$APP_SETTINGS .
@@ -79,8 +80,7 @@ run_on_device() {
     ./$APP -d "$1"
 
 cleanup() {
-    # clean up
-    rm -f $APP $LOCK
+    [[ -z "$app_created" ]] && rm -f $APP
 
     # don't delete mfaktc.ini unless it's a symbolic link
     [[ -L $APP_SETTINGS ]] && rm $APP_SETTINGS
@@ -91,18 +91,15 @@ trap 'cleanup' EXIT
 
 if [[ $# -eq 0 ]]; then
     # don't run if device is in use
-    if [[ -e $LOCK ]]; then
-        echo "error: lock file $LOCK exists, mfaktc may already be running"
+    exec 200 > "$LOCK"
+
+    if ! flock -n 200; then
+        echo "error: lock file $LOCK exists, mfaktc may already be running" >&2
         exit 1
-    else
-        touch $LOCK
     fi
 
     # run mfaktc on default device
     exec ./$APP
-
-    # clean up
-    rm $LOCK
 else
     run_on_device "$1"
 fi

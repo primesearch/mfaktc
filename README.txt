@@ -188,7 +188,8 @@ to 71 bits.
 
 On remote systems, processes are killed when a session disconnects. To prevent
 this, use a terminal multiplexer such as tmux or GNU Screen to detach and
-reattach sessions.
+reattach sessions. You can also use nohup as a simpler alternative, but be
+aware that nohup cannot reattach to a process.
 
 ###############
 # 3.2 Windows #

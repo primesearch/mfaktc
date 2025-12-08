@@ -49,7 +49,7 @@ LOCK=$APP.lock
 
 run_on_device() {
     # ensure instance has its own folder
-    ! test -d "device-$1" && mkdir "device-$1"
+    ! test -e "device-$1" && mkdir "device-$1"
     if ! cd "device-$1"
     then
         echo "error: could not enter directory 'device-$1' for device $1"
@@ -74,8 +74,7 @@ run_on_device() {
     ./$APP -d "$1"
 
     # clean up
-    rm $APP
-    rm $LOCK
+    rm -f $APP $LOCK
 
     # don't delete custom INI files
     test -L $APP_SETTINGS && rm $APP_SETTINGS

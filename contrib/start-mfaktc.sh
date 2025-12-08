@@ -49,10 +49,10 @@ LOCK=$APP.lock
 
 run_on_device() {
     # ensure instance has its own folder
-    ! test -e "device-$1" && mkdir "device-$1"
+    mkdir -p "device-$1"
     if ! cd "device-$1"
     then
-        echo "error: could not enter directory 'device-$1' for device $1"
+        echo "error: could not enter directory 'device-$1' for device $1" >&2
         exit 1
     fi
 
@@ -78,15 +78,18 @@ run_on_device() {
     # run mfaktc on specified device
     ./$APP -d "$1"
 
+cleanup() {
     # clean up
     rm -f $APP $LOCK
 
     # don't delete mfaktc.ini unless it's a symbolic link
-    test -L $APP_SETTINGS && rm $APP_SETTINGS
+    [[ -L $APP_SETTINGS ]] && rm $APP_SETTINGS
 }
 
-if [ "$#" == 0 ]
-then
+trap 'cleanup' EXIT
+}
+
+if [[ $# -eq 0 ]]; then
     # don't run if device is in use
     if [[ -e $LOCK ]]; then
         echo "error: lock file $LOCK exists, mfaktc may already be running"
@@ -96,7 +99,7 @@ then
     fi
 
     # run mfaktc on default device
-    ./$APP
+    exec ./$APP
 
     # clean up
     rm $LOCK

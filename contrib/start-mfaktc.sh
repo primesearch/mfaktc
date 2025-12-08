@@ -58,7 +58,7 @@ run_on_device() {
     fi
 
     # don't run if device is in use
-    exec 200 > "$LOCK"
+    exec 200>"$LOCK"
 
     if ! flock -n 200; then
         echo "error: lock file $LOCK exists, mfaktc may already be running on device $1" >&2
@@ -91,7 +91,7 @@ trap 'cleanup' EXIT
 
 if [[ $# -eq 0 ]]; then
     # don't run if device is in use
-    exec 200 > "$LOCK"
+    exec 200>"$LOCK"
 
     if ! flock -n 200; then
         echo "error: lock file $LOCK exists, mfaktc may already be running" >&2

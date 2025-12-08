@@ -73,8 +73,16 @@ run_on_device() {
     fi
     ln -s ../$APP . && app_created=1
 
-    # don't overwrite custom settings
-    ! test -e $APP_SETTINGS && ln -s ../$APP_SETTINGS .
+    # use device-specific configuration file if one exists
+    if [[ ! -e $APP_SETTINGS ]]; then
+        # otherwise, mfaktc.ini must be present in root folder
+        if [[ ! -e ../$APP_SETTINGS ]]; then
+            echo "error: $APP_SETTINGS not found in root folder"
+            exit 1
+        else
+            ln -s ../$APP_SETTINGS .
+        fi
+    fi
 
     # run mfaktc on specified device
     ./$APP -d "$1"
@@ -88,6 +96,12 @@ cleanup() {
 
 trap 'cleanup' EXIT
 }
+
+# mfaktc executable must be present
+if [[ ! -e $APP ]]; then
+    echo "error: mfaktc executable not found in root folder"
+    exit 1
+fi
 
 if [[ $# -eq 0 ]]; then
     # don't run if device is in use

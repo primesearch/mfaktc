@@ -2,7 +2,7 @@
 
 # This file is part of mfaktc.
 # Copyright (c) 2019-2025  Danny Chia
-# Copyright (c) 2009-2011   Oliver Weihe (o.weihe@t-online.de)
+# Copyright (c) 2009-2011  Oliver Weihe (o.weihe@t-online.de)
 #
 # mfaktc is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -58,7 +58,7 @@ run_on_device() {
 
     # don't run if device is in use
     if [[ -e $LOCK ]]; then
-        echo "error: lock file $LOCK already exists, mfaktc may already be running on device $1"
+        echo "error: lock file $LOCK exists, mfaktc may already be running on device $1"
         exit 1
     else
         touch $LOCK
@@ -66,7 +66,8 @@ run_on_device() {
 
     # create symbolic links
     if [[ -e $APP ]]; then
-        echo "error: a file named 'mfaktc' already exists. Stopped to prevent data loss"
+        echo "error: cannot create symbolic link 'mfaktc' in directory 'device-$1' as a file"
+        echo "       with that name already exists. Stopped to prevent potential data loss
         exit 1
     fi
     ln -s ../$APP .
@@ -88,7 +89,7 @@ if [ "$#" == 0 ]
 then
     # don't run if device is in use
     if [[ -e $LOCK ]]; then
-        echo "error: lock file $LOCK already exists, mfaktc may already be running"
+        echo "error: lock file $LOCK exists, mfaktc may already be running"
         exit 1
     else
         touch $LOCK

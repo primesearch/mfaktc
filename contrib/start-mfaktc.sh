@@ -66,7 +66,7 @@ run_on_device() {
 
     # create symbolic links
     if [[ -e $APP ]]; then
-        echo "error: cannot create symbolic link 'mfaktc' in directory 'device-$1' as a file"
+        echo "error: cannot create symbolic link '$APP' in directory 'device-$1' as a file"
         echo "       with that name already exists. Stopped to prevent potential data loss
         exit 1
     fi

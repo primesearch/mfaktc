@@ -71,7 +71,6 @@ run_on_device() {
         echo "       with that name already exists. Stopped to prevent potential data loss" >&2
         exit 1
     fi
-    ln -s ../$APP . && app_created=1
 
     # use device-specific configuration file if one exists
     if [[ ! -e $APP_SETTINGS ]]; then
@@ -84,6 +83,7 @@ run_on_device() {
         fi
     fi
 
+    ln -s ../$APP . && app_created=1
     cleanup() {
         [[ -n "$app_created" ]] && rm -f $APP
 

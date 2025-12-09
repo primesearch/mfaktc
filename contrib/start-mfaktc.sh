@@ -67,8 +67,8 @@ run_on_device() {
 
     # create symbolic links
     if [[ -e $APP ]]; then
-        echo "error: cannot create symbolic link '$APP' in directory 'device-$1' as a file"
-        echo "       with that name already exists. Stopped to prevent potential data loss"
+        echo "error: cannot create symbolic link '$APP' in directory 'device-$1' as a file" >&2
+        echo "       with that name already exists. Stopped to prevent potential data loss" >&2
         exit 1
     fi
     ln -s ../$APP . && app_created=1
@@ -77,7 +77,7 @@ run_on_device() {
     if [[ ! -e $APP_SETTINGS ]]; then
         # otherwise, mfaktc.ini must be present in root folder
         if [[ ! -e ../$APP_SETTINGS ]]; then
-            echo "error: $APP_SETTINGS not found in root folder"
+            echo "error: $APP_SETTINGS not found in root folder" >&2
             exit 1
         else
             ln -s ../$APP_SETTINGS .
@@ -99,7 +99,7 @@ trap 'cleanup' EXIT
 
 # mfaktc executable must be present
 if [[ ! -e $APP ]]; then
-    echo "error: mfaktc executable not found in root folder"
+    echo "error: mfaktc executable not found in root folder" >&2
     exit 1
 fi
 

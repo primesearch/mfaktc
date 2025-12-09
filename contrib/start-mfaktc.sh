@@ -84,17 +84,17 @@ run_on_device() {
         fi
     fi
 
+    cleanup() {
+        [[ -n "$app_created" ]] && rm -f $APP
+
+        # don't delete mfaktc.ini unless it's a symbolic link
+        [[ -L $APP_SETTINGS ]] && rm $APP_SETTINGS
+    }
+
+    trap 'cleanup' EXIT
+
     # run mfaktc on specified device
     ./$APP -d "$1"
-
-cleanup() {
-    [[ -n "$app_created" ]] && rm -f $APP
-
-    # don't delete mfaktc.ini unless it's a symbolic link
-    [[ -L $APP_SETTINGS ]] && rm $APP_SETTINGS
-}
-
-trap 'cleanup' EXIT
 }
 
 # mfaktc executable must be present

@@ -49,7 +49,7 @@ INSTALL = copy
 
 ############################################################################################################
 
-all : ..\mfaktc-win-64.exe ..\mfaktc.ini $(ICON)
+all : ..\mfaktc-win-64.exe ..\mfaktc.ini
 
 ..\mfaktc-win-64.exe : $(COBJS) $(CUOBJS) $(RES)
 	$(LINK) $(LFLAGS) $^ $(LIBS) /out:$@
@@ -65,7 +65,7 @@ clean :
 %.rc : assets\\%.rc
 	$(INSTALL) $< .
 
-%.res : %.rc
+%.res : %.rc $(ICON)
 	rc /fo $@ $<
 
 tf_75bit.obj : tf_96bit.cu

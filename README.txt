@@ -12,6 +12,7 @@ Table of contents
 3   Running mfaktc
 3.1 Linux
 3.2 Windows
+3.3 mfaktc and multi-GPU systems
 4   Getting work and reporting results
 5   Known issues
 5.1 Non-issues
@@ -185,6 +186,11 @@ to 71 bits.
 - build mfaktc using the above instructions or download a stable release
 - go to the mfaktc root folder and run "./mfaktc"
 
+On remote systems, processes are killed when a session disconnects. To prevent
+this, use a terminal multiplexer such as tmux or GNU Screen to detach and
+reattach sessions. You can also use nohup as a simpler alternative, but be
+aware that nohup cannot reattach to a process.
+
 ###############
 # 3.2 Windows #
 ###############
@@ -193,8 +199,27 @@ mfaktc works very similarly on Windows. You can just run "mfaktc-win-64" in
 Command Prompt (cmd.exe) to launch the executable, or simply double-click it in
 File Explorer.
 
-However, you do need to prepend the executable name with ".\" in PowerShell or
-Windows Terminal.
+Please note: the executable name needs to be prepended with ".\" in PowerShell
+or Windows Terminal.
+
+####################################
+# 3.3 mfaktc and multi-GPU systems #
+####################################
+
+mfaktc currently does not support multiple threads, but the -d option can be
+used to start an instance on a specific device. Please note that device IDs
+are zero-indexed. For example, the option '-d 1' tells mfaktc to use the
+second GPU in a system with multiple GPUs. To avoid resource conflicts, make
+sure each instance has its own folder.
+
+It is recommended to set SieveOnGPU=1 in mfaktc.ini as this enables mfaktc to
+make full use of a device. Otherwise, multiple instances are needed to fully
+saturate a GPU when sieving on the CPU.
+
+For experienced users, the shell script start-mfaktc.sh can be used to easily
+launch multiple instances on Linux systems. It can be found in the "contribs"
+folder in the mfaktc repository on GitHub. Detailed information is available
+in the script file.
 
 
 ########################################
@@ -349,16 +374,6 @@ before making changes. ;-)
 #########
 # 7 FAQ #
 #########
-
-Q: Does mfaktc support multiple GPUs?
-A: Currently no, but you can use the -d option to start an instance on a
-   specific device. Please also see the next question.
-
-Q: Can I run multiple mfaktc instances on the same computer?
-A: Yes. In most cases, this is required to make full use of a GPU when sieving
-   on the CPU. Otherwise, one instance should fully utilize a single GPU.
-
-   You will need a separate directory for each mfaktc instance.
 
 Q: Are checkpoint files compatible between different mfaktc versions?
 A: Save files are compatible between different platforms and architectures. For

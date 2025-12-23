@@ -53,6 +53,7 @@ jobs:
         sys:
           # Specified version combination must exist as CUDA container image from Nvidia: nvcr.io/nvidia/cuda:${{ matrix.sys.cuda_version }}-devel-${{ matrix.sys.ct_os }}
           # Available versions can be found here: https://catalog.ngc.nvidia.com/orgs/nvidia/containers/cuda/tags (note that only Ubuntu distros are supported by this action)
+          - { cuda_version: '13.1.0', ct_os: 'ubuntu24.04' }
           - { cuda_version: '13.0.2', ct_os: 'ubuntu24.04' }
           # - { cuda_version: '13.0.1', ct_os: 'ubuntu24.04' }
           # - { cuda_version: '13.0.0', ct_os: 'ubuntu24.04' }
@@ -182,6 +183,7 @@ jobs:
         # Available CUDA versions can be viewed at the Jimver/cuda-toolkit action sources:
         # https://github.com/Jimver/cuda-toolkit/blob/v0.2.29/src/links/windows-links.ts
         sys:
+          - { cuda_version: '13.1.0' }
           - { cuda_version: '13.0.2' }
           - { cuda_version: '12.9.1' }
           - { cuda_version: '12.8.1' }
@@ -220,7 +222,7 @@ jobs:
 
       - name: Install CUDA Toolkit
         id: cuda-toolkit
-        uses: N-Storm/cuda-toolkit@v0.2.29
+        uses: N-Storm/cuda-toolkit@v0.2.30
         with:
           cuda: ${{ matrix.sys.cuda_version }}
           sub-packages: ${{ startsWith(matrix.sys.cuda_version, '8.') && '[]' || startsWith(matrix.sys.cuda_version, '13.') &&'[ "nvcc", "crt", "cudart", "nvvm", "nvptxcompiler" ]' || '[ "nvcc", "cudart" ]' }}

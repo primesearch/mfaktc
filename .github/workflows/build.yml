@@ -67,11 +67,11 @@ jobs:
           - { cuda_version: '12.8.2', ct_os: 'ubuntu24.04' }
           # - { cuda_version: '12.8.1', ct_os: 'ubuntu24.04' }
           # - { cuda_version: '12.8.0', ct_os: 'ubuntu24.04' }
-          - { cuda_version: '12.6.3', ct_os: 'ubuntu22.04' }
+          - { cuda_version: '12.6.3', ct_os: 'ubuntu24.04' }
           # - { cuda_version: '12.6.2', ct_os: 'ubuntu22.04' }
           # - { cuda_version: '12.6.1', ct_os: 'ubuntu22.04' }
           # - { cuda_version: '12.6.0', ct_os: 'ubuntu22.04' }
-          - { cuda_version: '12.5.1', ct_os: 'ubuntu22.04' }
+          - { cuda_version: '12.5.1', ct_os: 'ubuntu24.04' }
           # - { cuda_version: '12.5.0', ct_os: 'ubuntu22.04' }
           - { cuda_version: '12.4.1', ct_os: 'ubuntu22.04' }
           # - { cuda_version: '12.4.0', ct_os: 'ubuntu22.04' }

@@ -135,7 +135,7 @@ jobs:
         run: docker exec build-container bash -c "$SCRIPT"
 
       - name: Checkout repo
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           fetch-depth: 0
           fetch-tags: true
@@ -167,7 +167,7 @@ jobs:
         run: docker exec build-container bash -c "$SCRIPT"
 
       - name: Upload build artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: ${{ steps.prepare.outputs.BASE_NAME }}
           path: ${{ steps.prepare.outputs.BASE_NAME }}.*
@@ -222,7 +222,7 @@ jobs:
     steps:
 
       - name: Checkout repo
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           fetch-depth: 0
           fetch-tags: true
@@ -296,7 +296,7 @@ jobs:
           ${CL_VER} (${{ steps.prepare.outputs.COMPILER_VER }}) | ${{ steps.prepare.outputs.NVCC_VER }}" > ${{ steps.prepare.outputs.BASE_NAME }}.txt
 
       - name: Upload build artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: ${{ steps.prepare.outputs.BASE_NAME }}
           path: ${{ steps.prepare.outputs.BASE_NAME }}.*
@@ -319,7 +319,7 @@ jobs:
     steps:
 
       - name: Download artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v7
 
       - name: Prepare asset list and release notes
         id: makeinfo
@@ -345,7 +345,7 @@ jobs:
           ( echo "$GITHUB_REF_NAME" | grep -qsP "v?\d+(?:\.\d+(?:\.\d+)?(?:-\d+)?|\b)(-(?:alpha|beta|pre))" && echo "PRERELEASE=true" || echo "PRERELEASE=false" ) >> $GITHUB_OUTPUT
 
       - name: Create and upload release package
-        uses: softprops/action-gh-release@v2.2.1
+        uses: softprops/action-gh-release@v3.0.0
         with:
           fail_on_unmatched_files: false
           files: |

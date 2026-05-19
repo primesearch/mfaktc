@@ -58,7 +58,8 @@ jobs:
           - { cuda_version: '13.1.2', ct_os: 'ubuntu24.04' }
           # - { cuda_version: '13.1.1', ct_os: 'ubuntu24.04' }
           # - { cuda_version: '13.1.0', ct_os: 'ubuntu24.04' }
-          - { cuda_version: '13.0.2', ct_os: 'ubuntu24.04' }
+          - { cuda_version: '13.0.3', ct_os: 'ubuntu24.04' }
+          # - { cuda_version: '13.0.2', ct_os: 'ubuntu24.04' }
           # - { cuda_version: '13.0.1', ct_os: 'ubuntu24.04' }
           # - { cuda_version: '13.0.0', ct_os: 'ubuntu24.04' }
           - { cuda_version: '12.9.1', ct_os: 'ubuntu24.04' }
@@ -188,10 +189,8 @@ jobs:
         # https://github.com/N-Storm/cuda-toolkit/blob/v0.2.31/src/links/windows-links.ts
         sys:
           - { cuda_version: '13.2.1' }
-          # - { cuda_version: '13.2.0' }
           - { cuda_version: '13.1.2' }
-          # - { cuda_version: '13.1.1' }
-          - { cuda_version: '13.0.2' }
+          - { cuda_version: '13.0.3' }
           - { cuda_version: '12.9.1' }
           - { cuda_version: '12.8.1' }
           - { cuda_version: '12.6.3' }

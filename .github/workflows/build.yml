@@ -229,7 +229,7 @@ jobs:
 
       - name: Install CUDA Toolkit
         id: cuda-toolkit
-        uses: N-Storm/cuda-toolkit@v0.2.32
+        uses: N-Storm/cuda-toolkit@v0.2.34
         with:
           cuda: ${{ matrix.sys.cuda_version }}
           sub-packages: ${{ startsWith(matrix.sys.cuda_version, '8.') && '[]' || startsWith(matrix.sys.cuda_version, '13.') &&'[ "nvcc", "crt", "cudart", "nvvm", "nvptxcompiler" ]' || '[ "nvcc", "cudart" ]' }}

@@ -63,8 +63,7 @@ jobs:
           # - { cuda_version: '13.0.1', ct_os: 'ubuntu24.04' }
           # - { cuda_version: '13.0.0', ct_os: 'ubuntu24.04' }
           - { cuda_version: '12.9.2', ct_os: 'ubuntu24.04' }
-          - { cuda_version: '12.9.2', ct_os: 'ubuntu24.04' }
-          - { cuda_version: '12.9.1', ct_os: 'ubuntu24.04' }
+          # - { cuda_version: '12.9.1', ct_os: 'ubuntu24.04' }
           # - { cuda_version: '12.9.0', ct_os: 'ubuntu24.04' }
           - { cuda_version: '12.8.2', ct_os: 'ubuntu24.04' }
           # - { cuda_version: '12.8.1', ct_os: 'ubuntu24.04' }

@@ -1,4 +1,8 @@
 
+version 0.24.1
+==============================
+- no codebase changes, binary-only release rebuilt with current CUDA versions
+
 version 0.24.0
 ==============================
 - merged development branches 0.22 and 0.23.x

@@ -12,7 +12,7 @@ jobs:
   analyze:
     name: Analyze (${{ matrix.language }})
     runs-on: 'ubuntu-latest'
-    container: 'nvcr.io/nvidia/cuda:12.9.0-devel-ubuntu24.04'
+    container: 'nvcr.io/nvidia/cuda:13.2.1-devel-ubuntu24.04'
     permissions:
       # required for all workflows
       security-events: write
@@ -32,10 +32,10 @@ jobs:
           build-mode: autobuild
     steps:
     - name: Checkout repository
-      uses: actions/checkout@v4
+      uses: actions/checkout@v6
 
     - name: Initialize CodeQL
-      uses: github/codeql-action/init@v3
+      uses: github/codeql-action/init@v4
       with:
         languages: ${{ matrix.language }}
         build-mode: ${{ matrix.build-mode }}

@@ -179,7 +179,7 @@ jobs:
     # windows-2022 also works and produces nearly identical binaries, so let's
     # target the image that will be supported in the longer term. windows-2025
     # is in beta as of June 2025, but testing has shown it is reliable.
-    runs-on: windows-2025
+    runs-on: windows-2022
 
     strategy:
       # If set to true, all jobs within the same matrix (such as Linux or

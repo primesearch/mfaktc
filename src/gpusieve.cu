@@ -162,7 +162,6 @@ __device__ __inline static int mod_p(int x, int p, int pinv)
     if (pinv != gen_pinv(p)) printf("p doesn't match pinv!! p = %d, pinv = %d\n", p, pinv);
     if (r < 0 || r >= p) printf("x mod p out of range!! x = %d, p = %d, pinv = %d, r = %d\n", x, p, pinv, r);
 #endif
-    if (r < 0 || r >= p) printf("x mod p out of range!! x = %d, p = %d, pinv = %d, r = %d\n", x, p, pinv, r);
     return r;
 }
 
@@ -192,7 +191,6 @@ __device__ __inline static int mod_p_above64k(int x, int p, int pinv)
     if (pinv != gen_pinv(p)) printf("p doesn't match pinv!! p = %d, pinv = %d\n", p, pinv);
     if (r < 0 || r >= p) printf("x mod p out of range!! x = %d, p = %d, pinv = %d, r = %d\n", x, p, pinv, r);
 #endif
-    if (r < 0 || r >= p) printf("x mod p (above64k) out of range!! x = %d, p = %d, pinv = %d, r = %d\n", x, p, pinv, r);
     return r;
 }
 

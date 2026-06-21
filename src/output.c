@@ -524,7 +524,7 @@ void print_result_line(mystuff_t *mystuff, int factorsfound)
 #endif
         if (mystuff->legacy_results_txt == 1) {
             txtresultfile = fopen_and_lock(mystuff->resultfile, "a");
-            if (mystuff->print_timestamp == 1) {
+            if (txtresultfile != NULL && mystuff->print_timestamp == 1) {
                 print_timestamp(mystuff, txtresultfile);
             }
         }
@@ -569,14 +569,22 @@ void print_result_line(mystuff_t *mystuff, int factorsfound)
     }
     if (mystuff->mode == MODE_NORMAL) {
 #ifndef WAGSTAFF
-        fprintf(jsonresultfile, "%s\n", jsonstring);
-        unlock_and_fclose(jsonresultfile);
-        jsonresultfile = NULL;
+        if (jsonresultfile != NULL) {
+            fprintf(jsonresultfile, "%s\n", jsonstring);
+            unlock_and_fclose(jsonresultfile);
+            jsonresultfile = NULL;
+        } else {
+            printf("WARNING: could not open result file \"%s\"\n", mystuff->jsonresultfile);
+        }
 #endif
         if (mystuff->legacy_results_txt == 1) {
-            fprintf(txtresultfile, "%s%s\n", UID, txtstring);
-            unlock_and_fclose(txtresultfile);
-            txtresultfile = NULL;
+            if (txtresultfile != NULL) {
+                fprintf(txtresultfile, "%s%s\n", UID, txtstring);
+                unlock_and_fclose(txtresultfile);
+                txtresultfile = NULL;
+            } else {
+                printf("WARNING: could not open result file \"%s\"\n", mystuff->resultfile);
+            }
         }
     }
 }
@@ -603,7 +611,9 @@ void print_factor(mystuff_t *mystuff, int factor_number, char *factor)
 
     if (mystuff->mode == MODE_NORMAL && mystuff->legacy_results_txt == 1) {
         txtresultfile = fopen_and_lock(mystuff->resultfile, "a");
-        if (mystuff->print_timestamp == 1 && factor_number == 0) {
+        if (txtresultfile == NULL) {
+            printf("WARNING: could not open result file \"%s\"\n", mystuff->resultfile);
+        } else if (mystuff->print_timestamp == 1 && factor_number == 0) {
             print_timestamp(mystuff, txtresultfile);
         }
     }
@@ -624,7 +634,7 @@ void print_factor(mystuff_t *mystuff, int factor_number, char *factor)
             }
             printf("%s\n", factor_str_base);
         }
-        if (mystuff->mode == MODE_NORMAL && mystuff->legacy_results_txt == 1) {
+        if (txtresultfile != NULL) {
             fprintf(txtresultfile, "%s%s\n", UID, factor_str);
         }
     } else /* factor_number >= 10 */
@@ -634,13 +644,13 @@ void print_factor(mystuff_t *mystuff, int factor_number, char *factor)
             printf("%s%u: %d additional factor%s not shown\n", NAME_NUMBERS, mystuff->exponent, extra_factors,
                    (extra_factors == 1) ? "" : "s");
         }
-        if (mystuff->mode == MODE_NORMAL && mystuff->legacy_results_txt == 1) {
+        if (txtresultfile != NULL) {
             fprintf(txtresultfile, "%s%s%u: %d additional factor%s not shown\n", UID, NAME_NUMBERS, mystuff->exponent, extra_factors,
                     (extra_factors == 1) ? "" : "s");
         }
     }
 
-    if (mystuff->mode == MODE_NORMAL && mystuff->legacy_results_txt == 1) {
+    if (txtresultfile != NULL) {
         unlock_and_fclose(txtresultfile);
     }
 }

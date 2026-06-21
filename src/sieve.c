@@ -242,6 +242,7 @@ void sieve_init_class(unsigned int exp, unsigned long long int k_start, int siev
             printf("  k= %d\n", k);
             printf("  p= %d\n", p);
             printf("  check= %" PRId64 "\n", check);
+            exit(1);
         }
     }
 

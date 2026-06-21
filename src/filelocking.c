@@ -65,8 +65,7 @@ int make_temp_file(char *tpl)
     return _mktemp_s(tpl, strlen(tpl) + 1);
 #else
     int _temp_fd = mkstemp(tpl);
-    if (!_temp_fd)
-        return EINVAL;
+    if (_temp_fd == -1) return errno ? errno : EINVAL;
     close(_temp_fd);
     return 0;
 #endif

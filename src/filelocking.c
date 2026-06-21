@@ -114,9 +114,15 @@ FILE *fopen_and_lock(const char *path, const char *mode)
         break;
     }
 
+    if (lockfd < 0) {
+        /* The lock file could not be created for a reason other than
+           contention; do not pretend the file is locked. */
+        return NULL;
+    }
+
     locked_files[num_locked_files].lockfd = lockfd;
 
-    if (lockfd > 0 && i > 0) {
+    if (i > 0) {
         printf("Locked %.250s\n", path);
     }
 

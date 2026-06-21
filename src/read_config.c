@@ -69,6 +69,10 @@ int my_read_string(char *inifile, char *name, char *string, unsigned int len)
     while (fgets(buf, 250, in) && !found) {
         if (!strncmp(buf, name, idx) && buf[idx] == '=') {
             found = strlen(buf + idx + 1);
+            if (found == 0) {
+                string[0] = '\0';
+                continue;
+            }
             found = (len > found ? found : len) - 1;
             if (found) {
                 strncpy(string, buf + idx + 1, found);

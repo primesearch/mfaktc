@@ -102,20 +102,28 @@ int checkpoint_read(unsigned int exp, int bit_min, int bit_max, int *cur_class, 
         i = strlen(cur_buffer);
         if (i < 70) {
             ptr = &(ckp_buffer[i]);
-            sscanf(ptr, "%d %d %s %llu %08X", cur_class, &num_factors_ckp, factors_buffer, bit_level_time, &chksum_ckp);
-            sprintf(cur_buffer, "%s%u %d %d %d %s: %d %d %s %llu", NAME_NUMBERS, exp, bit_min, bit_max, NUM_CLASSES, MFAKTC_CHECKPOINT_VERSION,
-                    *cur_class, num_factors_ckp, factors_buffer, *bit_level_time);
+            /* parse into local variables, the caller's values are only set if the checkpoint file is valid */
+            int cur_class_ckp                         = -1;
+            unsigned long long int bit_level_time_ckp = 0;
+            num_factors_ckp                           = -1;
+            chksum_ckp                                = 0;
+            factors_buffer[0]                         = '\0';
+            sscanf(ptr, "%d %d %599s %llu %08X", &cur_class_ckp, &num_factors_ckp, factors_buffer, &bit_level_time_ckp, &chksum_ckp);
+            sprintf(cur_buffer, "%s%u %d %d %d %s: %d %d %s %llu", NAME_NUMBERS, exp, bit_min, bit_max, NUM_CLASSES,
+                    MFAKTC_CHECKPOINT_VERSION, cur_class_ckp, num_factors_ckp, factors_buffer, bit_level_time_ckp);
             chksum = crc32_checksum(cur_buffer, strlen(cur_buffer));
             if (chksum != chksum_ckp) {
                 printf("Warning: checkpoint file checksum mismatch\n");
             }
 
             sprintf(cur_buffer, "%s%u %d %d %d %s: %d %d %s %llu %08X", NAME_NUMBERS, exp, bit_min, bit_max, NUM_CLASSES,
-                    MFAKTC_CHECKPOINT_VERSION, *cur_class, num_factors_ckp, factors_buffer, *bit_level_time, chksum);
-            if (*cur_class >= 0 && *cur_class < NUM_CLASSES && num_factors_ckp >= 0 && strlen(ckp_buffer) == strlen(cur_buffer) &&
+                    MFAKTC_CHECKPOINT_VERSION, cur_class_ckp, num_factors_ckp, factors_buffer, bit_level_time_ckp, chksum);
+            if (cur_class_ckp >= 0 && cur_class_ckp < NUM_CLASSES && num_factors_ckp >= 0 && strlen(ckp_buffer) == strlen(cur_buffer) &&
                 strstr(ckp_buffer, cur_buffer) == ckp_buffer &&
                 ((num_factors_ckp == 0 && strlen(factors_buffer) == 1) || (num_factors_ckp >= 1 && strlen(factors_buffer) > 1))) {
-                ret = 1;
+                ret             = 1;
+                *cur_class      = cur_class_ckp;
+                *bit_level_time = bit_level_time_ckp;
 
                 // Reset factors
                 for (i = 0; i < MAX_FACTORS_PER_JOB; i++) {

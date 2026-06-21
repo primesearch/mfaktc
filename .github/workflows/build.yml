@@ -346,7 +346,7 @@ jobs:
           ( echo "$GITHUB_REF_NAME" | grep -qsP "v?\d+(?:\.\d+(?:\.\d+)?(?:-\d+)?|\b)(-(?:alpha|beta|pre))" && echo "PRERELEASE=true" || echo "PRERELEASE=false" ) >> $GITHUB_OUTPUT
 
       - name: Create and upload release package
-        uses: softprops/action-gh-release@v3.0.0
+        uses: softprops/action-gh-release@v3.0.1
         with:
           fail_on_unmatched_files: false
           files: |

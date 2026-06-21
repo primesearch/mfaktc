@@ -69,7 +69,7 @@ const uint32 primesHandledWithSpecialCode    = 50;          // Count of primes h
 
 // the maximum number of threads per SM is not the same for all architectures,
 // see https://en.wikipedia.org/wiki/CUDA#Technical_specifications for details
-#if __CUDA_ARCH < FERMI || __CUDA_ARCH__ == TURING
+#if __CUDA_ARCH__ < FERMI || __CUDA_ARCH__ == TURING
 // Compute capability 1.1 only supports 768 threads per multiprocessor, but
 // using minBlocksPerMultiprocessor = 3 may cause a "max reg limit too low"
 // error. Using minBlocksPerMultiprocessor = 4 seems to work and does not

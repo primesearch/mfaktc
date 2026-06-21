@@ -16,6 +16,12 @@ You should have received a copy of the GNU General Public License
 along with mfaktc.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+/* create_k_deltas() stores per-candidate bit offsets in [0, bits_to_process)
+   into k_deltas[] as unsigned short. bits_to_process is gpu_sieve_processing_size,
+   which is at most GPU_SIEVE_PROCESS_SIZE_MAX * 1024 bits; that must stay within
+   the 16-bit range or the offsets would silently truncate. */
+static_assert(GPU_SIEVE_PROCESS_SIZE_MAX * 1024 <= 65536, "GPU_SIEVE_PROCESS_SIZE_MAX too large for unsigned short k_deltas[]");
+
 __device__ static void create_k_deltas(unsigned int *bit_array, unsigned int bits_to_process, int *total_bit_count,
                                        unsigned short *k_deltas)
 {

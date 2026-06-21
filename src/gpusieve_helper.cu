@@ -38,23 +38,32 @@ __device__ static void create_k_deltas(unsigned int *bit_array, unsigned int bit
     bitcount[threadIdx.x] = 0;
     for (i = 0; i < words_per_thread; i++)
         bitcount[threadIdx.x] = __popc(bit_array[i]) + bitcount[threadIdx.x];
+    // make each lane's count visible to the other lanes of its warp before the first tally reads it
+    __syncwarp();
 
     // Create total count of bits set in block up to and including this threads popc.
     // Kudos to Rocke Verser for the population counting code.
     // CAUTION:  Following requires 256 threads per block
 
-    // First five tallies remain within one warp.  Should be in lock-step.
+    // First five tallies remain within one warp.  On architectures with
+    // Independent Thread Scheduling (Volta and later) warps are no longer
+    // guaranteed to run in lock-step, so each of these read-after-write steps
+    // must be separated by an explicit warp-level barrier.
     if (threadIdx.x & 1) // If we are running on any thread 0bxxxxxxx1, tally neighbor's count.
         bitcount[threadIdx.x] = bitcount[threadIdx.x - 1] + bitcount[threadIdx.x];
+    __syncwarp();
 
     if (threadIdx.x & 2) // If we are running on any thread 0bxxxxxx1x, tally neighbor's count.
         bitcount[threadIdx.x] = bitcount[(threadIdx.x - 2) | 1] + bitcount[threadIdx.x];
+    __syncwarp();
 
     if (threadIdx.x & 4) // If we are running on any thread 0bxxxxx1xx, tally neighbor's count.
         bitcount[threadIdx.x] = bitcount[(threadIdx.x - 4) | 3] + bitcount[threadIdx.x];
+    __syncwarp();
 
     if (threadIdx.x & 8) // If we are running on any thread 0bxxxx1xxx, tally neighbor's count.
         bitcount[threadIdx.x] = bitcount[(threadIdx.x - 8) | 7] + bitcount[threadIdx.x];
+    __syncwarp();
 
     if (threadIdx.x & 16) // If we are running on any thread 0bxxx1xxxx, tally neighbor's count.
         bitcount[threadIdx.x] = bitcount[(threadIdx.x - 16) | 15] + bitcount[threadIdx.x];

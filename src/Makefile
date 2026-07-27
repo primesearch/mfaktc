@@ -3,14 +3,23 @@ CUDA_DIR = /usr/local/cuda
 CUDA_INCLUDE = -I$(CUDA_DIR)/include/
 CUDA_LIB = -L$(CUDA_DIR)/lib64/
 
+DEBUG = 0
+
 # compiler settings for .c files (CPU)
-CC = gcc
-CFLAGS = -Wall -Wextra -O3 -flto -malign-double -ffunction-sections -fdata-sections -Wl,--gc-sections $(CUDA_INCLUDE)
-CFLAGS_EXTRA_SIEVE = -funroll-all-loops
+CC ?= gcc
+CXX ?= g++
+CFLAGS = -Wall -Wextra $(CUDA_INCLUDE)
+
+ifeq ($(DEBUG), 1)
+  CFLAGS += -g -Og
+else
+  CFLAGS += -O3 -ffast-math -flto -ffunction-sections -fdata-sections
+  CFLAGS_EXTRA_SIEVE = -funroll-all-loops
+endif
 
 # compiler settings for .cu files (GPU)
 NVCC = nvcc
-NVCCFLAGS = $(CUDA_INCLUDE) --ptxas-options=-v -O3 -Wno-deprecated-gpu-targets
+NVCCFLAGS = $(CUDA_INCLUDE) --ptxas-options=-v -Wno-deprecated-gpu-targets
 
 # generate code for compute capabilities - see this table for supported
 # versions: https://en.wikipedia.org/wiki/CUDA#GPUs_supported
@@ -40,11 +49,15 @@ NVCCFLAGS += --generate-code arch=compute_90,code=sm_90 # Hopper GPUs
 NVCCFLAGS += --generate-code arch=compute_120,code=sm_120 # Blackwell GPUs
 
 # pass some options to the C host compiler
-NVCCFLAGS += --compiler-options=-Wall
+ifeq ($(DEBUG), 1)
+  NVCCFLAGS += -g -G -O1 --compiler-options="-Wall -Wextra -Og"
+else
+  NVCCFLAGS += -O3 --compiler-options="-Wall -Wextra -O3"
+endif
 
 # Linker
-LD = gcc
-LDFLAGS = -flto -fPIC -Wl,--gc-sections $(CUDA_LIB) -lcudart_static -lm -lstdc++
+LD = $(CXX)
+LDFLAGS = -flto -Wl,--gc-sections $(CUDA_LIB) -lcudart_static -lm -ldl -lrt -lpthread
 
 INSTALL = install
 

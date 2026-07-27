@@ -26,6 +26,8 @@
 # support building under GitHub Actions runner environments and compiling
 # kernels for all devices with NVCC-supported compute capabilities.
 
+set -e -o pipefail
+
 if [[ -z "$1" ]]; then
   echo "Usage: $0 <CUDA version>" >&2
   exit 1
@@ -35,7 +37,7 @@ fi
 # to GNU sort
 export GSORT='/usr/bin/sort'
 
-CUDA_VERSION_FULL="$(echo "$1" | head -n1 | grep -Eom1 -e '^[1-9]([0-9])?\.[0-9]{1,2}(\.[0-9]{1,3})?$')"
+CUDA_VERSION_FULL=$(echo "$1" | head -n1 | grep -Eom1 -e '^[1-9]([0-9])?\.[0-9]{1,2}(\.[0-9]{1,3})?$')
 declare -a CUDA_VERSION
 IFS=" " read -r -a CUDA_VERSION <<< "$(echo "$CUDA_VERSION_FULL" | tr '.' ' ')"
 if [[ -z "${CUDA_VERSION[*]}" ]]; then
@@ -54,18 +56,18 @@ printf -v CUDA_VER %d%02d "${CUDA_VER_MAJOR}" "${CUDA_VER_MINOR}";
 # CUDA supports the --list-gpu-arch flag from 11.0.0 onwards.
 # For older CUDA versions, use grep to parse the supported architectures from
 # the output of --help
-[ "$CUDA_VER" -gt 1100 ] && NVCC_OPTS='--list-gpu-arch' || NVCC_OPTS='--help'
+[[ "$CUDA_VER" -gt 1100 ]] && NVCC_OPTS='--list-gpu-arch' || NVCC_OPTS='--help'
 NVCC_REGEX='compute_[1-9][0-9]{1,2}'
 # CUDA 11.0.x is a special case. Its --help output lists compute_32 and higher,
 # but only compute capability 3.5 and later are supported.
-[ "$CUDA_VER" -eq 1100 ] && NVCC_REGEX='compute_(3[5-9]|[4-9][0-9])'
+[[ "$CUDA_VER" -eq 1100 ]] && NVCC_REGEX='compute_(3[5-9]|[4-9][0-9])'
 
 declare -a CC_LIST
 IFS=" " read -r -a CC_LIST <<< "$(nvcc "$NVCC_OPTS" | grep -Eoe "$NVCC_REGEX" | cut -d '_' -f2 | $GSORT -un | xargs)"
-if [ ${#CC_LIST[*]} -eq 0 ]; then
+if [[ ${#CC_LIST[*]} -eq 0 ]]; then
   echo "Error: could not parse list of supported compute capabilities" >&2
   exit 3
-elif [ ${#CC_LIST[*]} -lt 3 ]; then
+elif [[ ${#CC_LIST[*]} -lt 3 ]]; then
   echo "Warning: less than three (3) supported compute capabilities" >&2
 fi
 
@@ -80,46 +82,42 @@ for CC in "${CC_LIST[@]}"; do
   sed -i "/^NVCCFLAGS = .*\$/a NVCCFLAGS += --generate-code arch=compute_${CC},code=sm_${CC}" src/Makefile src/Makefile.win
 done
 
-if [ "$CUDA_VER" -ge 1100 ]; then
+if [[ "$CUDA_VER" -ge 1100 ]]; then
   echo 'Adding NVCCFLAGS to allow unsupported MSVC versions...'
   sed -i '/^NVCCFLAGS = .*/a NVCCFLAGS += -allow-unsupported-compiler -D_ALLOW_COMPILER_AND_STL_VERSION_MISMATCH' src/Makefile.win
-fi
-if [ "$CUDA_VER" -lt 1200 ]; then
-  echo "Adding libraries to LDFLAGS to support static build on older Ubuntu versions..."
-  sed -i -E 's/^(LDFLAGS = .*? -lcudart_static) (.*)/\1 -ldl -lrt -lpthread \2/' src/Makefile
 fi
 
 echo 'Gathering host compiler and NVCC version info...'
 # COMPILER_VER for Windows builds is actually set to the MSVC product version.
 # We retrieve the cl.exe version during the build step and add it to the table.
 if [[ -x "$(command -v vswhere.exe)" ]]; then
-  CC_VSPROD="$(vswhere -latest -products '*' -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property displayName | sed -e 's/Visual Studio/MSVC/')"
+  CC_VSPROD=$(vswhere -latest -products '*' -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property displayName | sed -e 's/Visual Studio/MSVC/')
   COMPILER_VER="${CC_VSPROD}, $(vswhere -latest -products '*' -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationVersion)"
 elif [[ -x "$(command -v powershell.exe)" ]]; then
-  CC_VSINFO="$(powershell -Command Get-VSSetupInstance)"
-  CC_VSPROD="$(echo "$CC_VSINFO" | grep DisplayName | cut -d':' -f2 | xargs | sed -e 's/Visual Studio/MSVC/')"
+  CC_VSINFO=$(powershell -Command Get-VSSetupInstance)
+  CC_VSPROD=$(echo "$CC_VSINFO" | grep DisplayName | cut -d':' -f2 | xargs | sed -e 's/Visual Studio/MSVC/')
   COMPILER_VER="${CC_VSPROD}, $(echo "$CC_VSINFO" | grep InstallationVersion | cut -d':' -f2 | xargs)"
 else
-  COMPILER_VER="$(gcc --version | head -n1)"
+  COMPILER_VER=$(gcc --version | head -n1)
   # shellcheck source=/dev/null
   source /etc/os-release
-  OS_VER="${PRETTY_NAME}"
+  OS_VER=${PRETTY_NAME}
   OS_TYPE="linux64"
 fi
 
 if [[ -x "$(command -v powershell.exe)" ]]; then
-  OS_VER="$(powershell -Command "[System.Environment]::OSVersion.VersionString" | cut -d ' ' -f2-)"
+  OS_VER=$(powershell -Command "[System.Environment]::OSVersion.VersionString" | cut -d ' ' -f2-)
   OS_TYPE="win64"
 fi
 
-NVCC_VER="$(nvcc --version | tail -n1 | sed -E 's/^Build //;s/^Cuda compilation tools, //')"
+NVCC_VER=$(nvcc --version | tail -n1 | sed -E 's/^Build //;s/^Cuda compilation tools, //')
 
 # get mfaktc version from src/params.h
 # match SemVer and GIMPS version strings: https://regex101.com/r/m38d3i/2
-MFAKTC_VER="$(LC_ALL=en_US.utf8 grep -iPo '#define[\s\t]+MFAKTC_VERSION[\s\t]+"v?\d+(?:\.\d+(?:\.\d+)?(?:-\d+)?|\b)(?:-?(?:alpha|beta|pre)\.?(?:\d+)?\b)?' src/params.h | cut -d '"' -f 2)"
+MFAKTC_VER=$(LC_ALL=en_US.utf8 grep -iPo '#define[\s\t]+MFAKTC_VERSION[\s\t]+"v?\d+(?:\.\d+(?:\.\d+)?(?:-\d+)?|\b)(?:-?(?:alpha|beta|pre)\.?(?:\d+)?\b)?' src/params.h | cut -d '"' -f 2)
 
 # Git-formatted version
-GIT_TAG_VER="$(git describe --tags)"
+GIT_TAG_VER=$(git describe --tags)
 
 # Compare MFAKTC_VER with the version extracted from GIT_TAG_VER using tags.
 # If they don't match, throw a warning and use MFAKTC_VER and the short commit
@@ -130,7 +128,7 @@ GIT_TAG_VER="$(git describe --tags)"
 # reference. This gives a shorter BASE_NAME without the commit hash for
 # releases.
 if [[ "$MFAKTC_VER" != "${GIT_TAG_VER:0:${#MFAKTC_VER}}" ]]; then
-  SHA_SHORT="$(git rev-parse --short HEAD)"
+  SHA_SHORT=$(git rev-parse --short HEAD)
   BASE_NAME="mfaktc-${MFAKTC_VER}-${SHA_SHORT}-${OS_TYPE}-cuda${CUDA_VERSION_FULL}"
   echo "Warning: version from 'git describe' (${GIT_TAG_VER}) doesn't begin with MFAKTC_VER (${MFAKTC_VER}) from params.h"
   echo "Using version from params.h and short commit hash (${SHA_SHORT}) for BASE_NAME"

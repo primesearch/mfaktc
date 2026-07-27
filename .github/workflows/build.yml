@@ -17,26 +17,12 @@
 #
 # SPDX-License-Identifier: GPL-3.0-or-later
 
-name: mfaktc CI
+name: mfaktc CD
 
 on:
   push:
-    paths-ignore:
-      - '**/*.txt'
-      - '**/*.ini'
-      - 'COPYING'
-      - '.gitignore'
-  pull_request:
-    paths-ignore:
-      - '**/*.txt'
-      - '**/*.ini'
-      - 'COPYING'
-      - '.gitignore'
-    types:
-      - 'opened'
-      - 'reopened'
-      - 'synchronize'
-      - 'ready_for_review'
+    tags:
+      - '*'
   workflow_dispatch:
 
 jobs:
@@ -50,90 +36,77 @@ jobs:
       fail-fast: false
 
       matrix:
-        sys:
-          # Specified version combination must exist as CUDA container image from Nvidia: nvcr.io/nvidia/cuda:${{ matrix.sys.cuda_version }}-devel-${{ matrix.sys.ct_os }}
-          # Available versions can be found here: https://catalog.ngc.nvidia.com/orgs/nvidia/containers/cuda/tags (note that only Ubuntu distros are supported by this action)
-          - { cuda_version: '13.2.1', ct_os: 'ubuntu24.04' }
-          # - { cuda_version: '13.2.0', ct_os: 'ubuntu24.04' }
-          - { cuda_version: '13.1.2', ct_os: 'ubuntu24.04' }
-          # - { cuda_version: '13.1.1', ct_os: 'ubuntu24.04' }
-          # - { cuda_version: '13.1.0', ct_os: 'ubuntu24.04' }
-          - { cuda_version: '13.0.3', ct_os: 'ubuntu24.04' }
-          # - { cuda_version: '13.0.2', ct_os: 'ubuntu24.04' }
-          # - { cuda_version: '13.0.1', ct_os: 'ubuntu24.04' }
-          # - { cuda_version: '13.0.0', ct_os: 'ubuntu24.04' }
-          - { cuda_version: '12.9.2', ct_os: 'ubuntu24.04' }
-          # - { cuda_version: '12.9.1', ct_os: 'ubuntu24.04' }
-          # - { cuda_version: '12.9.0', ct_os: 'ubuntu24.04' }
-          - { cuda_version: '12.8.2', ct_os: 'ubuntu24.04' }
-          # - { cuda_version: '12.8.1', ct_os: 'ubuntu24.04' }
-          # - { cuda_version: '12.8.0', ct_os: 'ubuntu24.04' }
-          - { cuda_version: '12.6.3', ct_os: 'ubuntu24.04' }
-          # - { cuda_version: '12.6.2', ct_os: 'ubuntu22.04' }
-          # - { cuda_version: '12.6.1', ct_os: 'ubuntu22.04' }
-          # - { cuda_version: '12.6.0', ct_os: 'ubuntu22.04' }
-          - { cuda_version: '12.5.1', ct_os: 'ubuntu24.04' }
-          # - { cuda_version: '12.5.0', ct_os: 'ubuntu22.04' }
-          - { cuda_version: '12.4.1', ct_os: 'ubuntu22.04' }
-          # - { cuda_version: '12.4.0', ct_os: 'ubuntu22.04' }
-          - { cuda_version: '12.3.2', ct_os: 'ubuntu22.04' }
-          # - { cuda_version: '12.3.1', ct_os: 'ubuntu22.04' }
-          # - { cuda_version: '12.3.0', ct_os: 'ubuntu22.04' }
-          - { cuda_version: '12.2.2', ct_os: 'ubuntu22.04' }
-          # - { cuda_version: '12.2.0', ct_os: 'ubuntu22.04' }
-          - { cuda_version: '12.1.1', ct_os: 'ubuntu22.04' }
-          # - { cuda_version: '12.1.0', ct_os: 'ubuntu22.04' }
-          - { cuda_version: '12.0.1', ct_os: 'ubuntu22.04' }
-          # - { cuda_version: '12.0.0', ct_os: 'ubuntu22.04' }
-          - { cuda_version: '11.8.0', ct_os: 'ubuntu22.04' }
-          - { cuda_version: '11.7.1', ct_os: 'ubuntu22.04' }
-          # - { cuda_version: '11.7.0', ct_os: 'ubuntu22.04' }
-          - { cuda_version: '11.6.2', ct_os: 'ubuntu20.04' }
-          # - { cuda_version: '11.6.1', ct_os: 'ubuntu20.04' }
-          # - { cuda_version: '11.6.0', ct_os: 'ubuntu20.04' }
-          - { cuda_version: '11.5.2', ct_os: 'ubuntu20.04' }
-          # - { cuda_version: '11.5.1', ct_os: 'ubuntu20.04' }
-          # - { cuda_version: '11.5.0', ct_os: 'ubuntu20.04' }
-          - { cuda_version: '11.4.3', ct_os: 'ubuntu20.04' }
-          - { cuda_version: '11.3.1', ct_os: 'ubuntu20.04' }
-          - { cuda_version: '11.2.2', ct_os: 'ubuntu20.04' }
-          - { cuda_version: '11.1.1', ct_os: 'ubuntu20.04' }
-          - { cuda_version: '11.0.3', ct_os: 'ubuntu20.04' }
-          - { cuda_version: '10.2', ct_os: 'ubuntu18.04' }
-          - { cuda_version: '9.2', ct_os: 'ubuntu18.04' }
-          - { cuda_version: '8.0', ct_os: 'ubuntu16.04' }
+        include:
+          # Specified version combination must exist as CUDA container image from Nvidia: nvcr.io/nvidia/cuda:${{ matrix.cuda_version }}-devel-${{ matrix.ct_os }}
+          # Available versions can be found here: https://catalog.ngc.nvidia.com/orgs/nvidia/containers/cuda/tags
 
-    env:
+          # Rocky Linux 8: glibc 2.28
+          - { cuda_version: '13.2.1', ct_os: 'rockylinux8', toolset: 'system' }
+          - { cuda_version: '13.1.2', ct_os: 'rockylinux8', toolset: 'system' }
+          - { cuda_version: '13.0.3', ct_os: 'rockylinux8', toolset: 'system' }
+          - { cuda_version: '12.9.2', ct_os: 'rockylinux8', toolset: 'system' }
+          - { cuda_version: '12.8.2', ct_os: 'rockylinux8', toolset: 'system' }
+          - { cuda_version: '12.6.3', ct_os: 'rockylinux8', toolset: 'system' }
+          - { cuda_version: '12.5.1', ct_os: 'rockylinux8', toolset: 'system' }
+          - { cuda_version: '12.4.1', ct_os: 'rockylinux8', toolset: 'system' }
+
+          # CentOS 7 with GCC 6: glibc 2.17
+          - { cuda_version: '12.3.2', ct_os: 'centos7', toolset: '6' }
+          - { cuda_version: '12.2.2', ct_os: 'centos7', toolset: '6' }
+          - { cuda_version: '12.1.1', ct_os: 'centos7', toolset: '6' }
+          - { cuda_version: '12.0.1', ct_os: 'centos7', toolset: '6' }
+          - { cuda_version: '11.8.0', ct_os: 'centos7', toolset: '6' }
+          - { cuda_version: '11.7.1', ct_os: 'centos7', toolset: '6' }
+          - { cuda_version: '11.6.2', ct_os: 'centos7', toolset: '6' }
+          - { cuda_version: '11.5.2', ct_os: 'centos7', toolset: '6' }
+          - { cuda_version: '11.4.3', ct_os: 'centos7', toolset: '6' }
+          - { cuda_version: '11.3.1', ct_os: 'centos7', toolset: '6' }
+          - { cuda_version: '11.2.2', ct_os: 'centos7', toolset: '6' }
+          - { cuda_version: '11.1.1', ct_os: 'centos7', toolset: '6' }
+          - { cuda_version: '11.0.3', ct_os: 'centos7', toolset: '6' }
+
+          # CentOS 7 system GCC 4.8: glibc 2.17
+          - { cuda_version: '10.2', ct_os: 'centos7', toolset: 'system' }
+          - { cuda_version: '9.2',  ct_os: 'centos7', toolset: 'system' }
+          - { cuda_version: '8.0',  ct_os: 'centos7', toolset: 'system' }
+
       # We can't use GitHub direct container support on old Ubuntu versions,
       # because actions will fail due to an old glibc version.
       # A workaround is to use 'docker exec' to run build-related actions in
       # a separately launched Docker container, while generic actions will run
       # on the host runner.
-      CONTAINER: "nvcr.io/nvidia/cuda:${{ matrix.sys.cuda_version }}-devel-${{ matrix.sys.ct_os }}"
 
     steps:
 
       - name: Start Docker container
         run: |
-          docker pull $CONTAINER
-          docker run --name build-container -d -v ${GITHUB_WORKSPACE}:/workspace $CONTAINER tail -f /dev/null
-
-      - name: Update GPG keys for CUDA repo on Ubuntu 16.04
-        if: matrix.sys.ct_os == 'ubuntu16.04'
-        env:
-          SCRIPT: apt-key add /workspace/3bf863cc.pub
-        run: |
-          wget https://developer.download.nvidia.com/compute/cuda/repos/ubuntu1604/x86_64/3bf863cc.pub
-          docker exec build-container bash -c "$SCRIPT"
+          docker run --rm --name build-container -d -v "${GITHUB_WORKSPACE}:/workspace" "nvcr.io/nvidia/cuda:${{ matrix.cuda_version }}-devel-${{ matrix.ct_os }}" tail -f /dev/null
 
       - name: Update and install dependencies inside container
         id: packages
-        env:
-          SCRIPT: |
-            apt-get update
-            apt-get -y full-upgrade
-            apt-get install -y build-essential curl git make python3 sudo unzip wget zip
-        run: docker exec build-container bash -c "$SCRIPT"
+        run: |
+          docker exec -i -w /workspace build-container bash -s <<'EOF'
+            set -e -o pipefail
+            if [[ "${{ matrix.ct_os }}" == centos* ]]; then
+              sed -i '/^mirrorlist/d;/^#baseurl=/{s|^#||;s|/mirror|/vault|;}' /etc/yum.repos.d/CentOS*.repo
+              # yum update -y
+              if [[ "${{ matrix.toolset }}" == system ]]; then
+                yum install -y gcc gcc-c++ make git zip
+              else
+                yum install -y centos-release-scl
+                sed -i 's|/centos/7/|/centos/7.6.1810/|g;/^mirrorlist/d;/^# *baseurl=/{s|^# *||;s|/mirror|/vault|;}' /etc/yum.repos.d/CentOS-SCLo-*.repo
+                yum install -y "devtoolset-${{ matrix.toolset }}-gcc-c++" make git zip
+                source "/opt/rh/devtoolset-${{ matrix.toolset }}/enable"
+              fi
+            else
+              # dnf update -y
+              dnf install -y gcc gcc-c++ make git zip
+            fi
+
+            gcc --version
+            ldd --version
+            nvcc --version
+          EOF
 
       - name: Checkout repo
         uses: actions/checkout@v7
@@ -143,35 +116,47 @@ jobs:
 
       - name: Prepare sources and gather info
         id: prepare
-        env:
-          SCRIPT: |
-            cd /workspace
-            git config --global --add safe.directory /workspace
-            bash .github/workflows/scripts/build_helper.sh ${{ matrix.sys.cuda_version }}
         run: |
-          docker exec build-container bash -c "$SCRIPT"
-          cat .github/workflows/scripts/build_helper.sh.out >> $GITHUB_OUTPUT
+          docker exec -i -w /workspace build-container bash -s <<'EOF'
+            set -e -o pipefail
+            if [[ "${{ matrix.toolset }}" != system ]]; then
+              source "/opt/rh/devtoolset-${{ matrix.toolset }}/enable"
+            fi
+            git config --global --add safe.directory /workspace
+            bash .github/workflows/scripts/build_helper.sh ${{ matrix.cuda_version }}
+          EOF
+          cat .github/workflows/scripts/build_helper.sh.out >> "$GITHUB_OUTPUT"
 
       - name: Build from sources
-        env:
-          SCRIPT: cd /workspace/src && make -j$(nproc)
-        run: docker exec build-container bash -c "$SCRIPT"
+        run: |
+          docker exec -i -w /workspace build-container bash -s <<'EOF'
+            set -e -o pipefail
+            if [[ "${{ matrix.toolset }}" != system ]]; then
+              source "/opt/rh/devtoolset-${{ matrix.toolset }}/enable"
+            fi
+            cd src
+            make -j$(nproc)
+          EOF
 
       - name: Prepare ZIP archive with description
-        env:
-          SCRIPT: |
-            cd /workspace
+        run: |
+          docker exec -i -w /workspace build-container bash -s <<'EOF'
+            set -e -o pipefail
             zip -9 -j ${{ steps.prepare.outputs.BASE_NAME }}.zip Changelog.txt COPYING mfaktc mfaktc.ini README.txt
             echo "[${{ steps.prepare.outputs.BASE_NAME }}.zip](https://github.com/${{ github.repository }}/releases/download/${{ github.ref_name }}/${{ steps.prepare.outputs.BASE_NAME }}.zip) | \
-            ${{ matrix.sys.cuda_version }} | ${{ steps.prepare.outputs.CC_MIN }}-${{ steps.prepare.outputs.CC_MAX }} | ${{ steps.prepare.outputs.OS_VER }} | \
+            ${{ matrix.cuda_version }} | ${{ steps.prepare.outputs.CC_MIN }}-${{ steps.prepare.outputs.CC_MAX }} | ${{ steps.prepare.outputs.OS_VER }} | \
             ${{ steps.prepare.outputs.COMPILER_VER }} | ${{ steps.prepare.outputs.NVCC_VER }}" > ${{ steps.prepare.outputs.BASE_NAME }}.txt
-        run: docker exec build-container bash -c "$SCRIPT"
+          EOF
 
       - name: Upload build artifacts
         uses: actions/upload-artifact@v7
         with:
           name: ${{ steps.prepare.outputs.BASE_NAME }}
           path: ${{ steps.prepare.outputs.BASE_NAME }}.*
+
+      - name: Stop container
+        if: always()
+        run: docker rm -f build-container || true
 # End job "build-linux"
 
 # Begin job "build-win"
@@ -189,31 +174,31 @@ jobs:
       matrix:
         # Available CUDA versions can be viewed at the Jimver/cuda-toolkit action sources:
         # https://github.com/N-Storm/cuda-toolkit/blob/v0.2.31/src/links/windows-links.ts
-        sys:
-          - { cuda_version: '13.2.1' }
-          - { cuda_version: '13.1.2' }
-          - { cuda_version: '13.0.3' }
-          - { cuda_version: '12.9.2' }
-          - { cuda_version: '12.8.2' }
-          - { cuda_version: '12.6.3' }
-          - { cuda_version: '12.5.1' }
-          - { cuda_version: '12.4.1' }
-          - { cuda_version: '12.3.2' }
-          - { cuda_version: '12.2.2' }
-          - { cuda_version: '12.1.1' }
-          - { cuda_version: '12.0.1' }
-          - { cuda_version: '11.8.0' }
-          - { cuda_version: '11.7.1' }
-          - { cuda_version: '11.6.2' }
-          - { cuda_version: '11.5.2' }
-          - { cuda_version: '11.4.4' }
-          - { cuda_version: '11.3.1' }
-          - { cuda_version: '11.2.2' }
-          - { cuda_version: '11.1.1' }
-          - { cuda_version: '11.0.1' }
-          - { cuda_version: '10.0.130' }
-          - { cuda_version: '9.2.148' }
-          - { cuda_version: '8.0.61' }
+        cuda_version:
+          - '13.2.1'
+          - '13.1.2'
+          - '13.0.3'
+          - '12.9.2'
+          - '12.8.2'
+          - '12.6.3'
+          - '12.5.1'
+          - '12.4.1'
+          - '12.3.2'
+          - '12.2.2'
+          - '12.1.1'
+          - '12.0.1'
+          - '11.8.0'
+          - '11.7.1'
+          - '11.6.2'
+          - '11.5.2'
+          - '11.4.4'
+          - '11.3.1'
+          - '11.2.2'
+          - '11.1.1'
+          - '11.0.1'
+          - '10.0.130'
+          - '9.2.148'
+          - '8.0.61'
 
     env:
       MSVC_PKG_VC140: Microsoft.VisualStudio.Component.VC.140
@@ -232,30 +217,28 @@ jobs:
         id: cuda-toolkit
         uses: N-Storm/cuda-toolkit@v0.2.34
         with:
-          cuda: ${{ matrix.sys.cuda_version }}
-          sub-packages: ${{ startsWith(matrix.sys.cuda_version, '8.') && '[]' || startsWith(matrix.sys.cuda_version, '13.') &&'[ "nvcc", "crt", "cudart", "nvvm", "nvptxcompiler" ]' || '[ "nvcc", "cudart" ]' }}
+          cuda: ${{ matrix.cuda_version }}
+          sub-packages: ${{ startsWith(matrix.cuda_version, '8.') && '[]' || startsWith(matrix.cuda_version, '13.') &&'[ "nvcc", "crt", "cudart", "nvvm", "nvptxcompiler" ]' || '[ "nvcc", "cudart" ]' }}
           use-local-cache: false
           use-github-cache: false
-
-      - name: Configure path to CUDA
-        shell: powershell
-        run: |
-          [System.Environment]::SetEnvironmentVariable('PATH', "$env:CUDA_PATH\bin;$env:PATH", 'User')
 
       - name: Prepare sources and gather info
         id: prepare
         shell: bash
         run: |
-          bash .github/workflows/scripts/build_helper.sh ${{ matrix.sys.cuda_version }}
-          cat .github/workflows/scripts/build_helper.sh.out >> $GITHUB_OUTPUT
+          bash .github/workflows/scripts/build_helper.sh ${{ matrix.cuda_version }}
+          cat .github/workflows/scripts/build_helper.sh.out >> "$GITHUB_OUTPUT"
 
       - name: Build from sources with MSVC
         shell: cmd
         run: |
-          ${{ env.MSVC_ADD_PKG_CMD }}
-          "${{ env.VCVARS_PATH }}" x64 ${{ env.VCVARS_VER }} & cd src & copy mfaktc.ini .. & make SHELL="cmd.exe" -j%NUMBER_OF_PROCESSORS% -f Makefile.win & cl /? 2>&1 | findstr /C:"Version" > clversion.log & echo Build finished
+          ${{ env.MSVC_ADD_PKG_CMD }} || exit /b 1
+          call "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\vcvars64.bat" ${{ env.VCVARS_VER }} || exit /b 1
+          cd src || exit /b 1
+          copy mfaktc.ini .. || exit /b 1
+          make SHELL="cmd.exe" -j%NUMBER_OF_PROCESSORS% -f Makefile.win || exit /b 1
+          cl /? 2>&1 | findstr /C:"Version" > clversion.log || exit /b 1
         env:
-          VCVARS_PATH: 'C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\vcvars64.bat'
           # vcvars_ver=14.x enables Build Tools for previous MSVC versions:
           # - 14.0 is for Visual Studio 2015
           # - 14.16 is for Visual Studio 2017 version 15.9.x
@@ -289,11 +272,11 @@ jobs:
         # during the build step. Here, the cl version is extracted and added to
         # the table along with the MSVC version.
         run: |
-          [ -f src/clversion.log ] && CL_VER="$(grep -Eoe 'Version [\.0-9]+ ' src/clversion.log | cut -d' ' -f2)"
-          [ -z "$CL_VER" ] && CL_VER='Unknown'
+          [[ -f src/clversion.log ]] && CL_VER="$(grep -Eoe 'Version [\.0-9]+ ' src/clversion.log | cut -d' ' -f2)"
+          [[ -z "$CL_VER" ]] && CL_VER='Unknown'
           7z a -tzip -mx=9 "${{ steps.prepare.outputs.BASE_NAME }}.zip" Changelog.txt COPYING mfaktc-win-64.exe mfaktc.ini README.txt
           echo "[${{ steps.prepare.outputs.BASE_NAME }}.zip](https://github.com/${GITHUB_REPOSITORY}/releases/download/${GITHUB_REF_NAME}/${{ steps.prepare.outputs.BASE_NAME }}.zip) | \
-          ${{ matrix.sys.cuda_version }} | ${{ steps.prepare.outputs.CC_MIN }}-${{ steps.prepare.outputs.CC_MAX }} | ${{ steps.prepare.outputs.OS_VER }} | \
+          ${{ matrix.cuda_version }} | ${{ steps.prepare.outputs.CC_MIN }}-${{ steps.prepare.outputs.CC_MAX }} | ${{ steps.prepare.outputs.OS_VER }} | \
           ${CL_VER} (${{ steps.prepare.outputs.COMPILER_VER }}) | ${{ steps.prepare.outputs.NVCC_VER }}" > ${{ steps.prepare.outputs.BASE_NAME }}.txt
 
       - name: Upload build artifacts
@@ -342,8 +325,8 @@ jobs:
             echo 'RELEASE_FILES<<EOF'
             printf '%s\n' "${base_name}.zip" | sort -Vr
             echo 'EOF'
-          } > $GITHUB_OUTPUT
-          ( echo "$GITHUB_REF_NAME" | grep -qsP "v?\d+(?:\.\d+(?:\.\d+)?(?:-\d+)?|\b)(-(?:alpha|beta|pre))" && echo "PRERELEASE=true" || echo "PRERELEASE=false" ) >> $GITHUB_OUTPUT
+          } > "$GITHUB_OUTPUT"
+          ( echo "$GITHUB_REF_NAME" | grep -qsP "v?\d+(?:\.\d+(?:\.\d+)?(?:-\d+)?|\b)(-(?:alpha|beta|pre))" && echo "PRERELEASE=true" || echo "PRERELEASE=false" ) >> "$GITHUB_OUTPUT"
 
       - name: Create and upload release package
         uses: softprops/action-gh-release@v3

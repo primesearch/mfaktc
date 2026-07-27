@@ -1,0 +1,142 @@
+# This file is part of mfaktc.
+# Copyright (c) 2025        NStorm (https://github.com/N-Storm)
+# Copyright (c) 2009-2011   Oliver Weihe (o.weihe@t-online.de)
+#
+# mfaktc is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# mfaktc is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with mfaktc.  If not, see <http://www.gnu.org/licenses/>.
+#
+# SPDX-License-Identifier: GPL-3.0-or-later
+
+name: mfaktc CI
+
+on:
+  push:
+    paths-ignore:
+      - '**/*.txt'
+      - '**/*.ini'
+      - 'COPYING'
+      - '.gitignore'
+  pull_request:
+    paths-ignore:
+      - '**/*.txt'
+      - '**/*.ini'
+      - 'COPYING'
+      - '.gitignore'
+    types:
+      - 'opened'
+      - 'reopened'
+      - 'synchronize'
+      - 'ready_for_review'
+  schedule:
+    - cron: '0 0 1 * *'
+
+jobs:
+# Begin job "Linux"
+  Linux:
+    runs-on: ${{ matrix.os }}
+
+    strategy:
+      # If set to true, all jobs within the same matrix (such as Linux or
+      # Windows builds) will be aborted at the same time if any one job fails.
+      fail-fast: false
+
+      matrix:
+        os: [ubuntu-22.04, ubuntu-24.04, ubuntu-26.04]
+        cc: [gcc, clang]
+
+    env:
+      CC: ${{ matrix.cc }}
+      CXX: ${{ matrix.cc == 'gcc' && 'g++' || 'clang++' }}
+
+    steps:
+
+      - name: Checkout repo
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+          fetch-tags: true
+
+      - name: Update and install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y nvidia-cuda-toolkit
+
+      - name: Prepare sources
+        run: |
+          cuda_version=$(nvcc --version | awk '/release/ { sub(/^V/, "", $NF); print $NF }')
+          bash .github/workflows/scripts/build_helper.sh "$cuda_version"
+
+      - name: Build from sources
+        run: |
+          cd src
+          make -O -j$(nproc) DEBUG=1
+          make clean
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: mfaktc-linux64-${{ matrix.os }}-${{ matrix.cc }}
+          path: ${{ github.workspace }}
+# End job "Linux"
+
+# Begin job "Windows"
+  Windows:
+    # windows-2022 also works and produces nearly identical binaries, so let's
+    # target the image that will be supported in the longer term. windows-2025
+    # is in beta as of June 2025, but testing has shown it is reliable.
+    runs-on: windows-2022
+
+    steps:
+
+      - name: Checkout repo
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+          fetch-tags: true
+
+      - name: Install CUDA Toolkit
+        uses: N-Storm/cuda-toolkit@v0.2.34
+
+      - name: Prepare sources
+        shell: bash
+        run: |
+          cuda_version=$(nvcc --version | awk '/release/ { sub(/^V/, "", $NF); print $NF }')
+          bash .github/workflows/scripts/build_helper.sh "$cuda_version"
+
+      - name: Build from sources with MSVC
+        shell: cmd
+        run: |
+          "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\vcvars64.bat" x64 || exit /b 1
+          cd src || exit /b 1
+          copy mfaktc.ini .. || exit /b 1
+          make SHELL="cmd.exe" -j%NUMBER_OF_PROCESSORS% -f Makefile.win DEBUG=1 || exit /b 1
+          make clean -f Makefile.win || exit /b 1
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: mfaktc-win64
+          path: ${{ github.workspace }}
+# End job "Windows"
+
+  ShellCheck:
+    name: ShellCheck
+
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v7
+    - name: Script
+      run: shopt -s globstar; shellcheck -o avoid-nullary-conditions,check-set-e-suppressed,deprecate-which,quote-safe-variables,require-double-brackets -s bash **/*.sh
+      continue-on-error: true

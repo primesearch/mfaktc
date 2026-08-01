@@ -51,16 +51,15 @@ LOCK=$APP.lock
 run_on_device() {
     # ensure instance has its own folder
     mkdir -p "device-$1"
-    if ! cd "device-$1"
-    then
+    if ! cd "device-$1"; then
         echo "error: could not enter directory 'device-$1' for device $1" >&2
         exit 1
     fi
 
     # don't run if device is in use
-    exec 200>"$LOCK"
+    exec {LOCK_FD}>"$LOCK"
 
-    if ! flock -n 200; then
+    if ! flock -n "$LOCK_FD"; then
         echo "error: lock file $LOCK exists, mfaktc may already be running on device $1" >&2
         exit 1
     fi
@@ -105,9 +104,9 @@ fi
 
 if [[ $# -eq 0 ]]; then
     # don't run if device is in use
-    exec 200>"$LOCK"
+    exec {LOCK_FD}>"$LOCK"
 
-    if ! flock -n 200; then
+    if ! flock -n "$LOCK_FD"; then
         echo "error: lock file $LOCK exists, mfaktc may already be running" >&2
         exit 1
     fi

@@ -1,8 +1,24 @@
-CC = cl
-CFLAGS = /O2 /Oy /W2 /fp:fast /I"$(CUDA_PATH)\include" /I"$(CUDA_PATH)\include\cudart" /nologo
+DEBUG = 0
 
-NVCCFLAGS = -m64 -O3 --ptxas-options=-v -Wno-deprecated-gpu-targets
-CUFLAGS = -DWIN64 -Xcompiler "/EHsc /W3 /nologo /O2" $(NVCCFLAGS)
+CC = cl
+CFLAGS = /W4 /I"$(CUDA_PATH)\include" /I"$(CUDA_PATH)\include\cudart" /nologo
+
+ifeq ($(DEBUG), 1)
+  CFLAGS += /Od /Zi /RTC1
+else
+  CFLAGS += /O2 /GL /Gw /fp:fast
+endif
+
+NVCCFLAGS = -m64 --ptxas-options=-v -Wno-deprecated-gpu-targets
+CUFLAGS = -DWIN64 $(NVCCFLAGS)
+
+ifeq ($(DEBUG), 1)
+  NVCCFLAGS += -g -G -O1
+  CUFLAGS += -Xcompiler "/EHsc /W4 /nologo /Od /Zi"
+else
+  NVCCFLAGS += -O3 
+  CUFLAGS += -Xcompiler "/EHsc /W4 /nologo /O2 /Gw"
+endif
 
 ############################################################
 
@@ -29,7 +45,12 @@ NVCCFLAGS += --generate-code arch=compute_120,code=sm_120
 ############################################################
 
 LINK = link
-LFLAGS = /nologo
+
+ifeq ($(DEBUG), 1)
+  LFLAGS = /nologo
+else
+  LFLAGS = /nologo /LTCG /OPT:REF /OPT:ICF
+endif
 
 CSRC  = sieve.c timer.c parse.c read_config.c mfaktc.c checkpoint.c \
 	filelocking.c signal_handler.c output.c crc.c

@@ -49,8 +49,10 @@ CUDA_VER_MAJOR=${CUDA_VERSION[0]}
 CUDA_VER_MINOR=${CUDA_VERSION[1]}
 echo -e "CUDA_VER_MAJOR=${CUDA_VER_MAJOR}\nCUDA_VER_MINOR=${CUDA_VER_MINOR}" > "$0.out"
 
-# Format CUDA_VER as single integer with both major and minor (inc. leading zero) versions.
-# Used for simple comparison of CUDA versions internally in this script.
+# Format CUDA_VER as single integer containing both the major and minor
+# versions; this includes leading zeroes. Used for simple comparison of CUDA
+# versions internally in this script (does not compare patch versions as
+# CUDA_VER does not expose this information).
 printf -v CUDA_VER %d%02d "${CUDA_VER_MAJOR}" "${CUDA_VER_MINOR}";
 
 # CUDA supports the --list-gpu-arch flag from 11.0.0 onwards.
@@ -120,11 +122,11 @@ MFAKTC_VER=$(LC_ALL=en_US.utf8 grep -iPo '#define[\s\t]+MFAKTC_VERSION[\s\t]+"v?
 GIT_TAG_VER=""
 
 if GIT_TAG_VER=$(git describe --tags 2>/dev/null); then
-    BASE_VER="$GIT_TAG_VER"
+  BASE_VER="$GIT_TAG_VER"
 else
-    SHA_SHORT=$(git rev-parse --short HEAD 2>/dev/null || echo unknown)
-    BASE_VER="${MFAKTC_VER}-${SHA_SHORT}"
-    echo "Info: 'git describe --tags' failed; using ${BASE_VER} instead"
+  SHA_SHORT=$(git rev-parse --short HEAD 2>/dev/null || echo unknown)
+  BASE_VER="${MFAKTC_VER}-${SHA_SHORT}"
+  echo "Info: 'git describe --tags' failed; using ${BASE_VER} instead"
 fi
 
 # We first try to use 'git describe' to obtain the mfaktc version.
@@ -138,9 +140,9 @@ fi
 # commit ID. This keeps BASE_NAME shorter for release builds while still
 # producing unique names for development builds.
 if [[ -n "$GIT_TAG_VER" && "$GIT_TAG_VER" != "$MFAKTC_VER"* ]]; then
-    SHA_SHORT=$(git rev-parse --short HEAD)
-    BASE_VER="${MFAKTC_VER}-${SHA_SHORT}"
-    echo "Warning: version in params.h does not match 'git describe --tags' output"
+  SHA_SHORT=$(git rev-parse --short HEAD)
+  BASE_VER="${MFAKTC_VER}-${SHA_SHORT}"
+  echo "Warning: version in params.h does not match 'git describe --tags' output"
 fi
 
 echo -e "COMPILER_VER=${COMPILER_VER}\nNVCC_VER=${NVCC_VER}\nOS_VER=${OS_VER}\nBASE_NAME=${BASE_NAME}" | tee -a "$0.out"

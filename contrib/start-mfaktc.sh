@@ -85,7 +85,7 @@ run_on_device() {
     ln -s ../"$APP" . && app_created=1
 
     cleanup() {
-        [[ -n "$app_created" ]] && rm -f "$APP"
+        [[ -n $app_created ]] && rm -f "$APP"
 
         # don't delete mfaktc.ini unless it's a symbolic link
         [[ -L $APP_SETTINGS ]] && rm "$APP_SETTINGS"

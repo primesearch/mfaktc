@@ -138,5 +138,4 @@ jobs:
     steps:
     - uses: actions/checkout@v7
     - name: Script
-      run: shopt -s globstar; shellcheck -o avoid-nullary-conditions,check-set-e-suppressed,deprecate-which,quote-safe-variables,require-double-brackets -s bash **/*.sh
-      continue-on-error: true
+      run: shopt -s globstar dotglob; shellcheck -o avoid-nullary-conditions,check-set-e-suppressed,deprecate-which,quote-safe-variables,require-double-brackets -s bash **/*.sh

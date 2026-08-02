@@ -28,7 +28,7 @@
 
 set -e -o pipefail
 
-if [[ -z "$1" ]]; then
+if [[ -z $1 ]]; then
   echo "Usage: $0 <CUDA version>" >&2
   exit 1
 fi
@@ -39,31 +39,33 @@ export GSORT='/usr/bin/sort'
 
 CUDA_VERSION_FULL=$(echo "$1" | head -n1 | grep -Eom1 -e '^[1-9]([0-9])?\.[0-9]{1,2}(\.[0-9]{1,3})?$')
 declare -a CUDA_VERSION
-IFS=" " read -r -a CUDA_VERSION <<< "$(echo "$CUDA_VERSION_FULL" | tr '.' ' ')"
-if [[ -z "${CUDA_VERSION[*]}" ]]; then
+IFS=" " read -r -a CUDA_VERSION <<<"$(echo "$CUDA_VERSION_FULL" | tr '.' ' ')"
+if [[ -z ${CUDA_VERSION[*]} ]]; then
   echo "Error: unexpected CUDA version $1" >&2
   exit 2
 fi
 
 CUDA_VER_MAJOR=${CUDA_VERSION[0]}
 CUDA_VER_MINOR=${CUDA_VERSION[1]}
-echo -e "CUDA_VER_MAJOR=${CUDA_VER_MAJOR}\nCUDA_VER_MINOR=${CUDA_VER_MINOR}" > "$0.out"
+echo -e "CUDA_VER_MAJOR=${CUDA_VER_MAJOR}\nCUDA_VER_MINOR=${CUDA_VER_MINOR}" >"$0.out"
 
-# Format CUDA_VER as single integer with both major and minor (inc. leading zero) versions.
-# Used for simple comparison of CUDA versions internally in this script.
-printf -v CUDA_VER %d%02d "${CUDA_VER_MAJOR}" "${CUDA_VER_MINOR}";
+# Format CUDA_VER as single integer containing both the major and minor
+# versions; this includes leading zeroes. Used for simple comparison of CUDA
+# versions internally in this script (does not compare patch versions as
+# CUDA_VER does not expose this information).
+printf -v CUDA_VER %d%02d "${CUDA_VER_MAJOR}" "${CUDA_VER_MINOR}"
 
 # CUDA supports the --list-gpu-arch flag from 11.0.0 onwards.
 # For older CUDA versions, use grep to parse the supported architectures from
 # the output of --help
-[[ "$CUDA_VER" -gt 1100 ]] && NVCC_OPTS='--list-gpu-arch' || NVCC_OPTS='--help'
+[[ $CUDA_VER -gt 1100 ]] && NVCC_OPTS='--list-gpu-arch' || NVCC_OPTS='--help'
 NVCC_REGEX='compute_[1-9][0-9]{1,2}'
 # CUDA 11.0.x is a special case. Its --help output lists compute_32 and higher,
 # but only compute capability 3.5 and later are supported.
-[[ "$CUDA_VER" -eq 1100 ]] && NVCC_REGEX='compute_(3[5-9]|[4-9][0-9])'
+[[ $CUDA_VER -eq 1100 ]] && NVCC_REGEX='compute_(3[5-9]|[4-9][0-9])'
 
 declare -a CC_LIST
-IFS=" " read -r -a CC_LIST <<< "$(nvcc "$NVCC_OPTS" | grep -Eoe "$NVCC_REGEX" | cut -d '_' -f2 | $GSORT -un | xargs)"
+IFS=" " read -r -a CC_LIST <<<"$(nvcc "$NVCC_OPTS" | grep -Eoe "$NVCC_REGEX" | cut -d '_' -f2 | $GSORT -un | xargs)"
 if [[ ${#CC_LIST[*]} -eq 0 ]]; then
   echo "Error: could not parse list of supported compute capabilities" >&2
   exit 3
@@ -71,10 +73,10 @@ elif [[ ${#CC_LIST[*]} -lt 3 ]]; then
   echo "Warning: less than three (3) supported compute capabilities" >&2
 fi
 
-CC_MIN="${CC_LIST[0]:0:(-1)}.${CC_LIST[0]:(-1)}"
-CC_MAX="${CC_LIST[-1]:0:(-1)}.${CC_LIST[-1]:(-1)}"
+CC_MIN="${CC_LIST[0]:0:-1}.${CC_LIST[0]: -1}"
+CC_MAX="${CC_LIST[-1]:0:-1}.${CC_LIST[-1]: -1}"
 echo "All supported CCs: ${CC_LIST[*]}, CC_MIN=${CC_MIN}, CC_MAX=${CC_MAX}"
-echo -e "CC_LIST=\"${CC_LIST[*]}\"\nCC_MIN=${CC_MIN}\nCC_MAX=${CC_MAX}" >> "$0.out"
+echo -e "CC_LIST=\"${CC_LIST[*]}\"\nCC_MIN=${CC_MIN}\nCC_MAX=${CC_MAX}" >>"$0.out"
 
 echo 'Removing NVCCFLAGS strings with "arch=..." entries from makefiles and populating them with discovered supported values.'
 sed -i '/^NVCCFLAGS += --generate-code arch=compute.*/d' src/Makefile.win src/Makefile
@@ -82,7 +84,7 @@ for CC in "${CC_LIST[@]}"; do
   sed -i "/^NVCCFLAGS = .*\$/a NVCCFLAGS += --generate-code arch=compute_${CC},code=sm_${CC}" src/Makefile src/Makefile.win
 done
 
-if [[ "$CUDA_VER" -ge 1100 ]]; then
+if [[ $CUDA_VER -ge 1100 ]]; then
   echo 'Adding NVCCFLAGS to allow unsupported MSVC versions...'
   sed -i '/^NVCCFLAGS = .*/a NVCCFLAGS += -allow-unsupported-compiler -D_ALLOW_COMPILER_AND_STL_VERSION_MISMATCH' src/Makefile.win
 fi
@@ -120,11 +122,11 @@ MFAKTC_VER=$(LC_ALL=en_US.utf8 grep -iPo '#define[\s\t]+MFAKTC_VERSION[\s\t]+"v?
 GIT_TAG_VER=""
 
 if GIT_TAG_VER=$(git describe --tags 2>/dev/null); then
-    BASE_VER="$GIT_TAG_VER"
+  BASE_VER="$GIT_TAG_VER"
 else
-    SHA_SHORT=$(git rev-parse --short HEAD 2>/dev/null || echo unknown)
-    BASE_VER="${MFAKTC_VER}-${SHA_SHORT}"
-    echo "Info: 'git describe --tags' failed; using ${BASE_VER} instead"
+  SHA_SHORT=$(git rev-parse --short HEAD 2>/dev/null || echo unknown)
+  BASE_VER="${MFAKTC_VER}-${SHA_SHORT}"
+  echo "Info: 'git describe --tags' failed; using ${BASE_VER} instead"
 fi
 
 # We first try to use 'git describe' to obtain the mfaktc version.
@@ -137,10 +139,10 @@ fi
 # others, this also includes the number of commits since the tag plus the
 # commit ID. This keeps BASE_NAME shorter for release builds while still
 # producing unique names for development builds.
-if [[ -n "$GIT_TAG_VER" && "$GIT_TAG_VER" != "$MFAKTC_VER"* ]]; then
-    SHA_SHORT=$(git rev-parse --short HEAD)
-    BASE_VER="${MFAKTC_VER}-${SHA_SHORT}"
-    echo "Warning: version in params.h does not match 'git describe --tags' output"
+if [[ -n $GIT_TAG_VER && $GIT_TAG_VER != "$MFAKTC_VER"* ]]; then
+  SHA_SHORT=$(git rev-parse --short HEAD)
+  BASE_VER="${MFAKTC_VER}-${SHA_SHORT}"
+  echo "Warning: version in params.h does not match 'git describe --tags' output"
 fi
 
 echo -e "COMPILER_VER=${COMPILER_VER}\nNVCC_VER=${NVCC_VER}\nOS_VER=${OS_VER}\nBASE_NAME=${BASE_NAME}" | tee -a "$0.out"

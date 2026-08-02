@@ -35,18 +35,31 @@ esac
 # Mersenne or Wagstaff numbers in params.h. For simplicity's sake, we just add
 # both files.
 (
-cpp -D CUDART_VERSION=13000 -include selftest-data-mersenne.c -include \
+  cpp -D CUDART_VERSION=13000 -include selftest-data-mersenne.c -include \
     selftest-data-wagstaff.c -MM mfaktc.c
-echo
-
-for FILE in checkpoint.c output.c parse.c read_config.c sieve.c \
-            signal_handler.c timer.c tf_96bit.cu tf_barrett96.cu \
-            tf_barrett96_gs.cu gpusieve.cu cuda_utils.cu crc.c
-do
-  cpp -D CUDART_VERSION=13000 -MM ${FILE}
   echo
-done
 
-# special case for 75-bit kernels
-cpp -D CUDART_VERSION=13000 -MM tf_96bit.cu -MT tf_75bit.o
-) | sed s@\.o:@\.${OBJ}:@
+  FILES=(
+    checkpoint.c
+    output.c
+    parse.c
+    read_config.c
+    sieve.c
+    signal_handler.c
+    timer.c
+    tf_96bit.cu
+    tf_barrett96.cu
+    tf_barrett96_gs.cu
+    gpusieve.cu
+    cuda_utils.cu
+    crc.c
+  )
+
+  for FILE in "${FILES[@]}"; do
+    cpp -D CUDART_VERSION=13000 -MM "$FILE"
+    echo
+  done
+
+  # special case for 75-bit kernels
+  cpp -D CUDART_VERSION=13000 -MM tf_96bit.cu -MT tf_75bit.o
+) | sed "s|\.o:|\.${OBJ}:|"

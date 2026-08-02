@@ -78,22 +78,22 @@ run_on_device() {
             echo "error: $APP_SETTINGS not found in root folder" >&2
             exit 1
         else
-            ln -s ../$APP_SETTINGS .
+            ln -s ../"$APP_SETTINGS" .
         fi
     fi
 
-    ln -s ../$APP . && app_created=1
+    ln -s ../"$APP" . && app_created=1
 
     cleanup() {
-        [[ -n "$app_created" ]] && rm -f $APP
+        [[ -n $app_created ]] && rm -f "$APP"
 
         # don't delete mfaktc.ini unless it's a symbolic link
-        [[ -L $APP_SETTINGS ]] && rm $APP_SETTINGS
+        [[ -L $APP_SETTINGS ]] && rm "$APP_SETTINGS"
     }
     trap 'cleanup' EXIT
 
     # run mfaktc on specified device
-    ./$APP -d "$1"
+    ./"$APP" -d "$1"
 }
 
 # mfaktc executable must be present
@@ -112,7 +112,7 @@ if [[ $# -eq 0 ]]; then
     fi
 
     # run mfaktc on default device
-    exec ./$APP
+    exec ./"$APP"
 else
     run_on_device "$1"
 fi

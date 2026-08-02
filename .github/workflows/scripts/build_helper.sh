@@ -102,12 +102,12 @@ else
   # shellcheck source=/dev/null
   source /etc/os-release
   OS_VER=${PRETTY_NAME}
-  OS_TYPE="linux64"
+  # OS_TYPE="linux64"
 fi
 
 if [[ -x "$(command -v powershell.exe)" ]]; then
   OS_VER=$(powershell -Command "[System.Environment]::OSVersion.VersionString" | cut -d ' ' -f2-)
-  OS_TYPE="win64"
+  # OS_TYPE="win64"
 fi
 
 NVCC_VER=$(nvcc --version | tail -n1 | sed -E 's/^Build //;s/^Cuda compilation tools, //')
@@ -117,23 +117,30 @@ NVCC_VER=$(nvcc --version | tail -n1 | sed -E 's/^Build //;s/^Cuda compilation t
 MFAKTC_VER=$(LC_ALL=en_US.utf8 grep -iPo '#define[\s\t]+MFAKTC_VERSION[\s\t]+"v?\d+(?:\.\d+(?:\.\d+)?(?:-\d+)?|\b)(?:-?(?:alpha|beta|pre)\.?(?:\d+)?\b)?' src/params.h | cut -d '"' -f 2)
 
 # Git-formatted version
-GIT_TAG_VER=$(git describe --tags)
+GIT_TAG_VER=""
 
-# Compare MFAKTC_VER with the version extracted from GIT_TAG_VER using tags.
-# If they don't match, throw a warning and use MFAKTC_VER and the short commit
-# hash for BASE_NAME.
-# Otherwise, use GIT_TAG_VER as it should include the version number, short
-# hash and any commits since the last tag when git HEAD isn't directly
-# referenced by a tag name, or just a tag when the current commit has a tag
-# reference. This gives a shorter BASE_NAME without the commit hash for
-# releases.
-if [[ "$MFAKTC_VER" != "${GIT_TAG_VER:0:${#MFAKTC_VER}}" ]]; then
-  SHA_SHORT=$(git rev-parse --short HEAD)
-  BASE_NAME="mfaktc-${MFAKTC_VER}-${SHA_SHORT}-${OS_TYPE}-cuda${CUDA_VERSION_FULL}"
-  echo "Warning: version from 'git describe' (${GIT_TAG_VER}) doesn't begin with MFAKTC_VER (${MFAKTC_VER}) from params.h"
-  echo "Using version from params.h and short commit hash (${SHA_SHORT}) for BASE_NAME"
+if GIT_TAG_VER=$(git describe --tags 2>/dev/null); then
+    BASE_VER="$GIT_TAG_VER"
 else
-  BASE_NAME="mfaktc-${GIT_TAG_VER}-${OS_TYPE}-cuda${CUDA_VERSION_FULL}"
+    SHA_SHORT=$(git rev-parse --short HEAD 2>/dev/null || echo unknown)
+    BASE_VER="${MFAKTC_VER}-${SHA_SHORT}"
+    echo "Info: 'git describe --tags' failed; using ${BASE_VER} instead"
+fi
+
+# We first try to use 'git describe' to obtain the mfaktc version.
+#
+# If 'git describe' fails, or if the version from params.h and the beginning
+# of the Git-derived version differ, fall back to MFAKTC_VER plus the short
+# commit hash.
+#
+# Otherwise, use GIT_TAG_VER as it is the tag itself for tagged commits; for
+# others, this also includes the number of commits since the tag plus the
+# commit ID. This keeps BASE_NAME shorter for release builds while still
+# producing unique names for development builds.
+if [[ -n "$GIT_TAG_VER" && "$GIT_TAG_VER" != "$MFAKTC_VER"* ]]; then
+    SHA_SHORT=$(git rev-parse --short HEAD)
+    BASE_VER="${MFAKTC_VER}-${SHA_SHORT}"
+    echo "Warning: version in params.h does not match 'git describe --tags' output"
 fi
 
 echo -e "COMPILER_VER=${COMPILER_VER}\nNVCC_VER=${NVCC_VER}\nOS_VER=${OS_VER}\nBASE_NAME=${BASE_NAME}" | tee -a "$0.out"

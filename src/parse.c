@@ -379,7 +379,7 @@ enum ASSIGNMENT_ERRORS get_next_assignment(char *filename, unsigned int *exponen
 enum ASSIGNMENT_ERRORS clear_assignment(char *filename, unsigned int exponent, int bit_min, int bit_max, int bit_min_new)
 {
     int found = FALSE;
-    FILE *f_in, *f_out;
+    FILE *f_in, *f_out = NULL;
     LINE_BUFFER line; // line buffer
     char *tail = NULL; // points to tail material in line, if non-null
     enum PARSE_WARNINGS value;

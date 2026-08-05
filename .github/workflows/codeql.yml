@@ -29,8 +29,14 @@ jobs:
       matrix:
         include:
         - language: c-cpp
-          build-mode: autobuild
+          build-mode: none
     steps:
+    - name: Install Git
+      run: apt-get update && apt-get install -y git
+
+    - name: Configure Git safe directory
+      run: git config --global --add safe.directory /__w/mfaktc/mfaktc
+
     - name: Checkout repository
       uses: actions/checkout@v7
 

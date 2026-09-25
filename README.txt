@@ -161,6 +161,13 @@ mfaktc.ini for additional options and a short description of each one. mfaktc
 typically fetches assignments from a worktodo.txt file, but this can be
 customized. See section 4 for steps to obtain assignments.
 
+Only one mfaktc instance can work on a worktodo file at a time, as instances
+sharing one would work on the same assignment. mfaktc locks the file
+"<worktodo file>.pid" while it runs; the lock is released automatically when
+mfaktc exits, even after a crash, so the file can be left alone. To run
+several instances (e.g. one per GPU), give each one its own directory or its
+own WorkFile.
+
 mfaktc has built-in self-test that checks for errors. Please run the full
 self-test each time you:
 - recompile the code

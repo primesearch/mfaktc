@@ -43,6 +43,7 @@ along with mfaktc.  If not, see <http://www.gnu.org/licenses/>.
 #include "output.h"
 #include "gpusieve.h"
 #include "cuda_utils.h"
+#include "filelocking.h"
 
 unsigned long long int calculate_k(unsigned int exp, int bits)
 /* calculates biggest possible k in "2 * exp * k + 1 < 2^bits" */
@@ -890,6 +891,12 @@ int main(int argc, char **argv)
 #endif
 
     read_config(&mystuff);
+
+    if (mystuff.mode == MODE_NORMAL && use_worktodo && lock_workfile(mystuff.workfile) != 0) {
+        logprintf(&mystuff, "ERROR: another mfaktc instance is already working on \"%s\"\n", mystuff.workfile);
+        close_log(&mystuff);
+        return 1;
+    }
 
     int drv_ver, rt_ver;
     cudaRuntimeGetVersion(&rt_ver);

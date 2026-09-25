@@ -38,6 +38,7 @@ along with mfaktc (mfakto).  If not, see <http://www.gnu.org/licenses/>.
 #else
 #include <unistd.h>
 #include <sched.h>
+#include <sys/file.h>
 #define MODE       S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH
 static void Sleep(unsigned int ms)
 {
@@ -165,4 +166,71 @@ int unlock_and_fclose(FILE *f)
         ret = fclose(f);
     }
     return ret;
+}
+
+/*
+lock_workfile() prevents two instances from working on the same worktodo
+file, which would make them pick the same assignment. It takes an exclusive
+lock on "<workfile>.pid" and keeps it until the process exits; the operating
+system releases the lock when the process ends in any way, so a file left
+behind after a crash or power loss doesn't prevent a restart. The file
+contains the process ID for information only.
+
+returns 0 if the lock was acquired, 1 if another process holds it and -1
+(after printing the reason) if the lock file can't be created or locked;
+without the lock there is no way to tell whether another instance is running
+*/
+int lock_workfile(const char *workfile)
+{
+    char filename[256];
+    char pid[32];
+
+    snprintf(filename, sizeof(filename), "%.250s.pid", workfile);
+#if defined _MSC_VER || defined __MINGW32__
+    static HANDLE lock_handle = INVALID_HANDLE_VALUE;
+    OVERLAPPED ov;
+    DWORD written;
+
+    lock_handle = CreateFileA(filename, GENERIC_READ | GENERIC_WRITE, FILE_SHARE_READ | FILE_SHARE_WRITE, NULL, OPEN_ALWAYS,
+                              FILE_ATTRIBUTE_NORMAL, NULL);
+    if (lock_handle == INVALID_HANDLE_VALUE) {
+        fprintf(stderr, "Could not create \"%s\" (error %lu)\n", filename, (unsigned long)GetLastError());
+        return -1;
+    }
+    memset(&ov, 0, sizeof(ov));
+    if (!LockFileEx(lock_handle, LOCKFILE_EXCLUSIVE_LOCK | LOCKFILE_FAIL_IMMEDIATELY, 0, 1, 0, &ov)) {
+        DWORD err = GetLastError();
+        CloseHandle(lock_handle);
+        lock_handle = INVALID_HANDLE_VALUE;
+        if (err == ERROR_LOCK_VIOLATION) return 1;
+        fprintf(stderr, "Could not lock \"%s\" (error %lu)\n", filename, (unsigned long)err);
+        return -1;
+    }
+    snprintf(pid, sizeof(pid), "%lu\n", (unsigned long)GetCurrentProcessId());
+    SetEndOfFile(lock_handle);
+    WriteFile(lock_handle, pid, (DWORD)strlen(pid), &written, NULL);
+    /* lock_handle stays open until the process exits */
+#else
+    static int lock_fd = -1;
+
+    lock_fd = open(filename, O_RDWR | O_CREAT, MODE);
+    if (lock_fd < 0) {
+        fprintf(stderr, "Could not create \"%s\" (%s)\n", filename, strerror(errno));
+        return -1;
+    }
+    if (flock(lock_fd, LOCK_EX | LOCK_NB) != 0) {
+        int err = errno;
+        close(lock_fd);
+        lock_fd = -1;
+        if (err == EWOULDBLOCK) return 1;
+        fprintf(stderr, "Could not lock \"%s\" (%s)\n", filename, strerror(err));
+        return -1;
+    }
+    snprintf(pid, sizeof(pid), "%lu\n", (unsigned long)getpid());
+    if (ftruncate(lock_fd, 0) != 0 || write(lock_fd, pid, strlen(pid)) < 0) {
+        /* the lock itself is what matters, the PID is for information only */
+    }
+    /* lock_fd stays open until the process exits */
+#endif
+    return 0;
 }

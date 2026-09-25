@@ -167,6 +167,15 @@ startup; this ensures your mfaktc.ini is not affected when you upgrade or
 compile mfaktc. It is recommended to compare your INI file with the new
 mfaktc.ini.example after an upgrade as there may be new or changed settings.
 
+Only one mfaktc instance can work on a worktodo.txt at a time, as instances
+sharing one would work on the same assignment. mfaktc locks the file
+"worktodo.txt.pid" while it runs; the lock is released automatically when
+mfaktc exits, even after a crash, so the file can be left alone. If the lock
+can't be taken (e.g. the directory isn't writable, or file locking isn't
+available on a network filesystem), mfaktc doesn't start unless
+RequireWorkFileLock=0 is set in mfaktc.ini. To run several instances (e.g. one
+per GPU), give each one its own directory.
+
 mfaktc has built-in self-test that checks for errors. Please run the full
 self-test each time you:
 - recompile the code

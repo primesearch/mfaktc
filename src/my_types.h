@@ -77,6 +77,7 @@ typedef struct {
     int sieve_primes_min, sieve_primes_max; /* user configurable sieve_primes min/max */
   
     char workfile[51];                      /* allow filenames up to 50 chars... */
+    int require_workfile_lock;              /* 1: don't start if the workfile can't be locked */
     char addfile[51];                       /* allow filenames up to 50 chars... */
     char resultfile[51];                    /* allow filenames up to 50 chars... */
     char jsonresultfile[51];                /* allow filenames up to 50 chars... */

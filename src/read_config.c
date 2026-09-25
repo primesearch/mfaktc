@@ -26,6 +26,48 @@ along with mfaktc.  If not, see <http://www.gnu.org/licenses/>.
 #include "my_types.h"
 #include "output.h"
 
+/*
+Release archives and "make" ship the default settings as mfaktc.ini.example so
+that unpacking or building a new version doesn't overwrite the user's
+mfaktc.ini. Create mfaktc.ini from it when it doesn't exist yet.
+*/
+void create_inifile_from_example(const char *inifile)
+{
+    char example[64];
+    char buf[4096];
+    size_t n;
+    int failed = 0;
+    FILE *in, *out;
+
+    in = fopen(inifile, "r");
+    if (in) {
+        fclose(in);
+        return;
+    }
+    snprintf(example, sizeof(example), "%s.example", inifile);
+    in = fopen(example, "rb");
+    if (!in) return;
+    out = fopen(inifile, "wb");
+    if (!out) {
+        fclose(in);
+        printf("Warning: could not create \"%s\" from \"%s\"\n", inifile, example);
+        return;
+    }
+    while ((n = fread(buf, 1, sizeof(buf), in)) > 0) {
+        if (fwrite(buf, 1, n, out) != n) {
+            failed = 1;
+            break;
+        }
+    }
+    if (ferror(in)) failed = 1;
+    fclose(in);
+    if (fclose(out) != 0) failed = 1;
+    if (failed)
+        printf("Warning: could not create \"%s\" from \"%s\"\n", inifile, example);
+    else
+        printf("Created \"%s\" from \"%s\"\n", inifile, example);
+}
+
 int my_read_int(char *inifile, char *name, int *value)
 {
     FILE *in;

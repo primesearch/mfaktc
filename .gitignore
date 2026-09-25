@@ -19,6 +19,7 @@ results_sent.txt
 worktodo.txt
 worktodo.add
 /*.ini
+/*.ini.example
 
 # temporary files
 *.lck

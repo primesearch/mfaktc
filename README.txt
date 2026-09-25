@@ -161,6 +161,12 @@ mfaktc.ini for additional options and a short description of each one. mfaktc
 typically fetches assignments from a worktodo.txt file, but this can be
 customized. See section 4 for steps to obtain assignments.
 
+The default settings are shipped as mfaktc.ini.example. If mfaktc.ini doesn't
+exist, mfaktc creates it from mfaktc.ini.example when it starts, so unpacking
+a new version over an old one keeps your mfaktc.ini. Compare your mfaktc.ini
+with the new mfaktc.ini.example after upgrading to see new or changed
+settings.
+
 mfaktc has built-in self-test that checks for errors. Please run the full
 self-test each time you:
 - recompile the code

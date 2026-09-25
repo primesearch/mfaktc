@@ -463,10 +463,16 @@ int tf(mystuff_t *mystuff, int class_hint, unsigned long long int k_hint, int ke
 
 /*  restart == 0 ==> time_est = time_run */
 #ifndef MORE_CLASSES
-        time_est = (time_run * 96ULL) / (unsigned long long int)(96 - restart);
+        const int total_classes = 96;
 #else
-        time_est = (time_run * 960ULL) / (unsigned long long int)(960 - restart);
+        const int total_classes = 960;
 #endif
+        /* restart == total_classes: the checkpoint was written after the last class, nothing to extrapolate from */
+        if (restart < total_classes) {
+            time_est = (time_run * (unsigned long long int)total_classes) / (unsigned long long int)(total_classes - restart);
+        } else {
+            time_est = time_run;
+        }
 
         if (time_est > 86400000ULL) {
             logprintf(mystuff, "%" PRIu64 "d ", time_run / 86400000ULL);
@@ -478,7 +484,7 @@ int tf(mystuff_t *mystuff, int class_hint, unsigned long long int k_hint, int ke
             logprintf(mystuff, "%2" PRIu64 "m ", (time_run / 60000ULL) % 60ULL);
         }
         logprintf(mystuff, "%2" PRIu64 ".%03" PRIu64 "s\n", (time_run / 1000ULL) % 60ULL, time_run % 1000ULL);
-        if (restart != 0) {
+        if (restart != 0 && restart < total_classes) {
             logprintf(mystuff, "      estimated total time spent: ");
             if (time_est > 86400000ULL) logprintf(mystuff, "%" PRIu64 "d ", time_est / 86400000ULL);
             if (time_est > 3600000ULL) logprintf(mystuff, "%2" PRIu64 "h ", (time_est / 3600000ULL) % 24ULL);

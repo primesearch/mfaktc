@@ -1,7 +1,11 @@
+version 0.24.2
+==============================
+bug fixes:
+- fixed division by zero when resuming from a checkpoint on the last class
 
 version 0.24.1
 ==============================
-- no codebase changes, binary-only release rebuilt with current CUDA versions
+- no codebase changes, binary-only release rebuilt with latest CUDA versions
 
 version 0.24.0
 ==============================

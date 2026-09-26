@@ -29,14 +29,14 @@ along with mfaktc.  If not, see <http://www.gnu.org/licenses/>.
 int my_read_int(char *inifile, char *name, int *value)
 {
     FILE *in;
-    char buf[100];
+    char buf[256];
     int found = 0;
 
     in = fopen(inifile, "r");
     if (!in) {
         return 1;
     }
-    while (fgets(buf, 100, in) && !found) {
+    while (fgets(buf, 250, in) && !found) {
         if (!strncmp(buf, name, strlen(name)) && buf[strlen(name)] == '=') {
             if (sscanf(&(buf[strlen(name) + 1]), "%d", value) == 1) {
                 found = 1;

@@ -142,7 +142,7 @@ jobs:
         run: |
           docker exec -i -w /workspace build-container bash -s <<'EOF'
             set -e -o pipefail
-            zip -9 -j ${{ steps.prepare.outputs.BASE_NAME }}.zip Changelog.txt COPYING mfaktc mfaktc.ini README.txt
+            zip -9 -j ${{ steps.prepare.outputs.BASE_NAME }}.zip Changelog.txt COPYING mfaktc mfaktc.ini.example README.txt
             echo "[${{ steps.prepare.outputs.BASE_NAME }}.zip](https://github.com/${{ github.repository }}/releases/download/${{ github.ref_name }}/${{ steps.prepare.outputs.BASE_NAME }}.zip) | \
             ${{ matrix.cuda_version }} | ${{ steps.prepare.outputs.CC_MIN }}-${{ steps.prepare.outputs.CC_MAX }} | ${{ steps.prepare.outputs.OS_VER }} | \
             ${{ steps.prepare.outputs.COMPILER_VER }} | ${{ steps.prepare.outputs.NVCC_VER }}" > ${{ steps.prepare.outputs.BASE_NAME }}.txt
@@ -235,7 +235,7 @@ jobs:
           ${{ env.MSVC_ADD_PKG_CMD }} || exit /b 1
           call "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\vcvars64.bat" ${{ env.VCVARS_VER }} || exit /b 1
           cd src || exit /b 1
-          copy mfaktc.ini .. || exit /b 1
+          copy mfaktc.ini ..\mfaktc.ini.example || exit /b 1
           make SHELL="cmd.exe" -j%NUMBER_OF_PROCESSORS% -f Makefile.win || exit /b 1
           cl /? 2>&1 | findstr /C:"Version" > clversion.log || exit /b 1
         env:
@@ -274,7 +274,7 @@ jobs:
         run: |
           [[ -f src/clversion.log ]] && CL_VER="$(grep -Eoe 'Version [\.0-9]+ ' src/clversion.log | cut -d' ' -f2)"
           [[ -z "$CL_VER" ]] && CL_VER='Unknown'
-          7z a -tzip -mx=9 "${{ steps.prepare.outputs.BASE_NAME }}.zip" Changelog.txt COPYING mfaktc-win-64.exe mfaktc.ini README.txt
+          7z a -tzip -mx=9 "${{ steps.prepare.outputs.BASE_NAME }}.zip" Changelog.txt COPYING mfaktc-win-64.exe mfaktc.ini.example README.txt
           echo "[${{ steps.prepare.outputs.BASE_NAME }}.zip](https://github.com/${GITHUB_REPOSITORY}/releases/download/${GITHUB_REF_NAME}/${{ steps.prepare.outputs.BASE_NAME }}.zip) | \
           ${{ matrix.cuda_version }} | ${{ steps.prepare.outputs.CC_MIN }}-${{ steps.prepare.outputs.CC_MAX }} | ${{ steps.prepare.outputs.OS_VER }} | \
           ${CL_VER} (${{ steps.prepare.outputs.COMPILER_VER }}) | ${{ steps.prepare.outputs.NVCC_VER }}" > ${{ steps.prepare.outputs.BASE_NAME }}.txt

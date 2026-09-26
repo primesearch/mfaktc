@@ -73,7 +73,7 @@ CUOBJS = $(CUSRC:.cu=.o) tf_75bit.o
 
 ##############################################################################
 
-all: ../mfaktc ../mfaktc.ini
+all: ../mfaktc ../mfaktc.ini.example
 
 ../mfaktc : $(COBJS) $(CUOBJS)
 	$(LD) $^ -o $@ $(LDFLAGS)
@@ -93,7 +93,9 @@ tf_75bit.o : tf_96bit.cu
 %.o : %.c
 	$(CC) $(CFLAGS) -c $< -o $@
 
-../%.ini : %.ini
-	$(INSTALL) -m 644 $< ..
+# install the default settings as mfaktc.ini.example so that an existing
+# mfaktc.ini isn't overwritten; mfaktc creates mfaktc.ini from it on first start
+../mfaktc.ini.example : mfaktc.ini
+	$(INSTALL) -m 644 $< $@
 
 .PHONY: all clean

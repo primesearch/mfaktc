@@ -70,7 +70,7 @@ INSTALL = copy
 
 ############################################################################################################
 
-all : ..\mfaktc-win-64.exe ..\mfaktc.ini
+all : ..\mfaktc-win-64.exe ..\mfaktc.ini.example
 
 ..\mfaktc-win-64.exe : $(COBJS) $(CUOBJS) $(RES)
 	$(LINK) $(LFLAGS) $^ $(LIBS) /out:$@
@@ -95,8 +95,10 @@ tf_75bit.obj : tf_96bit.cu
 %.obj : %.cu
 	nvcc -c $< -o $@ $(CUFLAGS)
 
-..\\%.ini : %.ini
-	$(INSTALL) $< ..
+# install the default settings as mfaktc.ini.example so that an existing
+# mfaktc.ini isn't overwritten; mfaktc creates mfaktc.ini from it on first start
+..\mfaktc.ini.example : mfaktc.ini
+	$(INSTALL) $< $@
 
 assets\\icons\\mfaktc.ico : assets\\icons\\mfaktc_16x16.png assets\\icons\\mfaktc_24x24.png assets\\icons\\mfaktc_32x32.png assets\\icons\\mfaktc_48x48.png assets\\icons\\mfaktc_256x256.png
 	magick convert $^ $@

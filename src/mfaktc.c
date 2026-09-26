@@ -752,6 +752,9 @@ int main(int argc, char **argv)
     mystuff.addfilestatus = -1; /* -1 -> timer not initialized! */
     mystuff.cuda_toolkit  = CUDART_VERSION;
 
+    // create mfaktc.ini from mfaktc.ini.example on the first start
+    create_inifile_from_example("mfaktc.ini");
+
     // need to see if we should log all the output before all of the other preamble
     my_read_int("mfaktc.ini", "Logging", &(mystuff.logging));
     if (mystuff.logging == 1 && mystuff.logfileptr == NULL) {

@@ -4,6 +4,8 @@ CUDA_INCLUDE = -I$(CUDA_DIR)/include/
 CUDA_LIB = -L$(CUDA_DIR)/lib64/
 
 DEBUG = 0
+STATIC_RUNTIME = 0
+STATIC_CUDA = 0
 
 # compiler settings for .c files (CPU)
 CC ?= gcc
@@ -57,7 +59,16 @@ endif
 
 # Linker
 LD = $(CXX)
-LDFLAGS = -flto -Wl,--gc-sections $(CUDA_LIB) -lcudart_static -lm -ldl -lrt -lpthread
+
+ifeq ($(STATIC_CUDA), 1)
+  LDFLAGS = -flto -Wl,--gc-sections $(CUDA_LIB) -lcudart_static -lm -ldl -lrt -lpthread
+else
+  LDFLAGS = -flto -Wl,--gc-sections $(CUDA_LIB) -lcudart -lm -ldl -lrt -lpthread
+endif
+
+ifeq ($(STATIC_RUNTIME), 1)
+  LDFLAGS += -static-libstdc++ -static-libgcc
+endif
 
 INSTALL = install
 

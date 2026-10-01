@@ -16,7 +16,10 @@ ifeq ($(DEBUG), 1)
   CFLAGS += -g -Og
 else
   CFLAGS += -O3 -ffast-math -flto -ffunction-sections -fdata-sections
-  CFLAGS_EXTRA_SIEVE = -funroll-all-loops
+  # clang (also as "gcc" on macOS) doesn't support -funroll-all-loops
+  ifeq ($(shell $(CC) --version 2>/dev/null | grep -c clang),0)
+    CFLAGS_EXTRA_SIEVE = -funroll-all-loops
+  endif
 endif
 
 # compiler settings for .cu files (GPU)

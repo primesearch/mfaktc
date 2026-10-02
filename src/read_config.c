@@ -503,7 +503,7 @@ int read_config(mystuff_t *mystuff)
     mystuff->logging = i;
     if (mystuff->logging == 1 && mystuff->logfileptr == NULL) {
         mystuff->logfileptr = fopen(mystuff->logfile, "a");
-        line_buffered(mystuff->logfileptr);
+        unbuffered(mystuff->logfileptr);
         if (mystuff->logfileptr == NULL) {
             logprintf(mystuff, "Warning: Cannot open %s for appending, error: %d", mystuff->logfile, errno);
         }

@@ -27,6 +27,7 @@ along with mfaktc.  If not, see <http://www.gnu.org/licenses/>.
 #include "output.h"
 #include "crc.h"
 #include "compatibility.h"
+#include "filelocking.h"
 
 /*
 checkpoint_write() writes the checkpoint file.
@@ -35,10 +36,13 @@ void checkpoint_write(unsigned int exp, int bit_min, int bit_max, int cur_class,
                       unsigned long long int bit_level_time)
 {
     FILE *f;
-    char ckp_buffer[MAX_BUFFER_LENGTH], filename[MAX_CHECKPOINT_FILENAME_LENGTH], factors_buffer[MAX_FACTOR_BUFFER_LENGTH];
+    char ckp_buffer[MAX_BUFFER_LENGTH], filename[MAX_CHECKPOINT_FILENAME_LENGTH], filename_write[MAX_CHECKPOINT_FILENAME_LENGTH + 6],
+        factors_buffer[MAX_FACTOR_BUFFER_LENGTH];
     unsigned int i, factors_buffer_length;
+    int write_error;
 
     snprintf(filename, MAX_CHECKPOINT_FILENAME_LENGTH, "%s%u_%d-%d_%d.ckp", NAME_NUMBERS, exp, bit_min, bit_max, NUM_CLASSES);
+    snprintf(filename_write, sizeof(filename_write), "%s.write", filename);
     if (factors[0].d0 || factors[0].d1 || factors[0].d2) {
         i = 0;
         char factor[MAX_DEZ_96_STRING_LENGTH];
@@ -54,17 +58,24 @@ void checkpoint_write(unsigned int exp, int bit_min, int bit_max, int cur_class,
         sprintf(factors_buffer, "0");
     }
 
-    f = fopen(filename, "w");
+    /* write a new file and replace the checkpoint file with it, so that a crash or a full disk while writing
+       doesn't destroy the previous checkpoint */
+    f = fopen(filename_write, "w");
     if (f == NULL) {
-        printf("Warning: could not write checkpoint file \"%s\"\n", filename);
+        printf("Warning: could not write checkpoint file \"%s\"\n", filename_write);
     } else {
         sprintf(ckp_buffer, "%s%u %d %d %d %s: %d %d %s %llu", NAME_NUMBERS, exp, bit_min, bit_max, NUM_CLASSES, MFAKTC_CHECKPOINT_VERSION,
                 cur_class, num_factors, strlen(factors_buffer) ? factors_buffer : "0", bit_level_time);
         i = crc32_checksum(ckp_buffer, strlen(ckp_buffer));
         fprintf(f, "%s%u %d %d %d %s: %d %d %s %llu %08X", NAME_NUMBERS, exp, bit_min, bit_max, NUM_CLASSES, MFAKTC_CHECKPOINT_VERSION,
                 cur_class, num_factors, strlen(factors_buffer) ? factors_buffer : "0", bit_level_time, i);
-        fclose(f);
+        write_error = ferror(f);
+        if (fclose(f) != 0) write_error = 1;
         f = NULL;
+        if (write_error || replace_file(filename_write, filename) != 0) {
+            printf("Warning: could not write checkpoint file \"%s\"\n", filename);
+            remove(filename_write);
+        }
     }
 }
 
@@ -158,7 +169,7 @@ tries to delete the checkpoint file
 */
 void checkpoint_delete(unsigned int exp, int bit_min, int bit_max)
 {
-    char filename[MAX_CHECKPOINT_FILENAME_LENGTH];
+    char filename[MAX_CHECKPOINT_FILENAME_LENGTH + 6];
     sprintf(filename, "%s%u_%d-%d_%d.ckp", NAME_NUMBERS, exp, bit_min, bit_max, NUM_CLASSES);
 
     if (remove(filename)) {
@@ -167,4 +178,6 @@ void checkpoint_delete(unsigned int exp, int bit_min, int bit_max)
             printf("Warning: can't delete the checkpoint file \"%s\"\n", filename);
         }
     }
+    strcat(filename, ".write"); /* left behind if mfaktc stopped while writing a checkpoint */
+    remove(filename);
 }

@@ -117,7 +117,8 @@ tf_75bit.obj : tf_96bit.cu
 	nvcc -c $< -o $@ $(CUFLAGS)
 
 # install the default settings as mfaktc.ini.example so that an existing
-# mfaktc.ini isn't overwritten; mfaktc creates mfaktc.ini from it on first start
+# mfaktc.ini isn't overwritten; mfaktc creates mfaktc.ini from it on first
+# start unless a custom INI file is specified
 ..\mfaktc.ini.example : mfaktc.ini
 	$(INSTALL) $< $@
 

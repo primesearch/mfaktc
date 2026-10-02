@@ -28,8 +28,9 @@ along with mfaktc.  If not, see <http://www.gnu.org/licenses/>.
 
 /*
 Release archives and "make" ship the default settings as mfaktc.ini.example so
-that unpacking or building a new version doesn't overwrite the user's
-mfaktc.ini. Create mfaktc.ini from it when it doesn't exist yet.
+that the user's mfaktc.ini is not overwritten when mfaktc is upgraded or built
+from source. We create mfaktc.ini from mfaktc.ini.example if the former is not
+found when mfaktc starts.
 */
 void create_inifile_from_example(const char *inifile)
 {

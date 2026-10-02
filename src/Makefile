@@ -105,7 +105,8 @@ tf_75bit.o : tf_96bit.cu
 	$(CC) $(CFLAGS) -c $< -o $@
 
 # install the default settings as mfaktc.ini.example so that an existing
-# mfaktc.ini isn't overwritten; mfaktc creates mfaktc.ini from it on first start
+# mfaktc.ini isn't overwritten; mfaktc creates mfaktc.ini from it on first
+# start unless a custom INI file is specified
 ../mfaktc.ini.example : mfaktc.ini
 	$(INSTALL) -m 644 $< $@
 

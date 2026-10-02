@@ -10,6 +10,9 @@
 mfaktc
 *.exe
 
+# stale lock files
+*.pid
+
 # device-specific mfaktc files
 *.ckp
 *.log

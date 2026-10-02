@@ -17,6 +17,7 @@ along with mfaktc.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 #include <stdio.h>
+#include <limits.h>
 #include <stdlib.h>
 #ifndef _MSC_VER
 #include <unistd.h>
@@ -45,12 +46,13 @@ along with mfaktc.  If not, see <http://www.gnu.org/licenses/>.
 #include "cuda_utils.h"
 
 unsigned long long int calculate_k(unsigned int exp, int bits)
-/* calculates biggest possible k in "2 * exp * k + 1 < 2^bits" */
+/* calculates biggest possible k in "2 * exp * k + 1 < 2^bits"; returns ULLONG_MAX if k doesn't fit into 64 bits,
+   which valid_assignment() rules out for real work (its limit of 63.9 bits for k is below 64) */
 {
     unsigned long long int k = 0, tmp_low, tmp_hi;
 
-    if ((bits > 65) && exp < (1U << (bits - 65)))
-        k = 0; // k would be >= 2^64...
+    if (bits > 96 || ((bits > 65) && (bits - 65 >= 32 || exp < (1U << (bits - 65)))))
+        return ULLONG_MAX; // k would be >= 2^64
     else if (bits <= 64) {
         tmp_low = 1ULL << (bits - 1);
         tmp_low--;

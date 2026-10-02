@@ -353,6 +353,7 @@ int tf(mystuff_t *mystuff, int class_hint, unsigned long long int k_hint, int ke
                     logprintf(mystuff, "ERROR: cudaGetLastError() returned %d: %s\n", cudaError, cudaGetErrorString(cudaError));
                     return RET_CUDA_ERROR; /* bail out, we might have a serious problem (detected by cudaGetLastError())... */
                 }
+                if (numfactors == RET_CUDA_ERROR) return RET_CUDA_ERROR; /* error reported by tf_class_*() */
                 factorsfound += numfactors;
                 if (mystuff->mode == MODE_NORMAL) {
                     if (numfactors > 0) {

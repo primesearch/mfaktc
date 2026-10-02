@@ -899,13 +899,13 @@ int main(int argc, char **argv)
     if (mystuff.mode == MODE_NORMAL && use_worktodo) {
         int lock = lock_workfile(mystuff.workfile);
         if (lock == 1) {
-            logprintf(&mystuff, "ERROR: another mfaktc instance is already working on \"%s\"\n", mystuff.workfile);
+            logprintf(&mystuff, "ERROR: \"%s\" is in use by another mfaktc instance\n", mystuff.workfile);
             close_log(&mystuff);
             return 1;
         }
         if (lock != 0 && mystuff.require_workfile_lock) {
             logprintf(&mystuff,
-                      "ERROR: can't check whether another mfaktc instance is working on \"%s\" (see RequireWorkFileLock in mfaktc.ini)\n",
+                      "ERROR: can't determine whether \"%s\" is in use by another mfaktc instance (see RequireWorkFileLock in mfaktc.ini)\n",
                       mystuff.workfile);
             close_log(&mystuff);
             return 1;
@@ -913,7 +913,7 @@ int main(int argc, char **argv)
         if (lock != 0) {
             logprintf(
                 &mystuff,
-                "WARNING: can't check whether another mfaktc instance is working on \"%s\", starting anyway (RequireWorkFileLock=0)\n",
+                "Warning: can't determine whether \"%s\" is in use by another mfaktc instance, starting anyway (RequireWorkFileLock=0)\n",
                 mystuff.workfile);
         }
     }

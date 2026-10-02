@@ -169,16 +169,21 @@ int unlock_and_fclose(FILE *f)
 }
 
 /*
-lock_workfile() prevents two instances from working on the same worktodo
-file, which would make them pick the same assignment. It takes an exclusive
-lock on "<workfile>.pid" and keeps it until the process exits; the operating
-system releases the lock when the process ends in any way, so a file left
-behind after a crash or power loss doesn't prevent a restart. The file
-contains the process ID for information only.
+lock_workfile() prevents multiple instances from working on the same
+worktodo.txt file, which would make them process the same set of assignments.
+It takes an exclusive lock on "<work file>.pid" and keeps it until the
+process exits; the operating system releases the lock when the process ends
+for any reason (such as a crash or power loss) so that mfaktc can be restarted
+even if a file is left behind. The file contains the process ID only for
+informational purposes.
 
-returns 0 if the lock was acquired, 1 if another process holds it and -1
-(after printing the reason) if the lock file can't be created or locked;
-without the lock there is no way to tell whether another instance is running
+return values:
+0 = the lock was acquired
+1 = another process holds the lock
+-1 = could not create or lock the lock file; mfaktc will print the reason
+
+In the absense of a lock file, mfaktc cannot tell whether the worktodo.txt
+file is in use by another mfaktc instance.
 */
 int lock_workfile(const char *workfile)
 {

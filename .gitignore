@@ -10,6 +10,9 @@
 mfaktc
 *.exe
 
+# stale lock files
+*.pid
+
 # device-specific mfaktc files
 *.ckp
 *.log
@@ -19,6 +22,7 @@ results_sent.txt
 worktodo.txt
 worktodo.add
 /*.ini
+/*.ini.example
 
 # temporary files
 *.lck

@@ -17,5 +17,6 @@ along with mfaktc.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 int read_config(mystuff_t *mystuff);
+void create_inifile_from_example(const char *inifile);
 int my_read_int(char *inifile, char *name, int *value);
 int my_read_string(char *inifile, char *name, char *string, unsigned int len);

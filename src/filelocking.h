@@ -37,6 +37,9 @@ int make_temp_file(char *tpl);
 
 FILE *fopen_and_lock(const char *path, const char *mode);
 int unlock_and_fclose(FILE *f);
+int fclose_keep_lock(FILE *f);
+int unlock_file(const char *path);
+int replace_file(const char *from, const char *to);
 int lock_workfile(const char *workfile);
 
 #if defined(NVCC_EXTERN) && !defined(_MSC_VER)

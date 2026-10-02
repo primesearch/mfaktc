@@ -387,6 +387,7 @@ enum ASSIGNMENT_ERRORS clear_assignment(char *filename, unsigned int exponent, i
     unsigned int current_line;
     struct ASSIGNMENT assignment; // the found assignment....
     char temp_file_template[] = "__worktodo__.XXXXXX";
+    int write_error;
 
     f_in = fopen_and_lock(filename, "r");
     if (NULL == f_in) {
@@ -434,6 +435,7 @@ enum ASSIGNMENT_ERRORS clear_assignment(char *filename, unsigned int exponent, i
         if (NULL == f_in) {
             fclose(f_out);
             f_out = NULL;
+            remove(temp_file_template);
             return CANT_OPEN_WORKFILE;
         }
     }
@@ -466,19 +468,25 @@ enum ASSIGNMENT_ERRORS clear_assignment(char *filename, unsigned int exponent, i
             }
         }
     } // while.....
-    unlock_and_fclose(f_in);
-    f_in = NULL;
-    fclose(f_out);
+    write_error = ferror(f_out);
+    if (fclose(f_out) != 0) write_error = 1;
     f_out = NULL;
-    if (!found) {
-        return ASSIGNMENT_NOT_FOUND;
-        }
-    if (remove(filename) != 0) {
+
+    /* Keep the workfile locked until it has been replaced: another process (e.g. AutoPrimeNet) that adds
+       assignments in between would otherwise lose them when the temporary file replaces the workfile. */
+    fclose_keep_lock(f_in);
+    f_in = NULL;
+    if (!found || write_error) {
+        remove(temp_file_template);
+        unlock_file(filename);
+        return found ? CANT_OPEN_TEMPFILE : ASSIGNMENT_NOT_FOUND;
+    }
+    if (replace_file(temp_file_template, filename) != 0) {
+        remove(temp_file_template);
+        unlock_file(filename);
         return CANT_RENAME;
     }
-    if (rename(temp_file_template, filename) != 0) {
-        return CANT_RENAME;
-    }
+    unlock_file(filename);
     return OK;
 }
 

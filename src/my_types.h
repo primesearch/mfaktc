@@ -16,6 +16,8 @@ You should have received a copy of the GNU General Public License
 along with mfaktc.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+#include <signal.h> /* sig_atomic_t */
+
 /* 72bit (3x 24bit) integer
 D=d0 + d1*(2^24) + d2*(2^48) */
 typedef struct {
@@ -119,7 +121,7 @@ typedef struct {
     int timestamp_on_same_line;
     int timestamp_interval;
 
-    int quit;
+    volatile sig_atomic_t quit; /* set by the signal handler */
     int verbosity; /* 0 = reduced number of screen printfs, 1 = default, >= 2 = some additional printfs */
     int logging;   /* 0 = logging disabled (default), 1 = logging enabled */
     int legacy_results_txt; /* 0 = output to results.txt disabled (default), 1 = output to results.txt enabled */

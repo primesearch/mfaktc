@@ -19,6 +19,10 @@ along with mfaktc.  If not, see <http://www.gnu.org/licenses/>.
 #include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
+#ifndef _MSC_VER
+#include <unistd.h>
+#endif
 
 #include <cuda_runtime.h>
 
@@ -28,6 +32,23 @@ along with mfaktc.  If not, see <http://www.gnu.org/licenses/>.
 
 mystuff_t *signal_handler_mystuff;
 
+/*
+On POSIX systems the handler interrupts the main program, which may be in the middle of printf(), malloc() or a
+CUDA call, so it may only use async-signal-safe functions: write() and _exit() instead of printf() and exit().
+stdout and the log file are line-buffered (line_buffered()), so _exit() doesn't lose complete lines that were
+printed before. On Windows the handler runs in a separate thread, where printf() and exit() are fine.
+*/
+static void signal_message(const char *msg)
+{
+#ifdef _MSC_VER
+    fputs(msg, stdout);
+#else
+    if (write(STDOUT_FILENO, msg, strlen(msg)) < 0) {
+        /* nothing to do */
+    }
+#endif
+}
+
 void my_signal_handler(int signum)
 {
 #ifdef _MSC_VER
@@ -36,21 +57,33 @@ invoked so we just register it again. */
     signal(signum, &my_signal_handler);
 #endif
 
-    if (signal_handler_mystuff->printmode == 1) printf("\n");
+    if (signal_handler_mystuff->printmode == 1) signal_message("\n");
     signal_handler_mystuff->quit++;
     if (signal_handler_mystuff->quit == 1) {
         if (signum == SIGINT)
-            printf("received signal \"SIGINT\"\n");
+            signal_message("received signal \"SIGINT\"\n");
         else if (signum == SIGTERM)
-            printf("received signal \"SIGTERM\"\n");
-        printf("mfaktc will exit once the current class is finished.\n");
-        printf("press ^C again to exit immediately\n");
-    }
-    if (signal_handler_mystuff->quit > 1) {
-        printf("mfaktc will exit NOW!\n");
+            signal_message("received signal \"SIGTERM\"\n");
+        signal_message("mfaktc will exit once the current class is finished.\n");
+        signal_message("press ^C again to exit immediately\n");
+    } else {
+        signal_message("mfaktc will exit NOW!\n");
+#ifdef _MSC_VER
         exit(1);
+#else
+        _exit(1);
+#endif
     }
-    signum++; /* useless but avoids warning about unused variable... */
+}
+
+/* make f line-buffered on POSIX systems (see my_signal_handler()); on Windows, _IOLBF means full buffering */
+void line_buffered(FILE *f)
+{
+#ifndef _MSC_VER
+    if (f != NULL) setvbuf(f, NULL, _IOLBF, BUFSIZ);
+#else
+    (void)f;
+#endif
 }
 
 void register_signal_handler(mystuff_t *mystuff)

@@ -25,6 +25,7 @@ along with mfaktc.  If not, see <http://www.gnu.org/licenses/>.
 #include "params.h"
 #include "my_types.h"
 #include "output.h"
+#include "signal_handler.h"
 
 /*
 Release archives and "make" ship the default settings as mfaktc.ini.example so
@@ -502,6 +503,7 @@ int read_config(mystuff_t *mystuff)
     mystuff->logging = i;
     if (mystuff->logging == 1 && mystuff->logfileptr == NULL) {
         mystuff->logfileptr = fopen(mystuff->logfile, "a");
+        line_buffered(mystuff->logfileptr);
         if (mystuff->logfileptr == NULL) {
             logprintf(mystuff, "Warning: Cannot open %s for appending, error: %d", mystuff->logfile, errno);
         }

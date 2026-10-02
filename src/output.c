@@ -488,12 +488,16 @@ void print_result_line(mystuff_t *mystuff, int factorsfound)
         computerjson[0] = 0;
     }
 
+    int i = MAX_FACTORS_PER_JOB;
     if (factorsfound) {
-        int i = 0;
+        i = 0;
         qsort(mystuff->factors, MAX_FACTORS_PER_JOB, sizeof(mystuff->factors[0]), cmp_int96);
         while (i < MAX_FACTORS_PER_JOB && mystuff->factors[i].d0 == 0 && mystuff->factors[i].d1 == 0 && mystuff->factors[i].d2 == 0) {
             i++;
         }
+    }
+    // the self-tests count factors without storing them, then mystuff->factors[] is all zero
+    if (i < MAX_FACTORS_PER_JOB) {
         char factor[MAX_DEZ_96_STRING_LENGTH];
         print_dez96(mystuff->factors[i++], factor);
         factors_list_length       = sprintf(factors_list, "%s", factor);

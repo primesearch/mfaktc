@@ -732,6 +732,8 @@ int main(int argc, char **argv)
     char *ptr;
     int use_worktodo = 1;
 
+    line_buffered(stdout); // see my_signal_handler()
+
     i = 1;
     memset(&mystuff, 0, sizeof(mystuff));
     mystuff.mode               = MODE_NORMAL;
@@ -762,6 +764,7 @@ int main(int argc, char **argv)
     my_read_int("mfaktc.ini", "Logging", &(mystuff.logging));
     if (mystuff.logging == 1 && mystuff.logfileptr == NULL) {
         mystuff.logfileptr = fopen(mystuff.logfile, "a");
+        line_buffered(mystuff.logfileptr);
     }
 
     while (i < argc) {

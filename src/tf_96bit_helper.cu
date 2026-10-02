@@ -176,7 +176,6 @@ are "out of range".
     // clang-format on
 
     trace_96_96(__FILE__, __LINE__, n, "nn", nn);
-    if (n.d0 == 0) printf("0x %08X %08X %08X\n", nn.d2, nn.d1, nn.d0);
 
     // clang-format off
     res->d0 = __sub_cc (q.d0, nn.d0);

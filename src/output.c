@@ -520,17 +520,6 @@ void print_result_line(mystuff_t *mystuff, int factorsfound)
     getOSJSON(osjson);
     get_utc_timestamp(timestamp);
 
-    if (mystuff->mode == MODE_NORMAL) {
-#ifndef WAGSTAFF
-        jsonresultfile = fopen_and_lock(mystuff->jsonresultfile, "a");
-#endif
-        if (mystuff->legacy_results_txt == 1) {
-            txtresultfile = fopen_and_lock(mystuff->resultfile, "a");
-            if (txtresultfile != NULL && mystuff->print_timestamp == 1) {
-                print_timestamp(mystuff, txtresultfile);
-            }
-        }
-    }
 #ifndef MORE_CLASSES
     bool partialresult = (mystuff->mode == MODE_NORMAL) && (mystuff->stats.class_counter < 96);
 #else
@@ -570,7 +559,10 @@ void print_result_line(mystuff_t *mystuff, int factorsfound)
         printf("%s\n", res_base_str);
     }
     if (mystuff->mode == MODE_NORMAL) {
+        /* Lock and write one result file at a time. Holding both locks at once could deadlock with another
+           program that locks them in the opposite order: mfakto locks results.txt first. */
 #ifndef WAGSTAFF
+        jsonresultfile = fopen_and_lock(mystuff->jsonresultfile, "a");
         if (jsonresultfile != NULL) {
             fprintf(jsonresultfile, "%s\n", jsonstring);
             unlock_and_fclose(jsonresultfile);
@@ -580,7 +572,11 @@ void print_result_line(mystuff_t *mystuff, int factorsfound)
         }
 #endif
         if (mystuff->legacy_results_txt == 1) {
+            txtresultfile = fopen_and_lock(mystuff->resultfile, "a");
             if (txtresultfile != NULL) {
+                if (mystuff->print_timestamp == 1) {
+                    print_timestamp(mystuff, txtresultfile);
+                }
                 fprintf(txtresultfile, "%s%s\n", UID, txtstring);
                 unlock_and_fclose(txtresultfile);
                 txtresultfile = NULL;

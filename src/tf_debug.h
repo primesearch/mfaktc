@@ -27,7 +27,7 @@ D = index for modbasecase_debug[];
 #define MODBASECASE_QI_ERROR(A, B, C, D)           \
     if (C > (A)) {                                 \
         printf("EEEEEK, step %d qi = %u\n", B, C); \
-        modbasecase_debug[D]++;                    \
+        atomicAdd(&modbasecase_debug[D], 1);       \
     }
 
 /*
@@ -39,7 +39,7 @@ D = index for modbasecase_debug[];
 #define MODBASECASE_NONZERO_ERROR(A, B, C, D)                      \
     if (A) {                                                       \
         printf("EEEEEK, step %d q.d%d is nonzero: %u\n", B, C, A); \
-        modbasecase_debug[D]++;                                    \
+        atomicAdd(&modbasecase_debug[D], 1);                       \
     }
 
 /*
@@ -51,7 +51,7 @@ D = index for modbasecase_debug[];
 #define MODBASECASE_VALUE_BIG_ERROR(A, NAME, B, C, D)              \
     if (C > A) {                                                   \
         printf("EEEEEK, step %d " NAME " is too big: %u\n", B, C); \
-        modbasecase_debug[D]++;                                    \
+        atomicAdd(&modbasecase_debug[D], 1);                       \
     }
 
 #else

@@ -487,6 +487,7 @@ int process_add_file(char *workfilename, char *addfilename, int *addfilesstatus,
     FILE *workfile, *addfile;
     char buffer[512];
     size_t n;
+    int write_error;
 
     if (verbosity >= 2) {
         printf("checking for \"%s\"... ", addfilename);
@@ -537,8 +538,17 @@ int process_add_file(char *workfilename, char *addfilename, int *addfilesstatus,
                     printf("         Disabled worktodo.add feature until mfaktc is restarted.\n");
                     return CANT_READ;
                 }
-                unlock_and_fclose(workfile);
+                // buffered write errors (e.g. disk full) may only be reported when the file is closed
+                write_error = ferror(workfile);
+                if (unlock_and_fclose(workfile) != 0) write_error = 1;
                 workfile = NULL;
+                if (write_error) {
+                    unlock_and_fclose(addfile);
+                    addfile = NULL;
+                    printf("Warning: process_add_file() could not write to \"%s\"", workfilename);
+                    printf("         Disabled worktodo.add feature until mfaktc is restarted.\n");
+                    return CANT_WRITE;
+                }
             }
         } else // (*addfilesstatus) < 2
         {

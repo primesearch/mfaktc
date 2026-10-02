@@ -58,6 +58,7 @@ extern "C" __host__ int tf_class_barrett92(unsigned long long int k_min, unsigne
     int192 b_preinit;
 #endif
     int shiftcount, ln2b, count = 0;
+    int aborted = 0; /* set if a second ^C stops the class early */
     unsigned long long int k_diff;
     char string[50];
     int factorsfound = 0;
@@ -132,6 +133,12 @@ extern "C" __host__ int tf_class_barrett92(unsigned long long int k_min, unsigne
 
     timer_init(&timer2);
     while ((k_min <= k_max) || (h_ktab_index > 0)) {
+        /* second ^C: stop the class early, don't start the preprocessed ktabs */
+        if (mystuff->quit > 1) {
+            aborted = 1;
+            break;
+        }
+
         /* preprocessing: calculate a ktab (factor table) */
         if ((k_min <= k_max) && (h_ktab_index < mystuff->cpu_streams)) // if we have an empty h_ktab we can preprocess another one
         {
@@ -235,6 +242,9 @@ extern "C" __host__ int tf_class_barrett92(unsigned long long int k_min, unsigne
     /* wait to finish the current calculations on the device */
     cuda_ret = cudaDeviceSynchronize();
     if (cuda_ret != cudaSuccess) printf("per class final cudaDeviceSynchronize failed!\n");
+
+    /* the results of the unfinished class are discarded */
+    if (aborted) return RET_QUIT;
 
     /* download results from GPU */
     cudaMemcpy(mystuff->h_RES, mystuff->d_RES, 32 * sizeof(int), cudaMemcpyDeviceToHost);

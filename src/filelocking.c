@@ -60,6 +60,27 @@ typedef struct _lockinfo {
 static unsigned int num_locked_files = 0;
 static lockinfo locked_files[MAX_LOCKED_FILES];
 
+/*
+remove_lock_files() is called at exit and removes any currently held lock
+files, such as those that remain when mfaktc exits because of an error or if
+Ctrl + C is pressed a second time while a file is locked. Such files can still
+be left behind by a crash or a power loss. fopen_and_lock() then waits until
+they are deleted: it doesn't take over lock files it didn't create, as there
+is no reliable way to tell whether the lock owner is still alive. Operating
+systems recycle process IDs, and other programs such as AutoPrimeNet may share
+the same directory as mfaktc.
+*/
+static void remove_lock_files(void)
+{
+    unsigned int i;
+
+    for (i = 0; i < num_locked_files; i++) {
+        close(locked_files[i].lockfd);
+        remove(locked_files[i].lock_filename);
+    }
+    num_locked_files = 0;
+}
+
 int make_temp_file(char *tpl)
 {
 #if defined _MSC_VER || defined __MINGW32__
@@ -77,6 +98,12 @@ FILE *fopen_and_lock(const char *path, const char *mode)
     unsigned int i;
     int lockfd;
     FILE *f;
+    static int remove_lock_files_registered = 0;
+
+    if (!remove_lock_files_registered) {
+        atexit(remove_lock_files);
+        remove_lock_files_registered = 1;
+    }
 
     if (!path) {
         fprintf(stderr, "fopen_and_lock() called with NULL passed as path argument.\n");
@@ -102,7 +129,13 @@ FILE *fopen_and_lock(const char *path, const char *mode)
     for (i = 0;;) {
         if ((lockfd = open(locked_files[num_locked_files].lock_filename, O_EXCL | O_CREAT, MODE)) < 0) {
             if (errno == EEXIST) {
-                if (i == 0) fprintf(stderr, "%.250s already exists, waiting ...\n", locked_files[num_locked_files].lock_filename);
+                if (i == 0) {
+                    fprintf(stderr, "%.250s already exists, waiting ...\n", locked_files[num_locked_files].lock_filename);
+                    fprintf(
+                        stderr,
+                        "If no other program (such as AutoPrimeNet or another mfaktc instance) is using %.250s, the lock file was left behind by an unexpected exit and can be deleted.\n",
+                        path);
+                }
                 if (i < 1000) i++; // slowly increase sleep time up to 1 sec
                 Sleep(i);
                 continue;

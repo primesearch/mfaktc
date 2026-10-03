@@ -22,6 +22,12 @@ additions public too, so that others may benefit from your work.
 #include "my_intrinsics.h"
 #define NVCC_EXTERN
 #include "gpusieve.h"
+
+#if defined(__clang__) && !defined(__CUDA_ARCH__)
+// clang as the host compiler sees the __device__ helpers below as unused static functions:
+// they are only called from device code, which isn't part of the host compilation
+#pragma clang diagnostic ignored "-Wunused-function"
+#endif
 #undef NVCC_EXTERN
 
 #undef RAW_GPU_BENCH // FIXME

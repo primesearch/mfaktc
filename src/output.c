@@ -453,13 +453,13 @@ void print_result_line(mystuff_t *mystuff, int factorsfound)
     char details[50];
     char res_base_str[70];
     char txtstring[200];
-    char json_checksum_string[750];
+    char json_checksum_string[MAX_FACTOR_BUFFER_LENGTH + 300]; /* factors_list + the other fields at their maximum length */
     char timestamp[50];
 
     FILE *txtresultfile = NULL;
 
 #ifndef WAGSTAFF
-    char jsonstring[1350];
+    char jsonstring[MAX_FACTOR_BUFFER_LENGTH + 1000]; /* factorjson + the other fields at their maximum length */
     FILE *jsonresultfile = NULL;
 #endif
 

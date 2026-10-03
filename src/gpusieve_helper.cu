@@ -31,7 +31,7 @@ __device__ static void create_k_deltas(unsigned int *bit_array, unsigned int bit
 
     bitcount[threadIdx.x] = 0;
     for (i = 0; i < words_per_thread; i++)
-        bitcount[threadIdx.x] += __popc(bit_array[i]);
+        bitcount[threadIdx.x] = __popc(bit_array[i]) + bitcount[threadIdx.x];
 
     // Create total count of bits set in block up to and including this threads popc.
     // Kudos to Rocke Verser for the population counting code.
@@ -39,32 +39,32 @@ __device__ static void create_k_deltas(unsigned int *bit_array, unsigned int bit
 
     // First five tallies remain within one warp.  Should be in lock-step.
     if (threadIdx.x & 1) // If we are running on any thread 0bxxxxxxx1, tally neighbor's count.
-        bitcount[threadIdx.x] += bitcount[threadIdx.x - 1];
+        bitcount[threadIdx.x] = bitcount[threadIdx.x - 1] + bitcount[threadIdx.x];
 
     if (threadIdx.x & 2) // If we are running on any thread 0bxxxxxx1x, tally neighbor's count.
-        bitcount[threadIdx.x] += bitcount[(threadIdx.x - 2) | 1];
+        bitcount[threadIdx.x] = bitcount[(threadIdx.x - 2) | 1] + bitcount[threadIdx.x];
 
     if (threadIdx.x & 4) // If we are running on any thread 0bxxxxx1xx, tally neighbor's count.
-        bitcount[threadIdx.x] += bitcount[(threadIdx.x - 4) | 3];
+        bitcount[threadIdx.x] = bitcount[(threadIdx.x - 4) | 3] + bitcount[threadIdx.x];
 
     if (threadIdx.x & 8) // If we are running on any thread 0bxxxx1xxx, tally neighbor's count.
-        bitcount[threadIdx.x] += bitcount[(threadIdx.x - 8) | 7];
+        bitcount[threadIdx.x] = bitcount[(threadIdx.x - 8) | 7] + bitcount[threadIdx.x];
 
     if (threadIdx.x & 16) // If we are running on any thread 0bxxx1xxxx, tally neighbor's count.
-        bitcount[threadIdx.x] += bitcount[(threadIdx.x - 16) | 15];
+        bitcount[threadIdx.x] = bitcount[(threadIdx.x - 16) | 15] + bitcount[threadIdx.x];
 
     // Further tallies are across warps.  Must synchronize
     __syncthreads();
     if (threadIdx.x & 32) // If we are running on any thread 0bxx1xxxxx, tally neighbor's count.
-        bitcount[threadIdx.x] += bitcount[(threadIdx.x - 32) | 31];
+        bitcount[threadIdx.x] = bitcount[(threadIdx.x - 32) | 31] + bitcount[threadIdx.x];
 
     __syncthreads();
     if (threadIdx.x & 64) // If we are running on any thread 0bx1xxxxxx, tally neighbor's count.
-        bitcount[threadIdx.x] += bitcount[(threadIdx.x - 64) | 63];
+        bitcount[threadIdx.x] = bitcount[(threadIdx.x - 64) | 63] + bitcount[threadIdx.x];
 
     __syncthreads();
     if (threadIdx.x & 128) // If we are running on any thread 0b1xxxxxxx, tally neighbor's count.
-        bitcount[threadIdx.x] += bitcount[127];
+        bitcount[threadIdx.x] = bitcount[127] + bitcount[threadIdx.x];
 
     // At this point, bitcount[...] contains the total number of bits for the indexed
     // thread plus all lower-numbered threads.  I.e., bitcount[255] is the total count.

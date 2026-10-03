@@ -17,9 +17,10 @@ along with mfaktc.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 __device__ static void create_k_deltas(unsigned int *bit_array, unsigned int bits_to_process, int *total_bit_count,
-                                       unsigned short *k_deltas)
+                                       unsigned short *k_deltas, unsigned int *RES)
 {
-    int i, words_per_thread, sieve_word, k_bit_base;
+    int i, words_per_thread, sieve_word, k_bit_base, bit_count;
+    unsigned int dynamic_smem_size, max_bit_count;
     __shared__ volatile unsigned short bitcount[256]; // Each thread of our block puts bit-counts here
 
     // Get pointer to section of the bit_array this thread is processing.
@@ -70,18 +71,29 @@ __device__ static void create_k_deltas(unsigned int *bit_array, unsigned int bit
     // thread plus all lower-numbered threads.  I.e., bitcount[255] is the total count.
 
     __syncthreads();
-    *total_bit_count = bitcount[255];
+    bit_count = bitcount[255];
+
+    // k_deltas[] is the dynamic shared memory, whose size the host estimates from the sieve parameters. If a block
+    // has more candidates than fit (not expected with the sizes used), none are stored or tested, and RES[31] is set
+    // so that the host stops instead of silently skipping them.
+    asm("mov.u32 %0, %%dynamic_smem_size;" : "=r"(dynamic_smem_size));
+    max_bit_count = dynamic_smem_size / sizeof(unsigned short);
+    if ((unsigned int)bit_count > max_bit_count) {
+        if (threadIdx.x == 0) RES[31] = bit_count;
+        *total_bit_count = 0;
+        words_per_thread = 0; // skip the loop below
+    } else {
+        *total_bit_count = bit_count;
+    }
 
     //POSSIBLE OPTIMIZATION - bitcounts and k_deltas could use the same memory space if we'd read bitcount into a register
     // and sync threads before doing any writes to k_deltas.
 
-    //POSSIBLE SANITY CHECK -- is there any way to test if total_bit_count exceeds the amount of shared memory allocated?
-
     // Loop til this thread's section of the bit array is finished.
 
-    sieve_word = *bit_array;
+    sieve_word = words_per_thread ? *bit_array : 0;
     k_bit_base = threadIdx.x * words_per_thread * 32;
-    for (i = *total_bit_count - bitcount[threadIdx.x];; i++) {
+    for (i = bit_count - bitcount[threadIdx.x]; words_per_thread > 0; i++) {
         int bit_to_test;
 
         // Make sure we have a non-zero sieve word

@@ -1,7 +1,33 @@
 version 0.24.2
 ==============================
+enhancements:
+- mfaktc now creates the mfaktc.ini file from the mfaktc.ini.example template
+  - the user's INI file is no longer overwritten during an upgrade
+
 bug fixes:
 - fixed division by zero when resuming from a checkpoint on the last class
+- getOS() now correctly handles unknown platforms
+- mfaktc now checks that file handles are not null
+- mfaktc now checks whether mkstemp() has succeeded
+- the timer is now protected against backward clock adjustments
+- updated my_read_int() to use the same line buffer size as my_read_string()
+- DEBUG_GPU_MATH errors are now counted atomically
+- fixed some edge cases related to file locking
+- mfaktc now checks every computed sieve offset and exits if one is incorrect
+  - the previous behavior could cause factors to be missed silently
+- mfaktc now checks to ensure GPU_SIEVE_PROCESS_SIZE_MAX does not exceed 64
+  - values above 64 could cause mfaktc to test incorrect factor candidates
+- fixed various buffer overflows
+- fixed various compiler warnings
+
+build:
+- static builds are now supported
+
+other changes:
+- multiple instances can no longer access the same worktodo.txt file
+  - the exact behavior can be configured with the new RequireWorkFileLock
+    option in mfaktc.ini
+- removed redundant debug output
 
 version 0.24.1
 ==============================

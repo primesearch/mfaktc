@@ -69,7 +69,7 @@ bit_max64 is the number of bits in the factor (minus 64)
     extern __shared__ unsigned short k_deltas[]; // Write bits to test here.  Launching program must estimate
     // how much shared memory to allocate based on number of primes sieved.
 
-    create_k_deltas(bit_array, bits_to_process, &total_bit_count, k_deltas);
+    create_k_deltas(bit_array, bits_to_process, &total_bit_count, k_deltas, RES);
     create_fbase96(&f_base, k_base, exp, bits_to_process);
 
     initial_shifter_value = exp << (32 - shiftcount); // Initial shifter value
@@ -115,7 +115,7 @@ bit_max64 is the number of bits in the factor (minus 64)
     extern __shared__ unsigned short k_deltas[]; // Write bits to test here.  Launching program must estimate
     // how much shared memory to allocate based on number of primes sieved.
 
-    create_k_deltas(bit_array, bits_to_process, &total_bit_count, k_deltas);
+    create_k_deltas(bit_array, bits_to_process, &total_bit_count, k_deltas, RES);
     create_fbase96(&f_base, k_base, exp, bits_to_process);
 
     initial_shifter_value = exp << (32 - shiftcount); // Initial shifter value
@@ -161,7 +161,7 @@ bit_max64 is the number of bits in the factor (minus 64)
     extern __shared__ unsigned short k_deltas[]; // Write bits to test here.  Launching program must estimate
     // how much shared memory to allocate based on number of primes sieved.
 
-    create_k_deltas(bit_array, bits_to_process, &total_bit_count, k_deltas);
+    create_k_deltas(bit_array, bits_to_process, &total_bit_count, k_deltas, RES);
     create_fbase96(&f_base, k_base, exp, bits_to_process);
 
     initial_shifter_value = exp << (32 - shiftcount); // Initial shifter value
@@ -206,7 +206,7 @@ a is precomputed on host ONCE.
     extern __shared__ unsigned short k_deltas[]; // Write bits to test here.  Launching program must estimate
     // how much shared memory to allocate based on number of primes sieved.
 
-    create_k_deltas(bit_array, bits_to_process, &total_bit_count, k_deltas);
+    create_k_deltas(bit_array, bits_to_process, &total_bit_count, k_deltas, RES);
     create_fbase96(&f_base, k_base, exp, bits_to_process);
 
     initial_shifter_value = exp << (32 - shiftcount); // Initial shifter value
@@ -251,7 +251,7 @@ a is precomputed on host ONCE.
     extern __shared__ unsigned short k_deltas[]; // Write bits to test here.  Launching program must estimate
     // how much shared memory to allocate based on number of primes sieved.
 
-    create_k_deltas(bit_array, bits_to_process, &total_bit_count, k_deltas);
+    create_k_deltas(bit_array, bits_to_process, &total_bit_count, k_deltas, RES);
     create_fbase96(&f_base, k_base, exp, bits_to_process);
 
     initial_shifter_value = exp << (32 - shiftcount); // Initial shifter value
@@ -296,7 +296,7 @@ a is precomputed on host ONCE.
     extern __shared__ unsigned short k_deltas[]; // Write bits to test here.  Launching program must estimate
     // how much shared memory to allocate based on number of primes sieved.
 
-    create_k_deltas(bit_array, bits_to_process, &total_bit_count, k_deltas);
+    create_k_deltas(bit_array, bits_to_process, &total_bit_count, k_deltas, RES);
     create_fbase96(&f_base, k_base, exp, bits_to_process);
 
     initial_shifter_value = exp << (32 - shiftcount); // Initial shifter value

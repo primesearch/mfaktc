@@ -357,7 +357,7 @@ __launch_bounds__(THREADS_PER_BLOCK, 2) mfaktc_95_gs(unsigned int exp, int96 k_b
     extern __shared__ unsigned short k_deltas[]; // Write bits to test here.  Launching program must estimate how much
                                                  // shared memory to allocate based on number of primes sieved.
 
-    create_k_deltas(bit_array, bits_to_process, &total_bit_count, k_deltas);
+    create_k_deltas(bit_array, bits_to_process, &total_bit_count, k_deltas, RES);
     create_fbase96(&f_base, k_base, exp, bits_to_process);
 
     // Loop til the k values written to shared memory are exhausted

@@ -73,9 +73,11 @@ __device__ static void create_k_deltas(unsigned int *bit_array, unsigned int bit
     __syncthreads();
     bit_count = bitcount[255];
 
-    // k_deltas[] is the dynamic shared memory, whose size the host estimates from the sieve parameters. If a block
-    // has more candidates than fit (not expected with the sizes used), none are stored or tested, and RES[31] is set
-    // so that the host stops instead of silently skipping them.
+    // the host estimates the size of the dynamic shared memory k_deltas[]
+    // from the sieve parameters. If a block has more candidates than its
+    // buffer holds, then none are stored or tested. In this case, RES[31] is
+    // set so that the host stops instead of silently skipping them. However,
+    // this is not expected with the sizes used.
     asm("mov.u32 %0, %%dynamic_smem_size;" : "=r"(dynamic_smem_size));
     max_bit_count = dynamic_smem_size / sizeof(unsigned short);
     if ((unsigned int)bit_count > max_bit_count) {

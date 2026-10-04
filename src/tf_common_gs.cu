@@ -106,8 +106,8 @@ extern "C" __host__ int tf_class_barrett92_gs(unsigned long long int k_min, unsi
     else
         b_preinit.d5 = 1 << (ln2b - 160); // b_preinit = 2^ln2b
 
-    /* set result array to 0 */
-    cudaMemset(mystuff->d_RES, 0, 32 * sizeof(int)); // RES[0] counts the factors found, RES[31] flags a candidate buffer overflow
+    /* set result array to 0, RES[0] is the factor count and RES[31] flags a candidate buffer overflow */
+    cudaMemset(mystuff->d_RES, 0, 32 * sizeof(int));
 
 #ifdef DEBUG_GPU_MATH
     cudaMemset(mystuff->d_modbasecase_debug, 0, 32 * sizeof(int));
@@ -230,7 +230,7 @@ extern "C" __host__ int tf_class_barrett92_gs(unsigned long long int k_min, unsi
     if (mystuff->h_RES[31] != 0) {
         logprintf(
             mystuff,
-            "ERROR: a GPU sieve block had %u candidates, more than its buffer of %d holds. Some candidates were not tested, so factors could have been missed. Please report this.\n",
+            "ERROR: a GPU sieve block had %u candidates, more than its buffer of %d holds. Factors could have been missed due to untested candidates. Please report this.\n",
             mystuff->h_RES[31], shared_mem_required / (int)sizeof(unsigned short));
         return RET_CUDA_ERROR;
     }

@@ -111,18 +111,11 @@ int my_read_string(char *inifile, char *name, char *string, unsigned int len)
     }
     while (fgets(buf, 250, in) && !found) {
         if (!strncmp(buf, name, idx) && buf[idx] == '=') {
-            found = strlen(buf + idx + 1);
-            if (found == 0) {
-                string[0] = '\0';
-                continue;
-            }
-            found = (len > found ? found : len) - 1;
-            if (found) {
-                memcpy(string, buf + idx + 1, found); // found < len, NUL-terminated below
-                if (string[found - 1] == '\r') {
-                    found--;    // remove '\r' from string, this happens when reading a DOS/Windows formatted file on Linux
-                }
-            }
+            // the value ends at the line ending ("\r\n" when reading a DOS/Windows formatted file on Linux), but the
+            // last line of the file may not have one
+            found = strcspn(buf + idx + 1, "\r\n");
+            if (found >= len) found = len - 1;
+            memcpy(string, buf + idx + 1, found);
             string[found] = '\0';
         }
     }

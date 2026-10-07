@@ -355,6 +355,10 @@ int tf(mystuff_t *mystuff, int class_hint, unsigned long long int k_hint, int ke
                     return RET_CUDA_ERROR; /* bail out, we might have a serious problem (detected by cudaGetLastError())... */
                 }
                 if (numfactors == RET_CUDA_ERROR) return RET_CUDA_ERROR; /* error reported by tf_class_*() */
+                if (numfactors == RET_QUIT) { /* a second ^C stopped the class early: don't write a checkpoint for it */
+                    if (mystuff->printmode == 1) logprintf(mystuff, "\n");
+                    return RET_QUIT;
+                }
                 factorsfound += numfactors;
                 if (mystuff->mode == MODE_NORMAL) {
                     if (numfactors > 0) {
@@ -732,6 +736,8 @@ int main(int argc, char **argv)
     char *ptr;
     int use_worktodo = 1;
 
+    unbuffered(stdout); // see my_signal_handler()
+
     i = 1;
     memset(&mystuff, 0, sizeof(mystuff));
     mystuff.mode               = MODE_NORMAL;
@@ -762,6 +768,7 @@ int main(int argc, char **argv)
     my_read_int("mfaktc.ini", "Logging", &(mystuff.logging));
     if (mystuff.logging == 1 && mystuff.logfileptr == NULL) {
         mystuff.logfileptr = fopen(mystuff.logfile, "a");
+        unbuffered(mystuff.logfileptr);
     }
 
     while (i < argc) {

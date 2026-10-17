@@ -20,7 +20,9 @@ along with mfaktc.  If not, see <http://www.gnu.org/licenses/>.
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#ifndef _MSC_VER
+#ifdef _MSC_VER
+#include <intrin.h>
+#else
 #include <unistd.h>
 #endif
 
@@ -60,16 +62,25 @@ invoked so we just register it again. */
     signal(signum, &my_signal_handler);
 #endif
 
+    long n;
+
     if (signal_handler_mystuff->printmode == 1) signal_message("\n");
-    signal_handler_mystuff->quit++;
-    if (signal_handler_mystuff->quit == 1) {
+    /* decide by the value of this increment and don't read quit again: on Windows, each ^C runs the handler on a new
+       thread, so handlers can overlap, and the increment must be atomic. On POSIX systems the handler can't be
+       interrupted by another SIGINT or SIGTERM (see register_signal_handler()). */
+#ifdef _MSC_VER
+    n = _InterlockedIncrement(&signal_handler_mystuff->quit);
+#else
+    n = ++signal_handler_mystuff->quit;
+#endif
+    if (n == 1) {
         if (signum == SIGINT)
             signal_message("received signal \"SIGINT\"\n");
         else if (signum == SIGTERM)
             signal_message("received signal \"SIGTERM\"\n");
         signal_message("mfaktc will exit once the current class is finished.\n");
         signal_message("press ^C again to stop the current class and exit\n");
-    } else if (signal_handler_mystuff->quit == 2) {
+    } else if (n == 2) {
         /* the main loop stops the class early and exits normally, so files are closed and lock files removed */
         signal_message("mfaktc will stop the current class and exit.\n");
         signal_message("press ^C again to exit immediately\n");
@@ -93,6 +104,21 @@ void unbuffered(FILE *f)
 void register_signal_handler(mystuff_t *mystuff)
 {
     signal_handler_mystuff = mystuff;
+#ifdef _MSC_VER
     signal(SIGINT, &my_signal_handler);
     signal(SIGTERM, &my_signal_handler);
+#else
+    struct sigaction sa;
+
+    memset(&sa, 0, sizeof(sa));
+    sa.sa_handler = &my_signal_handler;
+    /* block both signals while the handler runs, so that a SIGTERM can't interrupt the handler of a SIGINT (or vice
+       versa) between reading and writing quit */
+    sigemptyset(&sa.sa_mask);
+    sigaddset(&sa.sa_mask, SIGINT);
+    sigaddset(&sa.sa_mask, SIGTERM);
+    sa.sa_flags = SA_RESTART; /* restart interrupted system calls, as signal() does on Linux */
+    sigaction(SIGINT, &sa, NULL);
+    sigaction(SIGTERM, &sa, NULL);
+#endif
 }

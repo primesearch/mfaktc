@@ -122,7 +122,11 @@ typedef struct {
     int timestamp_on_same_line;
     int timestamp_interval;
 
+#ifdef _MSC_VER
+    volatile long quit; /* set by the signal handler, which runs on its own thread on Windows (see my_signal_handler()) */
+#else
     volatile sig_atomic_t quit; /* set by the signal handler */
+#endif
     int verbosity; /* 0 = reduced number of screen printfs, 1 = default, >= 2 = some additional printfs */
     int logging;   /* 0 = logging disabled (default), 1 = logging enabled */
     int legacy_results_txt; /* 0 = output to results.txt disabled (default), 1 = output to results.txt enabled */

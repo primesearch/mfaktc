@@ -8,6 +8,13 @@ on:
   schedule:
     - cron: '16 12 * * 1'
 
+# Cancel a pull request's previous run when it gets a new push, so that a run
+# nobody waits for anymore doesn't hold runners: the organization's jobs share
+# a limit of 20 concurrent jobs. Pushes and scheduled runs aren't cancelled.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 jobs:
   analyze:
     name: Analyze (${{ matrix.language }})

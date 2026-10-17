@@ -251,7 +251,9 @@ int replace_file(const char *from, const char *to)
     struct stat st;
 
     /* keep the permissions of the replaced file (mkstemp() creates files with mode 0600) */
-    if (stat(to, &st) == 0) chmod(from, st.st_mode & 07777);
+    if (stat(to, &st) == 0 && chmod(from, st.st_mode & 07777) != 0) {
+        fprintf(stderr, "Warning: could not keep the permissions of \"%s\" (%s)\n", to, strerror(errno));
+    }
     return rename(from, to);
 #endif
 }

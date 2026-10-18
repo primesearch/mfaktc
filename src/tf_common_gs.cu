@@ -194,7 +194,7 @@ extern "C" __host__ int tf_class_barrett92_gs(unsigned long long int k_min, unsi
         if (k_min > k_max) break;
 
         /* second ^C: stop the class early, the results of the unfinished class are discarded */
-        if (mystuff->quit > 1) return RET_QUIT;
+        if (QUIT_COUNT(mystuff) > 1) return RET_QUIT;
 
         //BUG - we should call a different routine to advance the bit-to-clear values by gpusieve_size bits
         // This will be cheaper than recomputing the bit-to-clears from scratch

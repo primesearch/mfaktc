@@ -308,7 +308,7 @@ int tf(mystuff_t *mystuff, int class_hint, unsigned long long int k_hint, int ke
     for (; cur_class <= max_class; cur_class++) {
         if (class_needed(mystuff->exponent, k_min, cur_class)) {
             mystuff->stats.class_number = cur_class;
-            if (mystuff->quit) {
+            if (QUIT_COUNT(mystuff)) {
              /* check if quit is requested. Because this is at the beginning of the class
                 we can be sure that if RET_QUIT is returned the last class hasn't
                 finished. The signal handler which sets mystuff->quit not active during
@@ -382,7 +382,7 @@ int tf(mystuff_t *mystuff, int class_hint, unsigned long long int k_hint, int ke
                     if (mystuff->checkpoints == 1) {
                         if (numfactors > 0 ||
                             timer_diff(&timer_last_checkpoint) / 1000000 >= (unsigned long long int)mystuff->checkpointdelay ||
-                            mystuff->quit) {
+                            QUIT_COUNT(mystuff)) {
                             timer_init(&timer_last_checkpoint);
                             checkpoint_write(mystuff->exponent, mystuff->bit_min, mystuff->bit_max_stage, cur_class, factorsfound,
                                              mystuff->factors, mystuff->stats.bit_level_time);
@@ -1163,7 +1163,7 @@ int main(int argc, char **argv)
                         mystuff.bit_max_stage--;
                 }
                 tmp = 0;
-                while (mystuff.bit_max_stage <= mystuff.bit_max_assignment && !mystuff.quit) {
+                while (mystuff.bit_max_stage <= mystuff.bit_max_assignment && !QUIT_COUNT(&mystuff)) {
                     tmp = tf(&mystuff, 0, 0, AUTOSELECT_KERNEL);
                     // tmp = tf(&mystuff, 0, 0, _75BIT_MUL32);
                     // tmp = tf(&mystuff, 0, 0, _75BIT_MUL32_GS);
@@ -1221,7 +1221,7 @@ int main(int argc, char **argv)
                 logprintf(&mystuff, "ERROR: get_next_assignment(): no valid assignment found in \"%s\"\n", mystuff.workfile);
             else if (parse_ret != OK)
                 logprintf(&mystuff, "ERROR: get_next_assignment(): Unknown error (%d)\n", parse_ret);
-        } while (parse_ret == OK && use_worktodo && !mystuff.quit);
+        } while (parse_ret == OK && use_worktodo && !QUIT_COUNT(&mystuff));
     } else // mystuff.mode != MODE_NORMAL
     {
         selftest(&mystuff, 0);

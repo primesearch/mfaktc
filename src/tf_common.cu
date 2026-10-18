@@ -134,7 +134,7 @@ extern "C" __host__ int tf_class_barrett92(unsigned long long int k_min, unsigne
     timer_init(&timer2);
     while ((k_min <= k_max) || (h_ktab_index > 0)) {
         /* second ^C: stop the class early, don't start the preprocessed ktabs */
-        if (mystuff->quit > 1) {
+        if (QUIT_COUNT(mystuff) > 1) {
             aborted = 1;
             break;
         }

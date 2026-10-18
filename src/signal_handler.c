@@ -68,11 +68,7 @@ invoked so we just register it again. */
     /* decide by the value of this increment and don't read quit again. Handlers can overlap, so the increment must
        be atomic: on Windows, each ^C runs the handler on a new thread, and on POSIX systems another thread (such as
        one the CUDA runtime started) can run the handler for the next signal. */
-#ifdef _MSC_VER
-    n = _InterlockedIncrement(&signal_handler_mystuff->quit);
-#else
-    n = __atomic_add_fetch(&signal_handler_mystuff->quit, 1, __ATOMIC_SEQ_CST);  /* lock-free, so signal-safe */
-#endif
+    n = QUIT_INCREMENT(signal_handler_mystuff);
     if (n == 1) {
         if (signum == SIGINT)
             signal_message("received signal \"SIGINT\"\n");

@@ -19,11 +19,6 @@ along with mfaktc.  If not, see <http://www.gnu.org/licenses/>.
 #include <stdio.h>
 #include <string.h>
 #include <errno.h>
-#ifdef _MSC_VER
-#include <io.h>
-#else
-#include <unistd.h>
-#endif
 
 #include <cuda_runtime.h>
 
@@ -77,14 +72,7 @@ void checkpoint_write(unsigned int exp, int bit_min, int bit_max, int cur_class,
         write_error = ferror(f);
         /* write the new checkpoint to the disk before it replaces the previous one, so that a power loss can't leave
            an incomplete checkpoint behind */
-        if (fflush(f) != 0) write_error = 1;
-#ifdef _MSC_VER
-        else if (_commit(_fileno(f)) != 0)
-            write_error = 1;
-#else
-        else if (fsync(fileno(f)) != 0)
-            write_error = 1;
-#endif
+        if (sync_file(f) != 0) write_error = 1;
         if (fclose(f) != 0) write_error = 1;
         f = NULL;
         if (write_error || replace_file(filename_write, filename) != 0) {

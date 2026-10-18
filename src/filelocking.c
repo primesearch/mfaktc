@@ -250,9 +250,16 @@ int replace_file(const char *from, const char *to)
 #else
     struct stat st;
 
-    /* keep the permissions of the replaced file (mkstemp() creates files with mode 0600) */
-    if (stat(to, &st) == 0 && chmod(from, st.st_mode & 07777) != 0) {
-        fprintf(stderr, "Warning: could not keep the permissions of \"%s\" (%s)\n", to, strerror(errno));
+    /* keep the group and the permissions of the replaced file (mkstemp() creates files with mode 0600, and the new
+       file may get another group). If that fails, replace it anyway: not removing a finished assignment from the
+       work file would be worse. */
+    if (stat(to, &st) == 0) {
+        if (chown(from, (uid_t)-1, st.st_gid) != 0) {
+            fprintf(stderr, "Warning: could not keep the group of \"%s\" (%s)\n", to, strerror(errno));
+        }
+        if (chmod(from, st.st_mode & 07777) != 0) {
+            fprintf(stderr, "Warning: could not keep the permissions of \"%s\" (%s)\n", to, strerror(errno));
+        }
     }
     return rename(from, to);
 #endif

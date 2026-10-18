@@ -78,8 +78,10 @@ file itself when it isn't cached (e.g. the settings main() reads before read_con
 static char *ini_cache       = NULL;
 static size_t ini_cache_size = 0;
 static char ini_cache_name[64];
+static int ini_cache_unavailable = 0; /* read_config() couldn't open ini_cache_name, don't try again during the pass */
 
-/* reads the whole file into *data (malloc'ed, NUL-terminated); returns 0 on success */
+/* reads the whole file into *data (malloc'ed, NUL-terminated); returns 0 on success, 1 if the file can't be opened
+   and 2 if reading it fails */
 static int ini_load(const char *inifile, char **data, size_t *size)
 {
     FILE *in;
@@ -97,13 +99,18 @@ static int ini_load(const char *inifile, char **data, size_t *size)
             if (tmp == NULL) {
                 free(buf);
                 fclose(in);
-                return 1;
+                return 2;
             }
             buf = tmp;
         }
         n = fread(buf + used, 1, alloc - used, in);
         used += n;
     } while (n > 0);
+    if (ferror(in)) { /* don't take a partial file for the whole one */
+        free(buf);
+        fclose(in);
+        return 2;
+    }
     fclose(in);
     buf[used] = '\0';
     *data     = buf;
@@ -119,6 +126,7 @@ static int ini_get(const char *inifile, char **data, size_t *size)
         *size = ini_cache_size;
         return 0;
     }
+    if (ini_cache_unavailable && strcmp(inifile, ini_cache_name) == 0) return 1;
     return ini_load(inifile, data, size);
 }
 
@@ -733,13 +741,14 @@ int read_config(mystuff_t *mystuff)
 {
     int ret;
 
-    if (ini_load("mfaktc.ini", &ini_cache, &ini_cache_size) == 0) {
-        snprintf(ini_cache_name, sizeof(ini_cache_name), "%s", "mfaktc.ini");
-    } else {
-        ini_cache = NULL;
-    }
-    ret = read_config_settings(mystuff);
+    ret = ini_load("mfaktc.ini", &ini_cache, &ini_cache_size);
+    snprintf(ini_cache_name, sizeof(ini_cache_name), "%s", "mfaktc.ini");
+    if (ret != 0) ini_cache = NULL;
+    /* a missing file stays missing during read_config(); after a read error the settings are read one by one */
+    ini_cache_unavailable = (ret == 1);
+    ret                   = read_config_settings(mystuff);
     free(ini_cache);
-    ini_cache = NULL;
+    ini_cache             = NULL;
+    ini_cache_unavailable = 0;
     return ret;
 }

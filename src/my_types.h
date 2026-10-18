@@ -149,7 +149,7 @@ typedef struct {
    and increment it with QUIT_INCREMENT(), which returns the new value (lock-free, so the handler can use it). */
 #if defined _MSC_VER
 #include <intrin.h>
-#define QUIT_COUNT(m)     ((m)->quit)
+#define QUIT_COUNT(m)     _InterlockedCompareExchange(&(m)->quit, 0, 0)
 #define QUIT_INCREMENT(m) _InterlockedIncrement(&(m)->quit)
 #else
 #define QUIT_COUNT(m)     __atomic_load_n(&(m)->quit, __ATOMIC_SEQ_CST)

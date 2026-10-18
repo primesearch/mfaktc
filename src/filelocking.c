@@ -242,6 +242,18 @@ int unlock_file(const char *path)
     return -1;
 }
 
+/* writes the buffered data of f and syncs the file to the disk, so that a file that replaces another one is complete
+   even after a power loss. returns 0 on success */
+int sync_file(FILE *f)
+{
+    if (fflush(f) != 0) return -1;
+#if defined _MSC_VER || defined __MINGW32__
+    return _commit(_fileno(f)) == 0 ? 0 : -1;
+#else
+    return fsync(fileno(f)) == 0 ? 0 : -1;
+#endif
+}
+
 /* replaces the file "to" with the file "from"; on POSIX systems atomically. returns 0 on success */
 int replace_file(const char *from, const char *to)
 {

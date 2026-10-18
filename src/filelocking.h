@@ -39,6 +39,7 @@ FILE *fopen_and_lock(const char *path, const char *mode);
 int unlock_and_fclose(FILE *f);
 int fclose_keep_lock(FILE *f);
 int unlock_file(const char *path);
+int sync_file(FILE *f);
 int replace_file(const char *from, const char *to);
 int lock_workfile(const char *workfile);
 

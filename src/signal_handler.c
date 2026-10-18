@@ -65,13 +65,13 @@ invoked so we just register it again. */
     long n;
 
     if (signal_handler_mystuff->printmode == 1) signal_message("\n");
-    /* decide by the value of this increment and don't read quit again: on Windows, each ^C runs the handler on a new
-       thread, so handlers can overlap, and the increment must be atomic. On POSIX systems the handler can't be
-       interrupted by another SIGINT or SIGTERM (see register_signal_handler()). */
+    /* decide by the value of this increment and don't read quit again. Handlers can overlap, so the increment must
+       be atomic: on Windows, each ^C runs the handler on a new thread, and on POSIX systems another thread (such as
+       one the CUDA runtime started) can run the handler for the next signal. */
 #ifdef _MSC_VER
     n = _InterlockedIncrement(&signal_handler_mystuff->quit);
 #else
-    n = ++signal_handler_mystuff->quit;
+    n = __atomic_add_fetch(&signal_handler_mystuff->quit, 1, __ATOMIC_SEQ_CST);  /* lock-free, so signal-safe */
 #endif
     if (n == 1) {
         if (signum == SIGINT)
@@ -113,7 +113,7 @@ void register_signal_handler(mystuff_t *mystuff)
     memset(&sa, 0, sizeof(sa));
     sa.sa_handler = &my_signal_handler;
     /* block both signals while the handler runs, so that a SIGTERM can't interrupt the handler of a SIGINT (or vice
-       versa) between reading and writing quit */
+       versa) on the same thread */
     sigemptyset(&sa.sa_mask);
     sigaddset(&sa.sa_mask, SIGINT);
     sigaddset(&sa.sa_mask, SIGTERM);

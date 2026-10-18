@@ -396,6 +396,7 @@ enum ASSIGNMENT_ERRORS clear_assignment(char *filename, unsigned int exponent, i
 
     if (make_temp_file(temp_file_template) == 0) {
         f_out = fopen(temp_file_template, "w");
+        if (NULL == f_out) remove(temp_file_template); /* make_temp_file() creates the file on POSIX systems */
     }
 
     if (NULL == f_out) {

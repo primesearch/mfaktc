@@ -256,6 +256,7 @@ int replace_file(const char *from, const char *to)
     if (stat(to, &st) == 0) {
         if (chown(from, (uid_t)-1, st.st_gid) != 0) {
             fprintf(stderr, "Warning: could not keep the group of \"%s\" (%s)\n", to, strerror(errno));
+            st.st_mode &= ~(mode_t)S_IRWXG; /* don't give the group permissions to another group */
         }
         if (chmod(from, st.st_mode & 07777) != 0) {
             fprintf(stderr, "Warning: could not keep the permissions of \"%s\" (%s)\n", to, strerror(errno));

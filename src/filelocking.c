@@ -254,11 +254,33 @@ int sync_file(FILE *f)
 #endif
 }
 
+#if !(defined _MSC_VER || defined __MINGW32__)
+/* syncs the directory containing path, so that a rename in it survives a power loss */
+static void sync_directory(const char *path)
+{
+    char dir[256];
+    const char *slash = strrchr(path, '/');
+    int fd;
+
+    if (slash == NULL)
+        snprintf(dir, sizeof(dir), ".");
+    else
+        snprintf(dir, sizeof(dir), "%.*s", slash == path ? 1 : (int)(slash - path), path);
+    fd = open(dir, O_RDONLY);
+    if (fd < 0) return;
+    if (fsync(fd) != 0) {
+        /* nothing to do, the file has been replaced already */
+    }
+    close(fd);
+}
+#endif
+
 /* replaces the file "to" with the file "from"; on POSIX systems atomically. returns 0 on success */
 int replace_file(const char *from, const char *to)
 {
 #if defined _MSC_VER || defined __MINGW32__
-    return MoveFileExA(from, to, MOVEFILE_REPLACE_EXISTING) ? 0 : -1;
+    /* MOVEFILE_WRITE_THROUGH: return only when the move is on the disk */
+    return MoveFileExA(from, to, MOVEFILE_REPLACE_EXISTING | MOVEFILE_WRITE_THROUGH) ? 0 : -1;
 #else
     struct stat st;
 
@@ -274,7 +296,9 @@ int replace_file(const char *from, const char *to)
             fprintf(stderr, "Warning: could not keep the permissions of \"%s\" (%s)\n", to, strerror(errno));
         }
     }
-    return rename(from, to);
+    if (rename(from, to) != 0) return -1;
+    sync_directory(to); /* the rename itself must survive a power loss too */
+    return 0;
 #endif
 }
 

@@ -255,23 +255,33 @@ int sync_file(FILE *f)
 }
 
 #if !(defined _MSC_VER || defined __MINGW32__)
+/* syncs the file or directory path to the disk. returns 0 on success */
+static int sync_path(const char *path)
+{
+    int fd = open(path, O_RDONLY), ret, err;
+
+    if (fd < 0) return -1;
+    ret = fsync(fd);
+    err = errno;
+    close(fd);
+    errno = err; /* for the caller's warning */
+    return ret == 0 ? 0 : -1;
+}
+
 /* syncs the directory containing path, so that a rename in it survives a power loss */
 static void sync_directory(const char *path)
 {
     char dir[256];
     const char *slash = strrchr(path, '/');
-    int fd;
 
     if (slash == NULL)
         snprintf(dir, sizeof(dir), ".");
     else
         snprintf(dir, sizeof(dir), "%.*s", slash == path ? 1 : (int)(slash - path), path);
-    fd = open(dir, O_RDONLY);
-    if (fd < 0) return;
-    if (fsync(fd) != 0) {
-        /* nothing to do, the file has been replaced already */
-    }
-    close(fd);
+    /* the file has been replaced already, so only warn */
+    if (sync_path(dir) != 0)
+        fprintf(stderr, "Warning: could not sync the directory of \"%s\", its new version may not survive a power loss (%s)\n", path,
+                strerror(errno));
 }
 #endif
 
@@ -294,6 +304,10 @@ int replace_file(const char *from, const char *to)
         }
         if (chmod(from, st.st_mode & 07777) != 0) {
             fprintf(stderr, "Warning: could not keep the permissions of \"%s\" (%s)\n", to, strerror(errno));
+        }
+        /* the caller synced the contents, sync the new group and permissions as well */
+        if (sync_path(from) != 0) {
+            fprintf(stderr, "Warning: could not sync the group and permissions of \"%s\" (%s)\n", to, strerror(errno));
         }
     }
     if (rename(from, to) != 0) return -1;

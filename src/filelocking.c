@@ -271,17 +271,14 @@ static int sync_path(const char *path)
 /* syncs the directory containing path, so that a rename in it survives a power loss */
 static void sync_directory(const char *path)
 {
-    char dir[256];
     const char *slash = strrchr(path, '/');
+    char *dir         = slash == NULL ? strdup(".") : strndup(path, slash == path ? 1 : (size_t)(slash - path));
 
-    if (slash == NULL)
-        snprintf(dir, sizeof(dir), ".");
-    else
-        snprintf(dir, sizeof(dir), "%.*s", slash == path ? 1 : (int)(slash - path), path);
     /* the file has been replaced already, so only warn */
-    if (sync_path(dir) != 0)
+    if (dir == NULL || sync_path(dir) != 0)
         fprintf(stderr, "Warning: could not sync the directory of \"%s\", its new version may not survive a power loss (%s)\n", path,
                 strerror(errno));
+    free(dir);
 }
 #endif
 

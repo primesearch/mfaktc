@@ -379,7 +379,7 @@ enum ASSIGNMENT_ERRORS get_next_assignment(char *filename, unsigned int *exponen
 enum ASSIGNMENT_ERRORS clear_assignment(char *filename, unsigned int exponent, int bit_min, int bit_max, int bit_min_new)
 {
     int found = FALSE;
-    FILE *f_in, *f_out = NULL;
+    FILE *f_in, *f_out;
     LINE_BUFFER line; // line buffer
     char *tail = NULL; // points to tail material in line, if non-null
     enum PARSE_WARNINGS value;
@@ -394,11 +394,7 @@ enum ASSIGNMENT_ERRORS clear_assignment(char *filename, unsigned int exponent, i
         return CANT_OPEN_WORKFILE;
     }
 
-    if (make_temp_file(temp_file_template) == 0) {
-        f_out = fopen(temp_file_template, "w");
-        if (NULL == f_out) remove(temp_file_template); /* make_temp_file() creates the file on POSIX systems */
-    }
-
+    f_out = make_temp_file(temp_file_template);
     if (NULL == f_out) {
         unlock_and_fclose(f_in);
         f_in = NULL;

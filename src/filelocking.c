@@ -81,16 +81,33 @@ static void remove_lock_files(void)
     num_locked_files = 0;
 }
 
-int make_temp_file(char *tpl)
+FILE *make_temp_file(char *tpl)
 {
+    int temp_fd;
+    FILE *f;
 #if defined _MSC_VER || defined __MINGW32__
-    return _mktemp_s(tpl, strlen(tpl) + 1);
+    size_t len = strlen(tpl);
+    int tries;
+
+    /* _mktemp_s() only picks a name, so create the file exclusively, and pick another name if it was taken meanwhile */
+    for (tries = 0;; tries++) {
+        memcpy(tpl + len - 6, "XXXXXX", 6);
+        if (_mktemp_s(tpl, len + 1) != 0) return NULL;
+        temp_fd = open(tpl, _O_WRONLY | _O_CREAT | _O_EXCL, MODE);
+        if (temp_fd >= 0 || errno != EEXIST || tries == 9) break;
+    }
+    if (temp_fd < 0) return NULL;
+    f = _fdopen(temp_fd, "w");
 #else
-    int _temp_fd = mkstemp(tpl);
-    if (_temp_fd == -1) return errno ? errno : EINVAL;
-    close(_temp_fd);
-    return 0;
+    temp_fd = mkstemp(tpl);
+    if (temp_fd < 0) return NULL;
+    f = fdopen(temp_fd, "w");
 #endif
+    if (f == NULL) {
+        close(temp_fd);
+        remove(tpl);
+    }
+    return f;
 }
 
 FILE *fopen_and_lock(const char *path, const char *mode)

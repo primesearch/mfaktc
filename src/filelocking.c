@@ -81,6 +81,31 @@ static void remove_lock_files(void)
     num_locked_files = 0;
 }
 
+/* creates the file path for writing, replacing an old one. Unlike fopen(path, "w"), it doesn't write to a file (or
+   follow a symlink) that another process puts at path. returns NULL on failure */
+FILE *fopen_new(const char *path)
+{
+    int fd;
+    FILE *f;
+
+    remove(path);
+#if defined _MSC_VER || defined __MINGW32__
+    fd = open(path, _O_WRONLY | _O_CREAT | _O_EXCL, MODE);
+    if (fd < 0) return NULL;
+    f = _fdopen(fd, "w");
+#else
+    /* the mode fopen() uses */
+    fd = open(path, O_WRONLY | O_CREAT | O_EXCL, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH);
+    if (fd < 0) return NULL;
+    f = fdopen(fd, "w");
+#endif
+    if (f == NULL) {
+        close(fd);
+        remove(path);
+    }
+    return f;
+}
+
 FILE *make_temp_file(char *tpl)
 {
     int temp_fd;

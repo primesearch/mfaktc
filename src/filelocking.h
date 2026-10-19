@@ -37,6 +37,17 @@ extern "C" {
  */
 FILE *make_temp_file(char *tpl);
 
+/**
+ * @brief Creates the file path for writing, replacing an old one.
+ *
+ * Unlike fopen(path, "w"), it doesn't write to a file (or follow a symlink)
+ * that another process puts at path: it removes an old file and then creates
+ * the file with O_EXCL.
+ *
+ * @return The file opened for writing, or NULL on failure.
+ */
+FILE *fopen_new(const char *path);
+
 FILE *fopen_and_lock(const char *path, const char *mode);
 int unlock_and_fclose(FILE *f);
 int fclose_keep_lock(FILE *f);

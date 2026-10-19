@@ -60,7 +60,7 @@ void checkpoint_write(unsigned int exp, int bit_min, int bit_max, int cur_class,
 
     /* write a new file and replace the checkpoint file with it, so that a crash or a full disk while writing
        doesn't destroy the previous checkpoint */
-    f = fopen(filename_write, "w");
+    f = fopen_new(filename_write);
     if (f == NULL) {
         printf("Warning: could not write checkpoint file \"%s\"\n", filename_write);
     } else {

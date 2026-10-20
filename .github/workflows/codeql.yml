@@ -8,11 +8,11 @@ on:
   schedule:
     - cron: '16 12 * * 1'
 
-# Cancel a pull request's previous run when it gets a new push, so that a run
-# nobody waits for anymore doesn't hold runners: the organization's jobs share
-# a limit of 20 concurrent jobs. Every other run (pushes, scheduled runs) gets
-# a group of its own: in a shared group, a pending run would be replaced by a
-# newer one even without cancel-in-progress.
+# Cancel a pull request's previous run on synchronize, so that a run for a
+# previous commit doesn't hold runners: the organization has a limit of 20
+# total concurrent jobs. Every other run (such as direct commits and scheduled
+# runs) gets a group of its own: in a shared group, a pending run would be
+# replaced by a newer one even without cancel-in-progress.
 concurrency:
   group: ${{ github.workflow }}-${{ github.event_name == 'pull_request' && github.ref || github.run_id }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}

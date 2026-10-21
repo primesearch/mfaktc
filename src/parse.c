@@ -357,6 +357,21 @@ enum ASSIGNMENT_ERRORS get_next_assignment(char *filename, unsigned int *exponen
         return VALID_ASSIGNMENT_NOT_FOUND;
 }
 
+/* writes the name of a file called name in the directory of path to buf; returns 0 on success, -1 if buf is too small */
+static int name_beside(char *buf, size_t size, const char *path, const char *name)
+{
+    size_t dir_len = 0, i;
+
+    for (i = 0; path[i] != '\0'; i++) {
+#if defined _MSC_VER || defined __MINGW32__
+        if (path[i] == '/' || path[i] == '\\' || path[i] == ':') dir_len = i + 1;
+#else
+        if (path[i] == '/') dir_len = i + 1;
+#endif
+    }
+    return snprintf(buf, size, "%.*s%s", (int)dir_len, path, name) < (int)size ? 0 : -1;
+}
+
 /************************************************************************************************************
  * Function name : clear_assignment                                                                         *
  *                                                                                                          *
@@ -386,8 +401,14 @@ enum ASSIGNMENT_ERRORS clear_assignment(char *filename, unsigned int exponent, i
     unsigned int line_to_drop = UINT_MAX;
     unsigned int current_line;
     struct ASSIGNMENT assignment; // the found assignment....
-    char temp_file_template[] = "__worktodo__.XXXXXX";
+    char temp_file_template[300];
     int write_error;
+
+    /* next to the work file, as rename() can't replace it from another file system; the name is unique, so instances
+       may share a directory */
+    if (name_beside(temp_file_template, sizeof(temp_file_template), filename, "__worktodo__.XXXXXX") != 0) {
+        return CANT_OPEN_TEMPFILE;
+    }
 
     f_in = fopen_and_lock(filename, "r");
     if (NULL == f_in) {

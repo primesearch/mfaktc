@@ -730,6 +730,7 @@ int main(int argc, char **argv)
     int i, tmp = 0;
     char *ptr;
     int use_worktodo = 1;
+    int ret          = 0;
 
     i = 1;
     memset(&mystuff, 0, sizeof(mystuff));
@@ -1190,7 +1191,8 @@ int main(int argc, char **argv)
         } while (parse_ret == OK && use_worktodo && !mystuff.quit);
     } else // mystuff.mode != MODE_NORMAL
     {
-        selftest(&mystuff, 0);
+        /* report a failed self-test in the exit status too, for scripts that run it */
+        if (selftest(&mystuff, 0) != 0) ret = 1;
     }
 
     for (i = 0; i < mystuff.num_streams; i++) {
@@ -1213,5 +1215,5 @@ int main(int argc, char **argv)
     cudaFree(mystuff.d_sieve_info);
     cudaFree(mystuff.d_calc_bit_to_clear_info);
     close_log(&mystuff);
-    return 0;
+    return ret;
 }

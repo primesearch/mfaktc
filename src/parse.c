@@ -404,6 +404,9 @@ enum ASSIGNMENT_ERRORS clear_assignment(char *filename, unsigned int exponent, i
     char temp_file_template[300];
     int write_error;
 
+    if (NULL == filename) {
+        return CANT_OPEN_WORKFILE;
+    }
     /* next to the work file, as rename() can't replace it from another file system; the name is unique, so instances
        may share a directory */
     if (name_beside(temp_file_template, sizeof(temp_file_template), filename, "__worktodo__.XXXXXX") != 0) {

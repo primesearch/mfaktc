@@ -357,6 +357,21 @@ enum ASSIGNMENT_ERRORS get_next_assignment(char *filename, unsigned int *exponen
         return VALID_ASSIGNMENT_NOT_FOUND;
 }
 
+/* writes the name of a file called name in the directory of path to buf; returns 0 on success, -1 if buf is too small */
+static int name_beside(char *buf, size_t size, const char *path, const char *name)
+{
+    size_t dir_len = 0, i;
+
+    for (i = 0; path[i] != '\0'; i++) {
+#if defined _MSC_VER || defined __MINGW32__
+        if (path[i] == '/' || path[i] == '\\' || path[i] == ':') dir_len = i + 1;
+#else
+        if (path[i] == '/') dir_len = i + 1;
+#endif
+    }
+    return snprintf(buf, size, "%.*s%s", (int)dir_len, path, name) < (int)size ? 0 : -1;
+}
+
 /************************************************************************************************************
  * Function name : clear_assignment                                                                         *
  *                                                                                                          *
@@ -379,24 +394,31 @@ enum ASSIGNMENT_ERRORS get_next_assignment(char *filename, unsigned int *exponen
 enum ASSIGNMENT_ERRORS clear_assignment(char *filename, unsigned int exponent, int bit_min, int bit_max, int bit_min_new)
 {
     int found = FALSE;
-    FILE *f_in, *f_out = NULL;
+    FILE *f_in, *f_out;
     LINE_BUFFER line; // line buffer
     char *tail = NULL; // points to tail material in line, if non-null
     enum PARSE_WARNINGS value;
     unsigned int line_to_drop = UINT_MAX;
     unsigned int current_line;
     struct ASSIGNMENT assignment; // the found assignment....
-    char temp_file_template[] = "__worktodo__.XXXXXX";
+    char temp_file_template[300];
+    int write_error;
+
+    if (NULL == filename) {
+        return CANT_OPEN_WORKFILE;
+    }
+    /* next to the work file, as rename() can't replace it from another file system; the name is unique, so instances
+       may share a directory */
+    if (name_beside(temp_file_template, sizeof(temp_file_template), filename, "__worktodo__.XXXXXX") != 0) {
+        return CANT_OPEN_TEMPFILE;
+    }
 
     f_in = fopen_and_lock(filename, "r");
     if (NULL == f_in) {
         return CANT_OPEN_WORKFILE;
     }
 
-    if (make_temp_file(temp_file_template) == 0) {
-        f_out = fopen(temp_file_template, "w");
-    }
-
+    f_out = make_temp_file(temp_file_template);
     if (NULL == f_out) {
         unlock_and_fclose(f_in);
         f_in = NULL;
@@ -434,6 +456,7 @@ enum ASSIGNMENT_ERRORS clear_assignment(char *filename, unsigned int exponent, i
         if (NULL == f_in) {
             fclose(f_out);
             f_out = NULL;
+            remove(temp_file_template);
             return CANT_OPEN_WORKFILE;
         }
     }
@@ -466,19 +489,26 @@ enum ASSIGNMENT_ERRORS clear_assignment(char *filename, unsigned int exponent, i
             }
         }
     } // while.....
-    unlock_and_fclose(f_in);
-    f_in = NULL;
-    fclose(f_out);
+    write_error = ferror(f_out);
+    if (sync_file(f_out) != 0) write_error = 1; /* the new workfile must be complete on the disk before it replaces the old one */
+    if (fclose(f_out) != 0) write_error = 1;
     f_out = NULL;
-    if (!found) {
-        return ASSIGNMENT_NOT_FOUND;
-        }
-    if (remove(filename) != 0) {
+
+    /* Keep the workfile locked until it has been replaced: another process (e.g. AutoPrimeNet) that adds
+       assignments in between would otherwise lose them when the temporary file replaces the workfile. */
+    fclose_keep_lock(f_in);
+    f_in = NULL;
+    if (!found || write_error) {
+        remove(temp_file_template);
+        unlock_file(filename);
+        return found ? CANT_OPEN_TEMPFILE : ASSIGNMENT_NOT_FOUND;
+    }
+    if (replace_file(temp_file_template, filename) != 0) {
+        remove(temp_file_template);
+        unlock_file(filename);
         return CANT_RENAME;
     }
-    if (rename(temp_file_template, filename) != 0) {
-        return CANT_RENAME;
-    }
+    unlock_file(filename);
     return OK;
 }
 

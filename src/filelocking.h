@@ -22,21 +22,38 @@ extern "C" {
 #endif
 
 /**
- * @brief Creates a unique filename using the provided template.
+ * @brief Creates a file with a unique name using the provided template and
+ * opens it for writing.
  *
- * Windows (_MSC_VER or __MINGW32__) uses _mktemp_s to generate a unique
- * filename, and other platforms use mkstemp to create and open a unique file;
- * the file is closed afterwards.
+ * Other platforms use mkstemp; Windows (_MSC_VER or __MINGW32__) uses
+ * _mktemp_s to pick a name and creates the file with O_EXCL. The returned
+ * stream uses the descriptor that created the file, so the file can't be
+ * replaced between creating and opening it.
  *
  * @param tpl A modifiable string containing the template for the temporary
- *            filename. It should contain a sequence of 'X's that will be
+ *            filename. Its last six characters must be "XXXXXX"; they are
  *            replaced to generate a unique filename.
- * @return 0 on success, or an error code (e.g., EINVAL) on failure.
+ * @return The file opened for writing, or NULL on failure.
  */
-int make_temp_file(char *tpl);
+FILE *make_temp_file(char *tpl);
+
+/**
+ * @brief Creates the file path for writing, replacing an old one.
+ *
+ * Unlike fopen(path, "w"), it doesn't write to a file (or follow a symlink)
+ * that another process puts at path: it removes an old file and then creates
+ * the file with O_EXCL.
+ *
+ * @return The file opened for writing, or NULL on failure.
+ */
+FILE *fopen_new(const char *path);
 
 FILE *fopen_and_lock(const char *path, const char *mode);
 int unlock_and_fclose(FILE *f);
+int fclose_keep_lock(FILE *f);
+int unlock_file(const char *path);
+int sync_file(FILE *f);
+int replace_file(const char *from, const char *to);
 int lock_workfile(const char *workfile);
 
 #if defined(NVCC_EXTERN) && !defined(_MSC_VER)

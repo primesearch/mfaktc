@@ -81,16 +81,34 @@ static void remove_lock_files(void)
     num_locked_files = 0;
 }
 
-int make_temp_file(char *tpl)
+FILE *make_temp_file(char *tpl)
 {
+    int temp_fd;
+    FILE *f;
 #if defined _MSC_VER || defined __MINGW32__
-    return _mktemp_s(tpl, strlen(tpl) + 1);
+    size_t len = strlen(tpl);
+    int tries;
+
+    /* create the file exclusively as _mktemp_s() only picks a name */
+    for (tries = 0;; tries++) {
+        memcpy(tpl + len - 6, "XXXXXX", 6);
+        if (_mktemp_s(tpl, len + 1) != 0) return NULL;
+        temp_fd = open(tpl, _O_WRONLY | _O_CREAT | _O_EXCL, MODE);
+        /* don't pick another name unless the original one is taken */
+        if (temp_fd >= 0 || errno != EEXIST || tries == 9) break;
+    }
+    if (temp_fd < 0) return NULL;
+    f = _fdopen(temp_fd, "w");
 #else
-    int _temp_fd = mkstemp(tpl);
-    if (_temp_fd == -1) return errno ? errno : EINVAL;
-    close(_temp_fd);
-    return 0;
+    temp_fd = mkstemp(tpl);
+    if (temp_fd < 0) return NULL;
+    f = fdopen(temp_fd, "w");
 #endif
+    if (f == NULL) {
+        close(temp_fd);
+        remove(tpl);
+    }
+    return f;
 }
 
 FILE *fopen_and_lock(const char *path, const char *mode)
@@ -170,9 +188,25 @@ FILE *fopen_and_lock(const char *path, const char *mode)
     return f;
 }
 
+/* closes the lock file of locked_files[i] and removes the entry */
+static void release_lock(unsigned int i)
+{
+    unsigned int j;
+
+    if (close(locked_files[i].lockfd) != 0) perror("Failed to close lock file");
+    if (remove(locked_files[i].lock_filename) != 0) perror("Failed to delete lock file");
+    //      printf("release_lock(%s)\n", locked_files[i].lock_filename);
+    for (j = i + 1; j < num_locked_files; j++) {
+        locked_files[j - 1].lockfd    = locked_files[j].lockfd;
+        locked_files[j - 1].open_file = locked_files[j].open_file;
+        strcpy(locked_files[j - 1].lock_filename, locked_files[j].lock_filename);
+    }
+    num_locked_files--;
+}
+
 int unlock_and_fclose(FILE *f)
 {
-    unsigned int i, j;
+    unsigned int i;
     int ret;
 
     if (f == NULL) {
@@ -183,15 +217,7 @@ int unlock_and_fclose(FILE *f)
         if (locked_files[i].open_file == f) {
             ret = fclose(f);
             f   = NULL;
-            if (close(locked_files[i].lockfd) != 0) perror("Failed to close lock file");
-            if (remove(locked_files[i].lock_filename) != 0) perror("Failed to delete lock file");
-            //      printf("unlock_and_fclose(%s)\n", locked_files[i].lock_filename);
-            for (j = i + 1; j < num_locked_files; j++) {
-                locked_files[j - 1].lockfd    = locked_files[j].lockfd;
-                locked_files[j - 1].open_file = locked_files[j].open_file;
-                strcpy(locked_files[j - 1].lock_filename, locked_files[j].lock_filename);
-            }
-            num_locked_files--;
+            release_lock(i);
             break;
         }
     }
@@ -199,6 +225,119 @@ int unlock_and_fclose(FILE *f)
         ret = fclose(f);
     }
     return ret;
+}
+
+/* closes a file opened with fopen_and_lock() but keeps it locked until unlock_file(path) */
+int fclose_keep_lock(FILE *f)
+{
+    unsigned int i;
+
+    if (f == NULL) {
+        return -1;
+    }
+    for (i = 0; i < num_locked_files; i++) {
+        if (locked_files[i].open_file == f) {
+            locked_files[i].open_file = NULL;
+            break;
+        }
+    }
+    return fclose(f);
+}
+
+/* releases the lock of a file closed with fclose_keep_lock() */
+int unlock_file(const char *path)
+{
+    unsigned int i;
+    char lock_filename[256];
+
+    snprintf(lock_filename, sizeof(lock_filename), "%.250s.lck", path);
+    for (i = 0; i < num_locked_files; i++) {
+        if (locked_files[i].open_file == NULL && strcmp(locked_files[i].lock_filename, lock_filename) == 0) {
+            release_lock(i);
+            return 0;
+        }
+    }
+    return -1;
+}
+
+/* writes the buffered data of f and syncs the file to the disk so that a file
+   that replaces another one is complete even after a power loss. returns 0 on
+   success */
+int sync_file(FILE *f)
+{
+    if (fflush(f) != 0) return -1;
+#if defined _MSC_VER || defined __MINGW32__
+    return _commit(_fileno(f)) == 0 ? 0 : -1;
+#else
+    return fsync(fileno(f)) == 0 ? 0 : -1;
+#endif
+}
+
+#if !(defined _MSC_VER || defined __MINGW32__)
+/* syncs the file or directory path to the disk */
+static int sync_path(const char *path)
+{
+    int fd = open(path, O_RDONLY), ret, err;
+
+    if (fd < 0) return -1;
+    ret = fsync(fd);
+    err = errno;
+    close(fd);
+    /* for the caller's warning */
+    errno = err;
+    /* returns 0 on success */
+    return ret == 0 ? 0 : -1;
+}
+
+/* syncs the directory containing path so that a rename in it survives a power
+   loss */
+static void sync_directory(const char *path)
+{
+    const char *slash = strrchr(path, '/');
+    char *dir         = slash == NULL ? strdup(".") : strndup(path, slash == path ? 1 : (size_t)(slash - path));
+
+    /* only display a warning as the file has been replaced already */
+    if (dir == NULL || sync_path(dir) != 0)
+        fprintf(stderr, "Warning: could not sync the directory of \"%s\", its new version may not survive a power loss (%s)\n", path,
+                strerror(errno));
+    free(dir);
+}
+#endif
+
+/* replaces the file "to" with the file "from" */
+int replace_file(const char *from, const char *to)
+{
+#if defined _MSC_VER || defined __MINGW32__
+    /* MOVEFILE_WRITE_THROUGH: return only when the move is on the disk */
+    return MoveFileExA(from, to, MOVEFILE_REPLACE_EXISTING | MOVEFILE_WRITE_THROUGH) ? 0 : -1;
+#else
+    /* rename the file on POSIX systems atomically */
+    struct stat st;
+
+    /* keep the group and the permissions of the replaced file (as mkstemp()
+       creates files with mode 0600, and the new file may get another group).
+       If that fails, replace it anyway as not removing a finished assignment
+       from the work file would be worse. */
+    if (stat(to, &st) == 0) {
+        if (chown(from, (uid_t)-1, st.st_gid) != 0) {
+            fprintf(stderr, "Warning: could not keep the group of \"%s\" (%s)\n", to, strerror(errno));
+            /* don't give the group permissions to another group */
+            st.st_mode &= ~(mode_t)S_IRWXG;
+        }
+        if (chmod(from, st.st_mode & 07777) != 0) {
+            fprintf(stderr, "Warning: could not keep the permissions of \"%s\" (%s)\n", to, strerror(errno));
+        }
+        /* the caller synced the contents, sync the new group and permissions as well */
+        if (sync_path(from) != 0) {
+            fprintf(stderr, "Warning: could not sync the group and permissions of \"%s\" (%s)\n", to, strerror(errno));
+        }
+    }
+    if (rename(from, to) != 0) return -1;
+    /* the rename itself must survive a power loss too */
+    sync_directory(to);
+    /* returns 0 on success */
+    return 0;
+#endif
 }
 
 /*

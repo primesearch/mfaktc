@@ -22,21 +22,27 @@ extern "C" {
 #endif
 
 /**
- * @brief Creates a unique filename using the provided template.
+ * @brief Creates a file with a unique name using the provided template and
+ * opens a file handle, allowing it to be written to.
  *
- * Windows (_MSC_VER or __MINGW32__) uses _mktemp_s to generate a unique
- * filename, and other platforms use mkstemp to create and open a unique file;
- * the file is closed afterwards.
+ * Other platforms use mkstemp; Windows (_MSC_VER or __MINGW32__) uses
+ * _mktemp_s to pick a name and creates the file with O_EXCL. The returned
+ * stream uses the descriptor that created the file, so the newly created
+ * file can't be replaced before it is opened.
  *
  * @param tpl A modifiable string containing the template for the temporary
- *            filename. It should contain a sequence of 'X's that will be
+ *            filename. Its last six characters must be "XXXXXX"; they are
  *            replaced to generate a unique filename.
- * @return 0 on success, or an error code (e.g., EINVAL) on failure.
+ * @return The opened file handle, or NULL on failure.
  */
-int make_temp_file(char *tpl);
+FILE *make_temp_file(char *tpl);
 
 FILE *fopen_and_lock(const char *path, const char *mode);
 int unlock_and_fclose(FILE *f);
+int fclose_keep_lock(FILE *f);
+int unlock_file(const char *path);
+int sync_file(FILE *f);
+int replace_file(const char *from, const char *to);
 int lock_workfile(const char *workfile);
 
 #if defined(NVCC_EXTERN) && !defined(_MSC_VER)

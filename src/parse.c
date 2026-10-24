@@ -357,7 +357,7 @@ enum ASSIGNMENT_ERRORS get_next_assignment(char *filename, unsigned int *exponen
         return VALID_ASSIGNMENT_NOT_FOUND;
 }
 
-/* writes the name of a file called name in the directory of path to buf; returns 0 on success, -1 if buf is too small */
+/* writes the name of a file called name in the directory of path to buf */
 static int name_beside(char *buf, size_t size, const char *path, const char *name)
 {
     size_t dir_len = 0, i;
@@ -369,6 +369,7 @@ static int name_beside(char *buf, size_t size, const char *path, const char *nam
         if (path[i] == '/') dir_len = i + 1;
 #endif
     }
+    /* returns 0 on success or -1 if buf is too small */
     return snprintf(buf, size, "%.*s%s", (int)dir_len, path, name) < (int)size ? 0 : -1;
 }
 
@@ -384,7 +385,7 @@ static int name_beside(char *buf, size_t size, const char *path, const char *nam
  *                                                                                                          *
  *     0 - OK                                                                                               *
  *     3 - clear_assignment    : cannot open file <filename>                                                *
- *     4 - clear_assignment    : cannot open temporary file from template "__worktodo__.XXXXXX"                  *
+ *     4 - clear_assignment    : cannot open temporary file from template "__worktodo__.XXXXXX"             *
  *     5 - clear_assignment    : assignment not found                                                       *
  *     6 - clear_assignment    : cannot rename temporary workfile to regular workfile                       *
  *                                                                                                          *
@@ -407,8 +408,8 @@ enum ASSIGNMENT_ERRORS clear_assignment(char *filename, unsigned int exponent, i
     if (NULL == filename) {
         return CANT_OPEN_WORKFILE;
     }
-    /* next to the work file, as rename() can't replace it from another file system; the name is unique, so instances
-       may share a directory */
+    /* next to the work file as rename() can't replace it from another file
+       system; the name is unique, so instances may share a directory */
     if (name_beside(temp_file_template, sizeof(temp_file_template), filename, "__worktodo__.XXXXXX") != 0) {
         return CANT_OPEN_TEMPFILE;
     }
@@ -494,8 +495,9 @@ enum ASSIGNMENT_ERRORS clear_assignment(char *filename, unsigned int exponent, i
     if (fclose(f_out) != 0) write_error = 1;
     f_out = NULL;
 
-    /* Keep the workfile locked until it has been replaced: another process (e.g. AutoPrimeNet) that adds
-       assignments in between would otherwise lose them when the temporary file replaces the workfile. */
+    /* keep the work file locked until it has been replaced: otherwise, interim
+       changes made by another process (such as AutoPrimeNet) could be lost when
+       the temporary file replaces the work file */
     fclose_keep_lock(f_in);
     f_in = NULL;
     if (!found || write_error) {

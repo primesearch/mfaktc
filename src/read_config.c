@@ -121,7 +121,8 @@ static int ini_load(const char *inifile, char **data, size_t *size)
     return 0;
 }
 
-/* like fgets(buf, bufsize, ...) on data: copies the next line, or bufsize - 1 bytes of it; returns 0 at the end */
+/* like fgets(buf, bufsize, ...) on data: copies the next line, or bufsize - 1 bytes of it, starting at *pos.
+   returns 1 if it copied a line and 0 if there is nothing left to read, where fgets() returns NULL */
 static int ini_getline(const char *data, size_t size, size_t *pos, char *buf, int bufsize)
 {
     int i = 0;

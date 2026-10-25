@@ -81,8 +81,9 @@ static void remove_lock_files(void)
     num_locked_files = 0;
 }
 
-/* creates the file path for writing, replacing an old one. Unlike fopen(path, "w"), it doesn't write to a file (or
-   follow a symlink) that another process puts at path. returns NULL on failure */
+/* creates the file path to write to, replacing an old one. Unlike
+   fopen(path, "w"), this method doesn't write to a file (or follow a symlink)
+   that another process puts at the given path. returns NULL on failure */
 FILE *fopen_new(const char *path)
 {
     int fd;
@@ -114,12 +115,17 @@ FILE *make_temp_file(char *tpl)
     size_t len = strlen(tpl);
     int tries;
 
-    /* _mktemp_s() only picks a name, so create the file exclusively, and pick another name if it was taken meanwhile */
+    /* create the file exclusively as _mktemp_s() only picks a name */
     for (tries = 0;; tries++) {
         memcpy(tpl + len - 6, "XXXXXX", 6);
-        if (_mktemp_s(tpl, len + 1) != 0) return NULL;
+        if (_mktemp_s(tpl, len + 1) != 0) {
+            return NULL;
+        }
         temp_fd = open(tpl, _O_WRONLY | _O_CREAT | _O_EXCL, MODE);
-        if (temp_fd >= 0 || errno != EEXIST || tries == 9) break;
+        /* don't pick another name unless the original one is taken */
+        if (temp_fd >= 0 || errno != EEXIST || tries == 9) {
+            break;
+        }
     }
     if (temp_fd < 0) return NULL;
     f = _fdopen(temp_fd, "w");
@@ -284,8 +290,9 @@ int unlock_file(const char *path)
     return -1;
 }
 
-/* writes the buffered data of f and syncs the file to the disk, so that a file that replaces another one is complete
-   even after a power loss. returns 0 on success */
+/* writes the buffered data of f and syncs the file to the disk so that a file
+   that replaces another one is complete even after a power loss. returns 0 on
+   success */
 int sync_file(FILE *f)
 {
     if (fflush(f) != 0) return -1;
@@ -297,7 +304,7 @@ int sync_file(FILE *f)
 }
 
 #if !(defined _MSC_VER || defined __MINGW32__)
-/* syncs the file or directory path to the disk. returns 0 on success */
+/* syncs the file or directory path to the disk */
 static int sync_path(const char *path)
 {
     int fd = open(path, O_RDONLY), ret, err;
@@ -306,17 +313,20 @@ static int sync_path(const char *path)
     ret = fsync(fd);
     err = errno;
     close(fd);
-    errno = err; /* for the caller's warning */
+    /* for the caller's warning */
+    errno = err;
+    /* returns 0 on success */
     return ret == 0 ? 0 : -1;
 }
 
-/* syncs the directory containing path, so that a rename in it survives a power loss */
+/* syncs the directory containing path so that a rename in it survives a power
+   loss */
 static void sync_directory(const char *path)
 {
     const char *slash = strrchr(path, '/');
     char *dir         = slash == NULL ? strdup(".") : strndup(path, slash == path ? 1 : (size_t)(slash - path));
 
-    /* the file has been replaced already, so only warn */
+    /* only display a warning as the file has been replaced already */
     if (dir == NULL || sync_path(dir) != 0)
         fprintf(stderr, "Warning: could not sync the directory of \"%s\", its new version may not survive a power loss (%s)\n", path,
                 strerror(errno));
@@ -324,22 +334,25 @@ static void sync_directory(const char *path)
 }
 #endif
 
-/* replaces the file "to" with the file "from"; on POSIX systems atomically. returns 0 on success */
+/* replaces the file "to" with the file "from"  */
 int replace_file(const char *from, const char *to)
 {
 #if defined _MSC_VER || defined __MINGW32__
     /* MOVEFILE_WRITE_THROUGH: return only when the move is on the disk */
     return MoveFileExA(from, to, MOVEFILE_REPLACE_EXISTING | MOVEFILE_WRITE_THROUGH) ? 0 : -1;
 #else
+    /* rename the file on POSIX systems atomically */
     struct stat st;
 
-    /* keep the group and the permissions of the replaced file (mkstemp() creates files with mode 0600, and the new
-       file may get another group). If that fails, replace it anyway: not removing a finished assignment from the
-       work file would be worse. */
+    /* keep the group and the permissions of the replaced file (as mkstemp()
+       creates files with mode 0600, and the new file may get another group).
+       If that fails, replace it anyway as not removing a finished assignment
+       from the work file would be worse. */
     if (stat(to, &st) == 0) {
         if (chown(from, (uid_t)-1, st.st_gid) != 0) {
             fprintf(stderr, "Warning: could not keep the group of \"%s\" (%s)\n", to, strerror(errno));
-            st.st_mode &= ~(mode_t)S_IRWXG; /* don't give the group permissions to another group */
+            /* don't give the group permissions to another group */
+            st.st_mode &= ~(mode_t)S_IRWXG;
         }
         if (chmod(from, st.st_mode & 07777) != 0) {
             fprintf(stderr, "Warning: could not keep the permissions of \"%s\" (%s)\n", to, strerror(errno));
@@ -350,7 +363,9 @@ int replace_file(const char *from, const char *to)
         }
     }
     if (rename(from, to) != 0) return -1;
-    sync_directory(to); /* the rename itself must survive a power loss too */
+    /* the rename itself must survive a power loss too */
+    sync_directory(to);
+    /* returns 0 on success */
     return 0;
 #endif
 }

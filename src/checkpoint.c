@@ -58,8 +58,9 @@ void checkpoint_write(unsigned int exp, int bit_min, int bit_max, int cur_class,
         sprintf(factors_buffer, "0");
     }
 
-    /* write a new file and replace the checkpoint file with it, so that a crash or a full disk while writing
-       doesn't destroy the previous checkpoint */
+    /* write a new file and use it to replace the checkpoint file with it so
+       that a crash or a full disk while writing doesn't destroy the previous
+       checkpoint */
     f = fopen_new(filename_write);
     if (f == NULL) {
         printf("Warning: could not write checkpoint file \"%s\"\n", filename_write);
@@ -70,10 +71,15 @@ void checkpoint_write(unsigned int exp, int bit_min, int bit_max, int cur_class,
         fprintf(f, "%s%u %d %d %d %s: %d %d %s %llu %08X", NAME_NUMBERS, exp, bit_min, bit_max, NUM_CLASSES, MFAKTC_CHECKPOINT_VERSION,
                 cur_class, num_factors, strlen(factors_buffer) ? factors_buffer : "0", bit_level_time, i);
         write_error = ferror(f);
-        /* write the new checkpoint to the disk before it replaces the previous one, so that a power loss can't leave
-           an incomplete checkpoint behind */
-        if (sync_file(f) != 0) write_error = 1;
-        if (fclose(f) != 0) write_error = 1;
+        /* write the new checkpoint to the disk before it replaces the
+           previous one, so that a power loss can't leave an incomplete
+           checkpoint behind */
+        if (sync_file(f) != 0) {
+            write_error = 1;
+        }
+        if (fclose(f) != 0) {
+            write_error = 1;
+        }
         f = NULL;
         if (write_error || replace_file(filename_write, filename) != 0) {
             printf("Warning: could not write checkpoint file \"%s\"\n", filename);
@@ -181,6 +187,7 @@ void checkpoint_delete(unsigned int exp, int bit_min, int bit_max)
             printf("Warning: can't delete the checkpoint file \"%s\"\n", filename);
         }
     }
-    strcat(filename, ".write"); /* left behind if mfaktc stopped while writing a checkpoint */
+    /* left behind if mfaktc stopped while writing a checkpoint */
+    strcat(filename, ".write");
     remove(filename);
 }

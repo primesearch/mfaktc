@@ -23,28 +23,28 @@ extern "C" {
 
 /**
  * @brief Creates a file with a unique name using the provided template and
- * opens it for writing.
+ * opens a file handle, allowing it to be written to.
  *
  * Other platforms use mkstemp; Windows (_MSC_VER or __MINGW32__) uses
  * _mktemp_s to pick a name and creates the file with O_EXCL. The returned
- * stream uses the descriptor that created the file, so the file can't be
- * replaced between creating and opening it.
+ * stream uses the descriptor that created the file, so the newly created
+ * file can't be replaced before it is opened.
  *
  * @param tpl A modifiable string containing the template for the temporary
  *            filename. Its last six characters must be "XXXXXX"; they are
  *            replaced to generate a unique filename.
- * @return The file opened for writing, or NULL on failure.
+ * @return The opened file handle, or NULL on failure.
  */
 FILE *make_temp_file(char *tpl);
 
 /**
  * @brief Creates the file path for writing, replacing an old one.
  *
- * Unlike fopen(path, "w"), it doesn't write to a file (or follow a symlink)
- * that another process puts at path: it removes an old file and then creates
- * the file with O_EXCL.
+ * Unlike fopen(path, "w"), this doesn't write to a file (or follow a symlink)
+ * that another process puts at the given path: it removes an old file and
+ * then creates the file with O_EXCL.
  *
- * @return The file opened for writing, or NULL on failure.
+ * @return The file handle to write to, or NULL on failure.
  */
 FILE *fopen_new(const char *path);
 

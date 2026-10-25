@@ -357,7 +357,7 @@ enum ASSIGNMENT_ERRORS get_next_assignment(char *filename, unsigned int *exponen
         return VALID_ASSIGNMENT_NOT_FOUND;
 }
 
-/* writes the name of a file called name in the directory of path to buf*/
+/* writes the name of a file called name in the directory of path to buf */
 static int name_beside(char *buf, size_t size, const char *path, const char *name)
 {
     size_t dir_len = 0, i;
@@ -369,7 +369,7 @@ static int name_beside(char *buf, size_t size, const char *path, const char *nam
         if (path[i] == '/') dir_len = i + 1;
 #endif
     }
-    /* returns 0 on success or -1 if buf is too small  */
+    /* returns 0 on success or -1 if buf is too small */
     return snprintf(buf, size, "%.*s%s", (int)dir_len, path, name) < (int)size ? 0 : -1;
 }
 

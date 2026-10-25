@@ -334,7 +334,7 @@ static void sync_directory(const char *path)
 }
 #endif
 
-/* replaces the file "to" with the file "from"  */
+/* replaces the file "to" with the file "from" */
 int replace_file(const char *from, const char *to)
 {
 #if defined _MSC_VER || defined __MINGW32__

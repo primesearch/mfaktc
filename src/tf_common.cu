@@ -171,7 +171,13 @@ extern "C" __host__ int tf_class_barrett92(unsigned long long int k_min, unsigne
         /* try upload ktab and start the calcualtion of a preprocessed dataset on the device */
         stream = 0;
         while ((stream < mystuff->num_streams) && (h_ktab_index > 0)) {
-            if (cudaStreamQuery(mystuff->stream[stream]) == cudaSuccess) {
+            cudaError_t stream_status = cudaStreamQuery(mystuff->stream[stream]);
+            if (stream_status != cudaSuccess && stream_status != cudaErrorNotReady) {
+                /* e.g. a kernel failed: the stream would never become ready, so report the error instead of waiting forever */
+                logprintf(mystuff, "ERROR: cudaStreamQuery() returned %d: %s\n", stream_status, cudaGetErrorString(stream_status));
+                return RET_CUDA_ERROR;
+            }
+            if (stream_status == cudaSuccess) {
 #ifdef DEBUG_STREAM_SCHEDULE
                 printf(" STREAM_SCHEDULE: found empty stream: = %d (this releases h_ktab[%d])\n", stream, h_ktab_inuse[stream]);
 #endif

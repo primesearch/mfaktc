@@ -8,6 +8,15 @@ on:
   schedule:
     - cron: '16 12 * * 1'
 
+# Cancel a pull request's previous run on synchronize, so that a run for a
+# previous commit doesn't hold runners: the organization has a limit of 20
+# total concurrent jobs. Every other run (such as direct commits and scheduled
+# runs) gets a group of its own: in a shared group, a pending run would be
+# replaced by a newer one even without cancel-in-progress.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event_name == 'pull_request' && github.ref || github.run_id }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 jobs:
   analyze:
     name: Analyze (${{ matrix.language }})
@@ -38,15 +47,15 @@ jobs:
       run: git config --global --add safe.directory /__w/mfaktc/mfaktc
 
     - name: Checkout repository
-      uses: actions/checkout@v7
+      uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
     - name: Initialize CodeQL
-      uses: github/codeql-action/init@v4.38.2
+      uses: github/codeql-action/init@2892aa5e19bbd11bc0cff5427e3b750a04d9e3c2 # v4.38.2
       with:
         languages: ${{ matrix.language }}
         build-mode: ${{ matrix.build-mode }}
 
     - name: Perform CodeQL analysis
-      uses: github/codeql-action/analyze@v4.38.2
+      uses: github/codeql-action/analyze@2892aa5e19bbd11bc0cff5427e3b750a04d9e3c2 # v4.38.2
       with:
         category: "/language:${{matrix.language}}"

@@ -81,28 +81,45 @@ static void remove_lock_files(void)
     num_locked_files = 0;
 }
 
-/* creates the file path to write to, replacing an old one. Unlike
-   fopen(path, "w"), this method doesn't write to a file (or follow a symlink)
-   that another process puts at the given path. returns NULL on failure */
-FILE *fopen_new(const char *path)
+/* creates a new file with a unique name made of path, a number and ".write",
+   and writes the name to buf. Instances writing the same file use different
+   names, so neither can remove or replace the other one's new file, and
+   unlike mkstemp() the file gets the permissions fopen() would give it.
+   returns NULL on failure */
+FILE *fopen_new(char *buf, size_t size, const char *path)
 {
-    int fd;
+    static unsigned int counter = 0;
+    unsigned long pid;
+    unsigned int tries;
+    int fd = -1;
     FILE *f;
 
-    remove(path);
 #if defined _MSC_VER || defined __MINGW32__
-    fd = open(path, _O_WRONLY | _O_CREAT | _O_EXCL, MODE);
+    pid = (unsigned long)GetCurrentProcessId();
+#else
+    pid = (unsigned long)getpid();
+#endif
+    for (tries = 0; tries < 100; tries++) {
+        /* the process ID keeps instances from trying the same names */
+        if (snprintf(buf, size, "%s.%lu-%u.write", path, pid, counter++) >= (int)size) return NULL;
+#if defined _MSC_VER || defined __MINGW32__
+        fd = open(buf, _O_WRONLY | _O_CREAT | _O_EXCL, MODE);
+#else
+        /* the mode fopen() uses */
+        fd = open(buf, O_WRONLY | O_CREAT | O_EXCL, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH);
+#endif
+        /* don't pick another name unless this one is taken */
+        if (fd >= 0 || errno != EEXIST) break;
+    }
     if (fd < 0) return NULL;
+#if defined _MSC_VER || defined __MINGW32__
     f = _fdopen(fd, "w");
 #else
-    /* the mode fopen() uses */
-    fd = open(path, O_WRONLY | O_CREAT | O_EXCL, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH);
-    if (fd < 0) return NULL;
     f = fdopen(fd, "w");
 #endif
     if (f == NULL) {
         close(fd);
-        remove(path);
+        remove(buf);
     }
     return f;
 }

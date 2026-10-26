@@ -38,15 +38,18 @@ extern "C" {
 FILE *make_temp_file(char *tpl);
 
 /**
- * @brief Creates the file path for writing, replacing an old one.
+ * @brief Creates a new file to write, with a unique name based on path.
  *
- * Unlike fopen(path, "w"), this doesn't write to a file (or follow a symlink)
- * that another process puts at the given path: it removes an old file and
- * then creates the file with O_EXCL.
+ * The name is path followed by a number and ".write". The file is created
+ * with O_EXCL, so another process writing the same path never gets the same
+ * file, and a file or symlink that is already there is never written to.
  *
+ * @param buf  Receives the name of the new file.
+ * @param size The size of buf.
+ * @param path The name of the file that the new file will replace.
  * @return The file handle to write to, or NULL on failure.
  */
-FILE *fopen_new(const char *path);
+FILE *fopen_new(char *buf, size_t size, const char *path);
 
 FILE *fopen_and_lock(const char *path, const char *mode);
 int unlock_and_fclose(FILE *f);

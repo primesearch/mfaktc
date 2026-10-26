@@ -36,13 +36,12 @@ void checkpoint_write(unsigned int exp, int bit_min, int bit_max, int cur_class,
                       unsigned long long int bit_level_time)
 {
     FILE *f;
-    char ckp_buffer[MAX_BUFFER_LENGTH], filename[MAX_CHECKPOINT_FILENAME_LENGTH], filename_write[MAX_CHECKPOINT_FILENAME_LENGTH + 6],
+    char ckp_buffer[MAX_BUFFER_LENGTH], filename[MAX_CHECKPOINT_FILENAME_LENGTH], filename_write[MAX_CHECKPOINT_FILENAME_LENGTH + 32],
         factors_buffer[MAX_FACTOR_BUFFER_LENGTH];
     unsigned int i, factors_buffer_length;
     int write_error;
 
     snprintf(filename, MAX_CHECKPOINT_FILENAME_LENGTH, "%s%u_%d-%d_%d.ckp", NAME_NUMBERS, exp, bit_min, bit_max, NUM_CLASSES);
-    snprintf(filename_write, sizeof(filename_write), "%s.write", filename);
     if (factors[0].d0 || factors[0].d1 || factors[0].d2) {
         i = 0;
         char factor[MAX_DEZ_96_STRING_LENGTH];
@@ -61,9 +60,9 @@ void checkpoint_write(unsigned int exp, int bit_min, int bit_max, int cur_class,
     /* write a new file and use it to replace the checkpoint file with it so
        that a crash or a full disk while writing doesn't destroy the previous
        checkpoint */
-    f = fopen_new(filename_write);
+    f = fopen_new(filename_write, sizeof(filename_write), filename);
     if (f == NULL) {
-        printf("Warning: could not write checkpoint file \"%s\"\n", filename_write);
+        printf("Warning: could not create a new checkpoint file for \"%s\"\n", filename);
     } else {
         sprintf(ckp_buffer, "%s%u %d %d %d %s: %d %d %s %llu", NAME_NUMBERS, exp, bit_min, bit_max, NUM_CLASSES, MFAKTC_CHECKPOINT_VERSION,
                 cur_class, num_factors, strlen(factors_buffer) ? factors_buffer : "0", bit_level_time);

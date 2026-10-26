@@ -177,7 +177,7 @@ tries to delete the checkpoint file
 */
 void checkpoint_delete(unsigned int exp, int bit_min, int bit_max)
 {
-    char filename[MAX_CHECKPOINT_FILENAME_LENGTH + 6];
+    char filename[MAX_CHECKPOINT_FILENAME_LENGTH];
     sprintf(filename, "%s%u_%d-%d_%d.ckp", NAME_NUMBERS, exp, bit_min, bit_max, NUM_CLASSES);
 
     if (remove(filename)) {
@@ -186,7 +186,4 @@ void checkpoint_delete(unsigned int exp, int bit_min, int bit_max)
             printf("Warning: can't delete the checkpoint file \"%s\"\n", filename);
         }
     }
-    /* left behind if mfaktc stopped while writing a checkpoint */
-    strcat(filename, ".write");
-    remove(filename);
 }

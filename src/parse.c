@@ -491,8 +491,14 @@ enum ASSIGNMENT_ERRORS clear_assignment(char *filename, unsigned int exponent, i
         }
     } // while.....
     write_error = ferror(f_out);
-    if (sync_file(f_out) != 0) write_error = 1; /* the new workfile must be complete on the disk before it replaces the old one */
-    if (fclose(f_out) != 0) write_error = 1;
+    /* the new work file must be complete on the disk before it replaces the
+       old one */
+    if (sync_file(f_out) != 0) {
+        write_error = 1;
+    }
+    if (fclose(f_out) != 0) {
+        write_error = 1;
+    }
     f_out = NULL;
 
     /* keep the work file locked until it has been replaced: otherwise, interim

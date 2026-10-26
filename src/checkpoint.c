@@ -27,6 +27,7 @@ along with mfaktc.  If not, see <http://www.gnu.org/licenses/>.
 #include "output.h"
 #include "crc.h"
 #include "compatibility.h"
+#include "filelocking.h"
 
 /*
 checkpoint_write() writes the checkpoint file.
@@ -35,8 +36,10 @@ void checkpoint_write(unsigned int exp, int bit_min, int bit_max, int cur_class,
                       unsigned long long int bit_level_time)
 {
     FILE *f;
-    char ckp_buffer[MAX_BUFFER_LENGTH], filename[MAX_CHECKPOINT_FILENAME_LENGTH], factors_buffer[MAX_FACTOR_BUFFER_LENGTH];
+    char ckp_buffer[MAX_BUFFER_LENGTH], filename[MAX_CHECKPOINT_FILENAME_LENGTH], filename_write[MAX_CHECKPOINT_FILENAME_LENGTH + 32],
+        factors_buffer[MAX_FACTOR_BUFFER_LENGTH];
     unsigned int i, factors_buffer_length;
+    int write_error;
 
     snprintf(filename, MAX_CHECKPOINT_FILENAME_LENGTH, "%s%u_%d-%d_%d.ckp", NAME_NUMBERS, exp, bit_min, bit_max, NUM_CLASSES);
     if (factors[0].d0 || factors[0].d1 || factors[0].d2) {
@@ -54,17 +57,33 @@ void checkpoint_write(unsigned int exp, int bit_min, int bit_max, int cur_class,
         sprintf(factors_buffer, "0");
     }
 
-    f = fopen(filename, "w");
+    /* write a new file and use it to replace the checkpoint file with it so
+       that a crash or a full disk while writing doesn't destroy the previous
+       checkpoint */
+    f = fopen_new(filename_write, sizeof(filename_write), filename);
     if (f == NULL) {
-        printf("Warning: could not write checkpoint file \"%s\"\n", filename);
+        printf("Warning: could not create a new checkpoint file for \"%s\"\n", filename);
     } else {
         sprintf(ckp_buffer, "%s%u %d %d %d %s: %d %d %s %llu", NAME_NUMBERS, exp, bit_min, bit_max, NUM_CLASSES, MFAKTC_CHECKPOINT_VERSION,
                 cur_class, num_factors, strlen(factors_buffer) ? factors_buffer : "0", bit_level_time);
         i = crc32_checksum(ckp_buffer, strlen(ckp_buffer));
         fprintf(f, "%s%u %d %d %d %s: %d %d %s %llu %08X", NAME_NUMBERS, exp, bit_min, bit_max, NUM_CLASSES, MFAKTC_CHECKPOINT_VERSION,
                 cur_class, num_factors, strlen(factors_buffer) ? factors_buffer : "0", bit_level_time, i);
-        fclose(f);
+        write_error = ferror(f);
+        /* write the new checkpoint to the disk before it replaces the
+           previous one, so that a power loss can't leave an incomplete
+           checkpoint behind */
+        if (sync_file(f) != 0) {
+            write_error = 1;
+        }
+        if (fclose(f) != 0) {
+            write_error = 1;
+        }
         f = NULL;
+        if (write_error || replace_file(filename_write, filename) != 0) {
+            printf("Warning: could not write checkpoint file \"%s\"\n", filename);
+            remove(filename_write);
+        }
     }
 }
 

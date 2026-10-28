@@ -30,7 +30,7 @@ worktodo.add
 *.write
 __worktodo__.*
 
-# other
+# miscellaneous
 .vs/
 *.zip
 .DS_Store

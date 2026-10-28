@@ -18,6 +18,7 @@ along with mfaktc.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <errno.h>
 #include <cuda_runtime.h>
@@ -70,34 +71,96 @@ void create_inifile_from_example(const char *inifile)
         printf("Created \"%s\" from \"%s\"\n", inifile, example);
 }
 
-int my_read_int(char *inifile, char *name, int *value)
+/*
+read_config() reads the INI file into memory once (ini_t) instead of opening it again for every setting, and
+passes it to the ini_read_*() functions. They split it into lines exactly as fgets(buf, 250, ...) did.
+my_read_int() and my_read_string() read the file themselves (e.g. for the settings main() reads before
+read_config()).
+*/
+typedef struct {
+    const char *name; /* the INI file */
+    char *data; /* its contents (NUL-terminated) if status is 0 */
+    size_t size;
+    int status; /* ini_load(): 0 = loaded, 1 = can't be opened, 2 = reading failed */
+} ini_t;
+
+/* reads the whole file into *data (malloc'ed, NUL-terminated); returns 0 on success, 1 if the file can't be opened
+   and 2 if reading it fails */
+static int ini_load(const char *inifile, char **data, size_t *size)
 {
     FILE *in;
-    char buf[256];
-    int found = 0;
+    char *buf   = NULL, *tmp;
+    size_t used = 0, alloc = 0, n;
 
-    in = fopen(inifile, "r");
+    in = fopen(inifile, "rb");
     if (!in) {
         return 1;
     }
-    while (fgets(buf, 250, in) && !found) {
+    do {
+        if (alloc - used < 4096) {
+            alloc += 65536;
+            tmp = (char *)realloc(buf, alloc + 1);
+            if (tmp == NULL) {
+                free(buf);
+                fclose(in);
+                return 2;
+            }
+            buf = tmp;
+        }
+        n = fread(buf + used, 1, alloc - used, in);
+        used += n;
+    } while (n > 0);
+    if (ferror(in)) { /* don't take a partial file for the whole one */
+        free(buf);
+        fclose(in);
+        return 2;
+    }
+    fclose(in);
+    buf[used] = '\0';
+    *data     = buf;
+    *size     = used;
+    return 0;
+}
+
+/* like fgets(buf, bufsize, ...) on data: copies the next line, or bufsize - 1 bytes of it, starting at *pos.
+   returns 1 if it copied a line and 0 if there is nothing left to read, where fgets() returns NULL */
+static int ini_getline(const char *data, size_t size, size_t *pos, char *buf, int bufsize)
+{
+    int i = 0;
+
+    if (*pos >= size) return 0;
+    while (i < bufsize - 1 && *pos < size) {
+        buf[i] = data[(*pos)++];
+        if (buf[i++] == '\n') break;
+    }
+    buf[i] = '\0';
+    return 1;
+}
+
+/* finds name in the INI file contents data; returns 0 if found */
+static int ini_find_int(const char *data, size_t size, const char *name, int *value)
+{
+    size_t pos = 0;
+    char buf[256];
+    int found = 0;
+
+    while (!found && ini_getline(data, size, &pos, buf, 250)) {
         if (!strncmp(buf, name, strlen(name)) && buf[strlen(name)] == '=') {
             if (sscanf(&(buf[strlen(name) + 1]), "%d", value) == 1) {
                 found = 1;
             }
         }
     }
-    fclose(in);
-    in = NULL;
     if (found) {
         return 0;
     }
     return 1;
 }
 
-int my_read_string(char *inifile, char *name, char *string, unsigned int len)
+/* finds name in the INI file contents data; returns 0 if found */
+static int ini_find_string(const char *data, size_t size, const char *name, char *string, unsigned int len)
 {
-    FILE *in;
+    size_t pos = 0;
     char buf[256];
     unsigned int found = 0;
     unsigned int idx   = strlen(name);
@@ -106,11 +169,7 @@ int my_read_string(char *inifile, char *name, char *string, unsigned int len)
         len = 250;
     }
 
-    in = fopen(inifile, "r");
-    if (!in) {
-        return 1;
-    }
-    while (fgets(buf, 250, in) && !found) {
+    while (!found && ini_getline(data, size, &pos, buf, 250)) {
         if (!strncmp(buf, name, idx) && buf[idx] == '=') {
             // the value ends at the line ending ("\r\n" when reading a DOS/Windows formatted file on Linux), but the
             // last line of the file may not have one
@@ -120,15 +179,53 @@ int my_read_string(char *inifile, char *name, char *string, unsigned int len)
             string[found] = '\0';
         }
     }
-    fclose(in);
-    in = NULL;
     if (found >= 1) {
         return 0;
     }
     return 1;
 }
 
-int read_config(mystuff_t *mystuff)
+int my_read_int(char *inifile, char *name, int *value)
+{
+    char *data;
+    size_t size;
+    int ret;
+
+    if (ini_load(inifile, &data, &size)) return 1;
+    ret = ini_find_int(data, size, name, value);
+    free(data);
+    return ret;
+}
+
+int my_read_string(char *inifile, char *name, char *string, unsigned int len)
+{
+    char *data;
+    size_t size;
+    int ret;
+
+    if (ini_load(inifile, &data, &size)) return 1;
+    ret = ini_find_string(data, size, name, string, len);
+    free(data);
+    return ret;
+}
+
+/* like my_read_int(), from the INI file read by read_config(). After a read error, it tries to read the file again */
+static int ini_read_int(ini_t *ini, char *name, int *value)
+{
+    if (ini->status == 0) return ini_find_int(ini->data, ini->size, name, value);
+    if (ini->status == 2) return my_read_int((char *)ini->name, name, value);
+    return 1;
+}
+
+/* like my_read_string(), from the INI file read by read_config(). After a read error, it tries to read the file again */
+static int ini_read_string(ini_t *ini, char *name, char *string, unsigned int len)
+{
+    if (ini->status == 0) return ini_find_string(ini->data, ini->size, name, string, len);
+    if (ini->status == 2) return my_read_string((char *)ini->name, name, string, len);
+    return 1;
+}
+
+static int read_config_settings(mystuff_t *mystuff, ini_t *ini)
 {
     int i;
 
@@ -140,7 +237,7 @@ int read_config(mystuff_t *mystuff)
 
     /*****************************************************************************/
 
-    if (my_read_int("mfaktc.ini", "SievePrimes", &i)) {
+    if (ini_read_int(ini, "SievePrimes", &i)) {
         logprintf(mystuff, "Warning: Cannot read SievePrimes from mfaktc.ini, using default value (%d)\n", SIEVE_PRIMES_DEFAULT);
         i = SIEVE_PRIMES_DEFAULT;
     } else {
@@ -159,7 +256,7 @@ int read_config(mystuff_t *mystuff)
 
     /*****************************************************************************/
 
-    if (my_read_int("mfaktc.ini", "SievePrimesAdjust", &i)) {
+    if (ini_read_int(ini, "SievePrimesAdjust", &i)) {
         logprintf(mystuff, "Warning: Cannot read SievePrimesAdjust from mfaktc.ini, using default value (1)\n");
         i = 1;
     } else if (i != 0 && i != 1) {
@@ -173,7 +270,7 @@ int read_config(mystuff_t *mystuff)
 
     /*****************************************************************************/
 
-    if (my_read_int("mfaktc.ini", "SievePrimesMin", &i)) {
+    if (ini_read_int(ini, "SievePrimesMin", &i)) {
         logprintf(mystuff, "Warning: Cannot read SievePrimesMin from mfaktc.ini, using min value (%d)\n", SIEVE_PRIMES_MIN);
         i = SIEVE_PRIMES_MIN;
     } else {
@@ -189,7 +286,7 @@ int read_config(mystuff_t *mystuff)
 
     /*****************************************************************************/
 
-    if (my_read_int("mfaktc.ini", "SievePrimesMax", &i)) {
+    if (ini_read_int(ini, "SievePrimesMax", &i)) {
         logprintf(mystuff, "Warning: Cannot read SievePrimesMax from mfaktc.ini, using max value (%d)\n", SIEVE_PRIMES_MAX);
         i = SIEVE_PRIMES_MAX;
     } else {
@@ -205,7 +302,7 @@ int read_config(mystuff_t *mystuff)
 
     /*****************************************************************************/
 
-    if (my_read_int("mfaktc.ini", "NumStreams", &i)) {
+    if (ini_read_int(ini, "NumStreams", &i)) {
         logprintf(mystuff, "Warning: Cannot read NumStreams from mfaktc.ini, using default value (%d)\n", NUM_STREAMS_DEFAULT);
         i = NUM_STREAMS_DEFAULT;
     } else {
@@ -224,7 +321,7 @@ int read_config(mystuff_t *mystuff)
 
     /*****************************************************************************/
 
-    if (my_read_int("mfaktc.ini", "CPUStreams", &i)) {
+    if (ini_read_int(ini, "CPUStreams", &i)) {
         logprintf(mystuff, "Warning: Cannot read CPUStreams from mfaktc.ini, using default value (%d)\n", CPU_STREAMS_DEFAULT);
         i = CPU_STREAMS_DEFAULT;
     } else {
@@ -243,7 +340,7 @@ int read_config(mystuff_t *mystuff)
 
     /*****************************************************************************/
 
-    if (my_read_int("mfaktc.ini", "GridSize", &i)) {
+    if (ini_read_int(ini, "GridSize", &i)) {
         logprintf(mystuff, "Warning: Cannot read GridSize from mfaktc.ini, using default value (3)\n");
         i = 3;
     } else {
@@ -269,7 +366,7 @@ int read_config(mystuff_t *mystuff)
     }
 
     /*****************************************************************************/
-    if (my_read_int("mfaktc.ini", "SieveOnGPU", &i)) {
+    if (ini_read_int(ini, "SieveOnGPU", &i)) {
         logprintf(mystuff, "Warning: Cannot read SieveOnGPU from mfaktc.ini, enabled by default\n");
         i = 1;
     } else {
@@ -288,7 +385,7 @@ int read_config(mystuff_t *mystuff)
 
         /*****************************************************************************/
 
-        if (my_read_int("mfaktc.ini", "GPUSievePrimes", &i)) {
+        if (ini_read_int(ini, "GPUSievePrimes", &i)) {
             logprintf(mystuff, "Warning: Cannot read GPUSievePrimes from mfaktc.ini, using default value (%d)\n", GPU_SIEVE_PRIMES_DEFAULT);
             i = GPU_SIEVE_PRIMES_DEFAULT;
         } else {
@@ -307,7 +404,7 @@ int read_config(mystuff_t *mystuff)
 
         /*****************************************************************************/
 
-        if (my_read_int("mfaktc.ini", "GPUSieveSize", &i)) {
+        if (ini_read_int(ini, "GPUSieveSize", &i)) {
             logprintf(mystuff, "Warning: Cannot read GPUSieveSize from mfaktc.ini, using default value (%d)\n", GPU_SIEVE_SIZE_DEFAULT);
             i = GPU_SIEVE_SIZE_DEFAULT;
         } else {
@@ -326,7 +423,7 @@ int read_config(mystuff_t *mystuff)
 
         /*****************************************************************************/
 
-        if (my_read_int("mfaktc.ini", "GPUSieveProcessSize", &i)) {
+        if (ini_read_int(ini, "GPUSieveProcessSize", &i)) {
             logprintf(mystuff, "Warning: Cannot read GPUSieveProcessSize from mfaktc.ini, using default value (%d)\n",
                       GPU_SIEVE_PROCESS_SIZE_DEFAULT);
             i = GPU_SIEVE_PROCESS_SIZE_DEFAULT;
@@ -360,7 +457,7 @@ int read_config(mystuff_t *mystuff)
 
     /*****************************************************************************/
 
-    if (my_read_int("mfaktc.ini", "Checkpoints", &i)) {
+    if (ini_read_int(ini, "Checkpoints", &i)) {
         logprintf(mystuff, "Warning: Cannot read Checkpoints from mfaktc.ini, enabled by default\n");
         i = 1;
     } else if (i != 0 && i != 1) {
@@ -378,7 +475,7 @@ int read_config(mystuff_t *mystuff)
 
     /*****************************************************************************/
 
-    if (my_read_int("mfaktc.ini", "CheckpointDelay", &i)) {
+    if (ini_read_int(ini, "CheckpointDelay", &i)) {
         logprintf(mystuff, "Warning: Cannot read CheckpointDelay from mfaktc.ini, set to 30s by default\n");
         i = 30;
     }
@@ -397,7 +494,7 @@ int read_config(mystuff_t *mystuff)
 
     /*****************************************************************************/
 
-    if (my_read_int("mfaktc.ini", "WorkFileAddDelay", &i)) {
+    if (ini_read_int(ini, "WorkFileAddDelay", &i)) {
         logprintf(mystuff, "Warning: Cannot read WorkFileAddDelay from mfaktc.ini, set to 600 s by default\n");
         i = 600;
     }
@@ -420,7 +517,7 @@ int read_config(mystuff_t *mystuff)
 
     /*****************************************************************************/
 
-    if (my_read_int("mfaktc.ini", "RequireWorkFileLock", &i)) {
+    if (ini_read_int(ini, "RequireWorkFileLock", &i)) {
         i = 1; /* not in older INI files, enabled silently */
     } else if (i != 0 && i != 1) {
         logprintf(mystuff, "Warning: RequireWorkFileLock must be 0 or 1, enabled by default\n");
@@ -436,7 +533,7 @@ int read_config(mystuff_t *mystuff)
 
     /*****************************************************************************/
 
-    if (my_read_int("mfaktc.ini", "Stages", &i)) {
+    if (ini_read_int(ini, "Stages", &i)) {
         logprintf(mystuff, "Warning: Cannot read Stages from mfaktc.ini, enabled by default\n");
         i = 1;
     } else if (i != 0 && i != 1) {
@@ -454,7 +551,7 @@ int read_config(mystuff_t *mystuff)
 
     /*****************************************************************************/
 
-    if (my_read_int("mfaktc.ini", "StopAfterFactor", &i)) {
+    if (ini_read_int(ini, "StopAfterFactor", &i)) {
         logprintf(mystuff, "Warning: Cannot read StopAfterFactor from mfaktc.ini, set to 1 by default\n");
         i = 1;
     } else if (i < 0 || i > 2) {
@@ -477,7 +574,7 @@ int read_config(mystuff_t *mystuff)
 
     /*****************************************************************************/
 
-    if (my_read_int("mfaktc.ini", "PrintMode", &i)) {
+    if (ini_read_int(ini, "PrintMode", &i)) {
         logprintf(mystuff, "Warning: Cannot read PrintMode from mfaktc.ini, set to 0 by default\n");
         i = 0;
     } else if (i != 0 && i != 1) {
@@ -495,7 +592,7 @@ int read_config(mystuff_t *mystuff)
 
     /*****************************************************************************/
 
-    if (my_read_int("mfaktc.ini", "Logging", &i)) {
+    if (ini_read_int(ini, "Logging", &i)) {
         logprintf(mystuff, "Warning: Cannot read Logging from mfaktc.ini, set to 0 by default\n");
         i = 0;
     } else if (i != 0 && i != 1) {
@@ -520,7 +617,7 @@ int read_config(mystuff_t *mystuff)
 
     /*****************************************************************************/
 
-    if (my_read_string("mfaktc.ini", "V5UserID", mystuff->V5UserID, 50)) {
+    if (ini_read_string(ini, "V5UserID", mystuff->V5UserID, 50)) {
         /* no problem, don't use any */
         if (mystuff->verbosity >= 1) {
             logprintf(mystuff, "  V5UserID                  (none)\n");
@@ -534,7 +631,7 @@ int read_config(mystuff_t *mystuff)
 
     /*****************************************************************************/
 
-    if (my_read_string("mfaktc.ini", "ComputerID", mystuff->ComputerID, 50)) {
+    if (ini_read_string(ini, "ComputerID", mystuff->ComputerID, 50)) {
         /* no problem, don't use any */
         if (mystuff->verbosity >= 1) {
             logprintf(mystuff, "  ComputerID                (none)\n");
@@ -550,7 +647,7 @@ int read_config(mystuff_t *mystuff)
 
     for (i = 0; i < 256; i++)
         mystuff->stats.progressheader[i] = 0;
-    if (my_read_string("mfaktc.ini", "ProgressHeader", mystuff->stats.progressheader, 250)) {
+    if (ini_read_string(ini, "ProgressHeader", mystuff->stats.progressheader, 250)) {
         //    sprintf(mystuff->stats.progressheader, "    class | candidates |    time |    ETA | avg. rate | SievePrimes | CPU wait");
         sprintf(mystuff->stats.progressheader, "Date   Time     Pct    ETA | Exponent    Bits | GHz-d/day    Sieve     Wait");
         logprintf(mystuff, "WARNING, no ProgressHeader specified in mfaktc.ini, using default\n");
@@ -563,7 +660,7 @@ int read_config(mystuff_t *mystuff)
 
     for (i = 0; i < 256; i++)
         mystuff->stats.progressformat[i] = 0;
-    if (my_read_string("mfaktc.ini", "ProgressFormat", mystuff->stats.progressformat, 250)) {
+    if (ini_read_string(ini, "ProgressFormat", mystuff->stats.progressformat, 250)) {
         //    sprintf(mystuff->stats.progressformat, "%%C/%4d |    %%n | %%ts | %%e | %%rM/s |     %%s |  %%W%%%%", NUM_CLASSES);
         sprintf(mystuff->stats.progressformat, "%%d %%T  %%p %%e | %%M %%l-%%u |   %%g  %%s  %%W%%%%");
         logprintf(mystuff, "WARNING, no ProgressFormat specified in mfaktc.ini, using default\n");
@@ -574,7 +671,7 @@ int read_config(mystuff_t *mystuff)
 
     /*****************************************************************************/
 
-    if (my_read_int("mfaktc.ini", "AllowSleep", &i)) {
+    if (ini_read_int(ini, "AllowSleep", &i)) {
         logprintf(mystuff, "Warning: Cannot read AllowSleep from mfaktc.ini, set to 0 by default\n");
         i = 0;
     } else if (i < 0 || i > 1) {
@@ -592,7 +689,7 @@ int read_config(mystuff_t *mystuff)
 
     /*****************************************************************************/
 
-    if (my_read_int("mfaktc.ini", "LegacyResultsTxt", &i)) {
+    if (ini_read_int(ini, "LegacyResultsTxt", &i)) {
         logprintf(mystuff, "Warning: Cannot read LegacyResultsTxt from mfaktc.ini, set to 0 by default\n");
         i = 0;
     } else if (i < 0 || i > 1) {
@@ -610,7 +707,7 @@ int read_config(mystuff_t *mystuff)
 
     /*****************************************************************************/
 
-    if (my_read_int("mfaktc.ini", "TimeStampInResults", &i)) {
+    if (ini_read_int(ini, "TimeStampInResults", &i)) {
         logprintf(mystuff, "Warning: Cannot read TimeStampInResults from mfaktc.ini, set to 0 by default\n");
         i = 0;
     } else if (i < 0 || i > 1) {
@@ -628,7 +725,7 @@ int read_config(mystuff_t *mystuff)
 
     /*****************************************************************************/
 
-    if (my_read_int("mfaktc.ini", "TimestampOnSameLine", &i)) {
+    if (ini_read_int(ini, "TimestampOnSameLine", &i)) {
         logprintf(mystuff, "Warning: Cannot read TimestampOnSameLine from mfaktc.ini, set to 0 by default\n");
         i = 0;
     } else if (i < 0 || i > 1) {
@@ -646,7 +743,7 @@ int read_config(mystuff_t *mystuff)
 
     /*****************************************************************************/
 
-    if (my_read_int("mfaktc.ini", "ResultsFileTimestampInterval", &i)) {
+    if (ini_read_int(ini, "ResultsFileTimestampInterval", &i)) {
         logprintf(mystuff, "Warning: Cannot read ResultsFileTimestampInterval from mfaktc.ini, set to 1 by default\n");
         i = 1;
     } else if (i < 0 || i > 86400) {
@@ -659,4 +756,16 @@ int read_config(mystuff_t *mystuff)
     mystuff->timestamp_interval = i;
 
     return 0;
+}
+
+int read_config(mystuff_t *mystuff)
+{
+    ini_t ini = { "mfaktc.ini", NULL, 0, 0 };
+    int ret;
+
+    /* a missing file stays missing during read_config(); after a read error the settings are read one by one */
+    ini.status = ini_load(ini.name, &ini.data, &ini.size);
+    ret        = read_config_settings(mystuff, &ini);
+    free(ini.data);
+    return ret;
 }

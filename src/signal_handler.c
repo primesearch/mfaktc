@@ -19,6 +19,12 @@ along with mfaktc.  If not, see <http://www.gnu.org/licenses/>.
 #include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
+#ifdef _MSC_VER
+#include <intrin.h>
+#else
+#include <unistd.h>
+#endif
 
 #include <cuda_runtime.h>
 
@@ -28,6 +34,26 @@ along with mfaktc.  If not, see <http://www.gnu.org/licenses/>.
 
 mystuff_t *signal_handler_mystuff;
 
+/*
+The first ^C lets mfaktc finish the current class, the second one stops the class early; in both cases the main
+loop exits normally. A third ^C exits immediately.
+
+On POSIX systems the handler interrupts the main program, which may be in the middle of printf(), malloc() or a
+CUDA call, so it may only use async-signal-safe functions: write() and _exit() instead of printf() and exit().
+stdout and the log file are unbuffered (unbuffered()), so _exit() doesn't lose anything that was printed before.
+On Windows the handler runs in a separate thread, where printf() and exit() are fine.
+*/
+static void signal_message(const char *msg)
+{
+#ifdef _MSC_VER
+    fputs(msg, stdout);
+#else
+    if (write(STDOUT_FILENO, msg, strlen(msg)) < 0) {
+        /* nothing to do */
+    }
+#endif
+}
+
 void my_signal_handler(int signum)
 {
 #ifdef _MSC_VER
@@ -36,26 +62,59 @@ invoked so we just register it again. */
     signal(signum, &my_signal_handler);
 #endif
 
-    if (signal_handler_mystuff->printmode == 1) printf("\n");
-    signal_handler_mystuff->quit++;
-    if (signal_handler_mystuff->quit == 1) {
+    long n;
+
+    if (signal_handler_mystuff->printmode == 1) signal_message("\n");
+    /* decide by the value of this increment and don't read quit again. Handlers can overlap, so the increment must
+       be atomic: on Windows, each ^C runs the handler on a new thread, and on POSIX systems another thread (such as
+       one the CUDA runtime started) can run the handler for the next signal. */
+    n = QUIT_INCREMENT(signal_handler_mystuff);
+    if (n == 1) {
         if (signum == SIGINT)
-            printf("received signal \"SIGINT\"\n");
+            signal_message("received signal \"SIGINT\"\n");
         else if (signum == SIGTERM)
-            printf("received signal \"SIGTERM\"\n");
-        printf("mfaktc will exit once the current class is finished.\n");
-        printf("press ^C again to exit immediately\n");
-    }
-    if (signal_handler_mystuff->quit > 1) {
-        printf("mfaktc will exit NOW!\n");
+            signal_message("received signal \"SIGTERM\"\n");
+        signal_message("mfaktc will exit once the current class is finished.\n");
+        signal_message("press ^C again to stop the current class and exit\n");
+    } else if (n == 2) {
+        /* the main loop stops the class early and exits normally, so files are closed and lock files removed */
+        signal_message("mfaktc will stop the current class and exit.\n");
+        signal_message("press ^C again to exit immediately\n");
+    } else {
+        /* last resort, such as when mfaktc is waiting for a lock file */
+        signal_message("mfaktc will exit NOW!\n");
+#ifdef _MSC_VER
         exit(1);
+#else
+        _exit(1);
+#endif
     }
-    signum++; /* useless but avoids warning about unused variable... */
+}
+
+/* make f unbuffered (see my_signal_handler()) */
+void unbuffered(FILE *f)
+{
+    if (f != NULL) setvbuf(f, NULL, _IONBF, 0);
 }
 
 void register_signal_handler(mystuff_t *mystuff)
 {
     signal_handler_mystuff = mystuff;
+#ifdef _MSC_VER
     signal(SIGINT, &my_signal_handler);
     signal(SIGTERM, &my_signal_handler);
+#else
+    struct sigaction sa;
+
+    memset(&sa, 0, sizeof(sa));
+    sa.sa_handler = &my_signal_handler;
+    /* block both signals while the handler runs, so that a SIGTERM can't interrupt the handler of a SIGINT (or vice
+       versa) on the same thread */
+    sigemptyset(&sa.sa_mask);
+    sigaddset(&sa.sa_mask, SIGINT);
+    sigaddset(&sa.sa_mask, SIGTERM);
+    sa.sa_flags = SA_RESTART; /* restart interrupted system calls, as signal() does on Linux */
+    sigaction(SIGINT, &sa, NULL);
+    sigaction(SIGTERM, &sa, NULL);
+#endif
 }

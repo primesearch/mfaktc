@@ -310,7 +310,7 @@ int tf(mystuff_t *mystuff, int class_hint, unsigned long long int k_hint, int ke
     for (; cur_class <= max_class; cur_class++) {
         if (class_needed(mystuff->exponent, k_min, cur_class)) {
             mystuff->stats.class_number = cur_class;
-            if (mystuff->quit) {
+            if (QUIT_COUNT(mystuff)) {
              /* check if quit is requested. Because this is at the beginning of the class
                 we can be sure that if RET_QUIT is returned the last class hasn't
                 finished. The signal handler which sets mystuff->quit not active during
@@ -357,6 +357,10 @@ int tf(mystuff_t *mystuff, int class_hint, unsigned long long int k_hint, int ke
                     return RET_CUDA_ERROR; /* bail out, we might have a serious problem (detected by cudaGetLastError())... */
                 }
                 if (numfactors == RET_CUDA_ERROR) return RET_CUDA_ERROR; /* error reported by tf_class_*() */
+                if (numfactors == RET_QUIT) { /* a second ^C stopped the class early: don't write a checkpoint for it */
+                    if (mystuff->printmode == 1) logprintf(mystuff, "\n");
+                    return RET_QUIT;
+                }
                 factorsfound += numfactors;
                 if (mystuff->mode == MODE_NORMAL) {
                     if (numfactors > 0) {
@@ -380,7 +384,7 @@ int tf(mystuff_t *mystuff, int class_hint, unsigned long long int k_hint, int ke
                     if (mystuff->checkpoints == 1) {
                         if (numfactors > 0 ||
                             timer_diff(&timer_last_checkpoint) / 1000000 >= (unsigned long long int)mystuff->checkpointdelay ||
-                            mystuff->quit) {
+                            QUIT_COUNT(mystuff)) {
                             timer_init(&timer_last_checkpoint);
                             checkpoint_write(mystuff->exponent, mystuff->bit_min, mystuff->bit_max_stage, cur_class, factorsfound,
                                              mystuff->factors, mystuff->stats.bit_level_time);
@@ -735,6 +739,8 @@ int main(int argc, char **argv)
     int use_worktodo = 1;
     int ret          = 0;
 
+    unbuffered(stdout); // see my_signal_handler()
+
     i = 1;
     memset(&mystuff, 0, sizeof(mystuff));
     mystuff.mode               = MODE_NORMAL;
@@ -765,6 +771,7 @@ int main(int argc, char **argv)
     my_read_int("mfaktc.ini", "Logging", &(mystuff.logging));
     if (mystuff.logging == 1 && mystuff.logfileptr == NULL) {
         mystuff.logfileptr = fopen(mystuff.logfile, "a");
+        unbuffered(mystuff.logfileptr);
     }
 
     while (i < argc) {
@@ -1159,7 +1166,7 @@ int main(int argc, char **argv)
                         mystuff.bit_max_stage--;
                 }
                 tmp = 0;
-                while (mystuff.bit_max_stage <= mystuff.bit_max_assignment && !mystuff.quit) {
+                while (mystuff.bit_max_stage <= mystuff.bit_max_assignment && !QUIT_COUNT(&mystuff)) {
                     tmp = tf(&mystuff, 0, 0, AUTOSELECT_KERNEL);
                     // tmp = tf(&mystuff, 0, 0, _75BIT_MUL32);
                     // tmp = tf(&mystuff, 0, 0, _75BIT_MUL32_GS);
@@ -1217,7 +1224,7 @@ int main(int argc, char **argv)
                 logprintf(&mystuff, "ERROR: get_next_assignment(): no valid assignment found in \"%s\"\n", mystuff.workfile);
             else if (parse_ret != OK)
                 logprintf(&mystuff, "ERROR: get_next_assignment(): Unknown error (%d)\n", parse_ret);
-        } while (parse_ret == OK && use_worktodo && !mystuff.quit);
+        } while (parse_ret == OK && use_worktodo && !QUIT_COUNT(&mystuff));
     } else // mystuff.mode != MODE_NORMAL
     {
         /* report a failed self-test in the exit status too, for scripts that run it */

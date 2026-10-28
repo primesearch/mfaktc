@@ -16,6 +16,8 @@ You should have received a copy of the GNU General Public License
 along with mfaktc.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+#include <signal.h> /* sig_atomic_t */
+
 /* 72bit (3x 24bit) integer
 D=d0 + d1*(2^24) + d2*(2^48) */
 typedef struct {
@@ -120,7 +122,11 @@ typedef struct {
     int timestamp_on_same_line;
     int timestamp_interval;
 
-    int quit;
+#ifdef _MSC_VER
+    volatile long quit; /* set by the signal handler, which runs on its own thread on Windows (see my_signal_handler()) */
+#else
+    volatile sig_atomic_t quit; /* set by the signal handler */
+#endif
     int verbosity; /* 0 = reduced number of screen printfs, 1 = default, >= 2 = some additional printfs */
     int logging;   /* 0 = logging disabled (default), 1 = logging enabled */
     int legacy_results_txt; /* 0 = output to results.txt disabled (default), 1 = output to results.txt enabled */
@@ -138,6 +144,17 @@ typedef struct {
     // clang-format on
 
 } mystuff_t; /* FIXME: proper name needed */
+
+/* The signal handler changes quit, possibly on another thread (see my_signal_handler()): read it with QUIT_COUNT()
+   and increment it with QUIT_INCREMENT(), which returns the new value (lock-free, so the handler can use it). */
+#if defined _MSC_VER
+#include <intrin.h>
+#define QUIT_COUNT(m)     _InterlockedCompareExchange(&(m)->quit, 0, 0)
+#define QUIT_INCREMENT(m) _InterlockedIncrement(&(m)->quit)
+#else
+#define QUIT_COUNT(m)     __atomic_load_n(&(m)->quit, __ATOMIC_SEQ_CST)
+#define QUIT_INCREMENT(m) __atomic_add_fetch(&(m)->quit, 1, __ATOMIC_SEQ_CST)
+#endif
 
 enum GPUKernels {
     AUTOSELECT_KERNEL,

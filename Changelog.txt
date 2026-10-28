@@ -3,6 +3,8 @@ version 0.24.2
 enhancements:
 - mfaktc now creates the mfaktc.ini file from the mfaktc.ini.example template
   - the user's INI file is no longer overwritten during an upgrade
+- improved handling of calculations that exceed supported numeric limits
+- improved handling of Ctrl + C
 
 bug fixes:
 - fixed division by zero when resuming from a checkpoint on the last class
@@ -12,11 +14,18 @@ bug fixes:
 - the timer is now protected against backward clock adjustments
 - updated my_read_int() to use the same line buffer size as my_read_string()
 - DEBUG_GPU_MATH errors are now counted atomically
-- fixed some edge cases related to file locking
+- fixed some edge cases related to file locking and concurrency
 - mfaktc now checks every computed sieve offset and exits if one is incorrect
   - the previous behavior could cause factors to be missed silently
 - mfaktc now checks to ensure GPU_SIEVE_PROCESS_SIZE_MAX does not exceed 64
   - values above 64 could cause mfaktc to test incorrect factor candidates
+- to prevent deadlocks, mfaktc no longer locks both the legacy and the JSON
+  results file at once
+- the number of GPU sieve candidates is now checked against the shared memory
+- mfaktc no longer deletes worktodo.add if adding assignments from it fails
+- the last character of a value is no longer dropped when an option is on the
+  last line of an INI file
+- mfaktc no longer hangs when an error is reported in the CUDA stream
 - fixed various buffer overflows
 - fixed various compiler warnings
 
@@ -28,6 +37,8 @@ other changes:
   - the exact behavior can be configured with the new RequireWorkFileLock
     option in mfaktc.ini
 - removed redundant debug output
+- temporary files now have unique names
+- mfaktc now reads the INI file only once in total instead of once per setting
 
 version 0.24.1
 ==============================

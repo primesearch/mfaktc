@@ -14,8 +14,8 @@ Table of contents
 3.2 Windows
 3.3 mfaktc and multi-GPU systems
 4   Getting work and reporting results
-5   Known issues
-5.1 Non-issues
+5   Troubleshooting and known issues
+5.1 Expected behavior / non-issues
 6   Tuning
 7   FAQ
 8   .plan
@@ -169,10 +169,10 @@ mfaktc.ini.example after an upgrade as there may be new or changed settings.
 
 Only one mfaktc instance can use a worktodo.txt file at a time, as instances
 sharing one would process the same set of assignments. mfaktc locks the file
-"<worktodo file>.pid" while it runs; the lock is released automatically on
-exit (even after a crash) so the file can be left alone. mfaktc will not start
-if it fails to acquire a lock (such as when the directory isn't writable, or
-file locking isn't supported on a network file system). You can set
+"<work file>.pid" while it runs; the lock is released automatically on exit
+(even after a crash) so the file can be left alone. mfaktc will not start if
+it fails to acquire a lock (such as when the directory isn't writable, or file
+locking isn't supported on a network file system). You can set
 RequireWorkFileLock=0 in mfaktc.ini to override this. To run more than one
 instance, such as on a system with multiple GPUs, give each instance its own
 directory or separate worktodo.txt file.
@@ -331,9 +331,9 @@ Submitting results:
     or posting on the GIMPS forum:
     https://mersenneforum.org/forumdisplay.php?f=38
 
-##################
-# 5 Known issues #
-##################
+######################################
+# 5 Troubleshooting and known issues #
+######################################
 
 - The user interface isn't hardened against malformed inputs. There are some
   checks, but when you try hard enough you should be able to screw it up.
@@ -357,9 +357,9 @@ Submitting results:
   of the specified range.
 
 
-##################
-# 5.1 Non-issues #
-##################
+######################################
+# 5.1 Expected behavior / non-issues #
+######################################
 
 - mfaktc runs slower on small ranges. Usually it doesn't make much sense to
   run mfaktc with an upper limit below 64 bits. mfaktc is designed to find
@@ -416,7 +416,7 @@ A: mfaktc 0.23.0 and above use the semantic versioning scheme. You can learn
 # 8 .plan #
 ###########
 
-ongoing improvements
+ongoing improvements:
 - performance improvements whenever they are found ;-)
 - fix bugs as they are discovered
 - change compile-time options to runtime options, if applicable
@@ -424,7 +424,7 @@ ongoing improvements
 - try to use double precision for the long integer divisions
   - unsure, may or may not be useful
 
-requested features; no particular order and not planned for a specific release
+requested features, no particular order and not planned for a specific release:
 - JSON output for Wagstaff numbers https://www.mersenneforum.org/showpost.php?p=662680&postcount=3769
 - factors-meta.<factor>.timestamp https://www.mersenneforum.org/showpost.php?p=662603&postcount=3750
 - factors-meta.<factor>.class https://www.mersenneforum.org/showpost.php?p=662720&postcount=3781

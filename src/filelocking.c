@@ -162,7 +162,9 @@ void remove_stale_new_files(const char *path)
         if (snprintf(name, sizeof(name), "%s%s", prefix, e->d_name) >= (int)sizeof(name)) continue;
         /* look at the opened file, not at its name: it can't be exchanged for another file meanwhile. Not a symlink
            either, and no waiting on a pipe. */
-        fd = open(name, O_RDONLY | O_NOFOLLOW | O_NONBLOCK);
+        /* an exclusive lock on NFS needs a file that is open for writing; others' files are only readable */
+        fd = open(name, O_RDWR | O_NOFOLLOW | O_NONBLOCK);
+        if (fd < 0) fd = open(name, O_RDONLY | O_NOFOLLOW | O_NONBLOCK);
         if (fd < 0) continue;
         /* the lock is only available if the program that created the file is gone */
         if (fstat(fd, &st) == 0 && S_ISREG(st.st_mode) && time(NULL) - st.st_mtime > STALE_NEW_FILE_SECONDS &&

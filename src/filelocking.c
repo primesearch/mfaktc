@@ -38,6 +38,7 @@ along with mfaktc (mfakto).  If not, see <http://www.gnu.org/licenses/>.
 #else
 #include <unistd.h>
 #include <sched.h>
+#include <dirent.h>
 #include <sys/file.h>
 #define MODE       S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH
 static void Sleep(unsigned int ms)
@@ -79,6 +80,83 @@ static void remove_lock_files(void)
         remove(locked_files[i].lock_filename);
     }
     num_locked_files = 0;
+}
+
+/* whether name is "<base>.<pid>-<n>.write", a file made by fopen_new() */
+static int is_new_file_name(const char *name, const char *base)
+{
+    size_t len = strlen(base), i;
+
+    if (strncmp(name, base, len) != 0 || name[len] != '.') return 0;
+    name += len + 1;
+    for (i = 0; name[i] >= '0' && name[i] <= '9'; i++)
+        ;
+    if (i == 0 || name[i] != '-') return 0;
+    name += i + 1;
+    for (i = 0; name[i] >= '0' && name[i] <= '9'; i++)
+        ;
+    return i > 0 && strcmp(name + i, ".write") == 0;
+}
+
+/* the age after which a file made by fopen_new() has been left behind: writing
+   a file takes milliseconds, so the writer is gone for sure */
+#define STALE_NEW_FILE_SECONDS 3600
+
+/* removes the files made by fopen_new(path) that a stopped program left
+   behind. Newer ones are kept as another instance may be writing them. */
+void remove_stale_new_files(const char *path)
+{
+    const char *base = path, *p;
+    char prefix[256], name[512]; /* prefix is the directory of path with its trailing separator, or empty */
+    size_t prefix_len;
+#if defined _MSC_VER || defined __MINGW32__
+    HANDLE h;
+    WIN32_FIND_DATAA fd;
+    FILETIME now;
+    ULARGE_INTEGER now_t, file_t;
+
+    for (p = path; *p; p++)
+        if (*p == '/' || *p == '\\' || *p == ':') base = p + 1;
+#else
+    DIR *d;
+    struct dirent *e;
+    struct stat st;
+
+    for (p = path; *p; p++)
+        if (*p == '/') base = p + 1;
+#endif
+    prefix_len = (size_t)(base - path);
+    if (prefix_len >= sizeof(prefix)) return;
+    memcpy(prefix, path, prefix_len);
+    prefix[prefix_len] = '\0';
+
+#if defined _MSC_VER || defined __MINGW32__
+    if (snprintf(name, sizeof(name), "%s*.write", prefix) >= (int)sizeof(name)) return;
+    h = FindFirstFileA(name, &fd);
+    if (h == INVALID_HANDLE_VALUE) return;
+    GetSystemTimeAsFileTime(&now);
+    now_t.LowPart  = now.dwLowDateTime;
+    now_t.HighPart = now.dwHighDateTime;
+    do {
+        file_t.LowPart  = fd.ftLastWriteTime.dwLowDateTime;
+        file_t.HighPart = fd.ftLastWriteTime.dwHighDateTime;
+        /* FILETIME counts 100 ns */
+        if (is_new_file_name(fd.cFileName, base) && now_t.QuadPart > file_t.QuadPart &&
+            (now_t.QuadPart - file_t.QuadPart) / 10000000ULL > STALE_NEW_FILE_SECONDS &&
+            snprintf(name, sizeof(name), "%s%s", prefix, fd.cFileName) < (int)sizeof(name))
+            remove(name);
+    } while (FindNextFileA(h, &fd));
+    FindClose(h);
+#else
+    d = opendir(prefix_len ? prefix : ".");
+    if (d == NULL) return;
+    while ((e = readdir(d)) != NULL) {
+        if (!is_new_file_name(e->d_name, base)) continue;
+        if (snprintf(name, sizeof(name), "%s%s", prefix, e->d_name) >= (int)sizeof(name)) continue;
+        if (stat(name, &st) == 0 && time(NULL) - st.st_mtime > STALE_NEW_FILE_SECONDS) remove(name);
+    }
+    closedir(d);
+#endif
 }
 
 /* creates a new file with a unique name made of path, a number and ".write",

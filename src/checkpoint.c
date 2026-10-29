@@ -186,4 +186,6 @@ void checkpoint_delete(unsigned int exp, int bit_min, int bit_max)
             printf("Warning: can't delete the checkpoint file \"%s\"\n", filename);
         }
     }
+    /* left behind if mfaktc stopped while writing a checkpoint */
+    remove_stale_new_files(filename);
 }

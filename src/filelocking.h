@@ -51,6 +51,13 @@ FILE *make_temp_file(char *tpl);
  */
 FILE *fopen_new(char *buf, size_t size, const char *path);
 
+/**
+ * @brief Removes the files made by fopen_new(path) that a stopped program left behind.
+ *
+ * Files less than an hour old are kept, as another instance may be writing them.
+ */
+void remove_stale_new_files(const char *path);
+
 FILE *fopen_and_lock(const char *path, const char *mode);
 int unlock_and_fclose(FILE *f);
 int fclose_keep_lock(FILE *f);

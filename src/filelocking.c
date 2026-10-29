@@ -160,16 +160,17 @@ void remove_stale_new_files(const char *path)
 
         if (!is_new_file_name(e->d_name, base)) continue;
         if (snprintf(name, sizeof(name), "%s%s", prefix, e->d_name) >= (int)sizeof(name)) continue;
-        /* look at the opened file, not at its name: it can't be exchanged for another file meanwhile. Not a symlink
-           either, and no waiting on a pipe. */
-        /* an exclusive lock on NFS needs a file that is open for writing; other users' files may be only readable, and
-           files without the read permission only writable */
+        /* look at the opened file, not at its name: not a symlink, and no waiting on a pipe. An exclusive lock on NFS
+           needs a file that is open for writing, so try that first. Other users' files may be only readable, and files
+           without the read permission only writable. A file that can only be opened read-only can't be locked there, and
+           is left for the next run that can. */
         fd = open(name, O_RDWR | O_NOFOLLOW | O_NONBLOCK);
         if (fd < 0) fd = open(name, O_RDONLY | O_NOFOLLOW | O_NONBLOCK);
         if (fd < 0) fd = open(name, O_WRONLY | O_NOFOLLOW | O_NONBLOCK);
         if (fd < 0) continue;
-        /* the lock is only available if the program that created the file is gone */
-        if (fstat(fd, &st) == 0 && S_ISREG(st.st_mode) && time(NULL) - st.st_mtime > STALE_NEW_FILE_SECONDS &&
+        /* the lock is only available if the program that created the file is gone. A file that has another name too
+           (a hard link) is not one that fopen_new() made, as it never links the files. */
+        if (fstat(fd, &st) == 0 && S_ISREG(st.st_mode) && st.st_nlink == 1 && time(NULL) - st.st_mtime > STALE_NEW_FILE_SECONDS &&
             flock(fd, LOCK_EX | LOCK_NB) == 0)
             remove(name);
         close(fd);

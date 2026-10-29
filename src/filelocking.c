@@ -38,6 +38,7 @@ along with mfaktc (mfakto).  If not, see <http://www.gnu.org/licenses/>.
 #else
 #include <unistd.h>
 #include <sched.h>
+#include <dirent.h>
 #include <sys/file.h>
 #define MODE       S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH
 static void Sleep(unsigned int ms)
@@ -47,6 +48,10 @@ static void Sleep(unsigned int ms)
     ts.tv_nsec = (ms % 1000) * 1000000;
     nanosleep(&ts, NULL);
 }
+#endif
+
+#ifndef O_NOFOLLOW
+#define O_NOFOLLOW 0
 #endif
 
 #define MAX_LOCKED_FILES 5
@@ -81,6 +86,98 @@ static void remove_lock_files(void)
     num_locked_files = 0;
 }
 
+/* whether name is "<base>.<pid>-<n>.write", a file made by fopen_new() */
+static int is_new_file_name(const char *name, const char *base)
+{
+    size_t len = strlen(base), i;
+
+    if (strncmp(name, base, len) != 0 || name[len] != '.') return 0;
+    name += len + 1;
+    for (i = 0; name[i] >= '0' && name[i] <= '9'; i++)
+        ;
+    if (i == 0 || name[i] != '-') return 0;
+    name += i + 1;
+    for (i = 0; name[i] >= '0' && name[i] <= '9'; i++)
+        ;
+    return i > 0 && strcmp(name + i, ".write") == 0;
+}
+
+/* the age after which a file made by fopen_new() has been left behind: writing
+   a file takes milliseconds, so the writer is gone for sure */
+#define STALE_NEW_FILE_SECONDS 3600
+
+/* removes the files made by fopen_new(path) that a stopped program left
+   behind. Those that are less than an hour old are kept, and so are those that another instance has open
+   (it holds a lock on them on POSIX systems, and Windows doesn't delete open files). */
+void remove_stale_new_files(const char *path)
+{
+    const char *base = path, *p;
+    char prefix[256], name[512]; /* prefix is the directory of path with its trailing separator, or empty */
+    size_t prefix_len;
+#if defined _MSC_VER || defined __MINGW32__
+    HANDLE h;
+    WIN32_FIND_DATAA fd;
+    FILETIME now;
+    ULARGE_INTEGER now_t, file_t;
+
+    for (p = path; *p; p++)
+        if (*p == '/' || *p == '\\' || *p == ':') base = p + 1;
+#else
+    DIR *d;
+    struct dirent *e;
+    struct stat st;
+
+    for (p = path; *p; p++)
+        if (*p == '/') base = p + 1;
+#endif
+    prefix_len = (size_t)(base - path);
+    if (prefix_len >= sizeof(prefix)) return;
+    memcpy(prefix, path, prefix_len);
+    prefix[prefix_len] = '\0';
+
+#if defined _MSC_VER || defined __MINGW32__
+    if (snprintf(name, sizeof(name), "%s*.write", prefix) >= (int)sizeof(name)) return;
+    h = FindFirstFileA(name, &fd);
+    if (h == INVALID_HANDLE_VALUE) return;
+    GetSystemTimeAsFileTime(&now);
+    now_t.LowPart  = now.dwLowDateTime;
+    now_t.HighPart = now.dwHighDateTime;
+    do {
+        file_t.LowPart  = fd.ftLastWriteTime.dwLowDateTime;
+        file_t.HighPart = fd.ftLastWriteTime.dwHighDateTime;
+        /* FILETIME counts 100 ns */
+        if (is_new_file_name(fd.cFileName, base) && now_t.QuadPart > file_t.QuadPart &&
+            (now_t.QuadPart - file_t.QuadPart) / 10000000ULL > STALE_NEW_FILE_SECONDS &&
+            snprintf(name, sizeof(name), "%s%s", prefix, fd.cFileName) < (int)sizeof(name))
+            remove(name);
+    } while (FindNextFileA(h, &fd));
+    FindClose(h);
+#else
+    d = opendir(prefix_len ? prefix : ".");
+    if (d == NULL) return;
+    while ((e = readdir(d)) != NULL) {
+        int fd;
+
+        if (!is_new_file_name(e->d_name, base)) continue;
+        if (snprintf(name, sizeof(name), "%s%s", prefix, e->d_name) >= (int)sizeof(name)) continue;
+        /* look at the opened file, not at its name: it can't be exchanged for another file meanwhile. Not a symlink
+           either, and no waiting on a pipe. */
+        /* an exclusive lock on NFS needs a file that is open for writing; other users' files may be only readable, and
+           files without the read permission only writable */
+        fd = open(name, O_RDWR | O_NOFOLLOW | O_NONBLOCK);
+        if (fd < 0) fd = open(name, O_RDONLY | O_NOFOLLOW | O_NONBLOCK);
+        if (fd < 0) fd = open(name, O_WRONLY | O_NOFOLLOW | O_NONBLOCK);
+        if (fd < 0) continue;
+        /* the lock is only available if the program that created the file is gone */
+        if (fstat(fd, &st) == 0 && S_ISREG(st.st_mode) && time(NULL) - st.st_mtime > STALE_NEW_FILE_SECONDS &&
+            flock(fd, LOCK_EX | LOCK_NB) == 0)
+            remove(name);
+        close(fd);
+    }
+    closedir(d);
+#endif
+}
+
 /* creates a new file with a unique name made of path, a number and ".write",
    and writes the name to buf. Instances writing the same file use different
    names, so neither can remove or replace the other one's new file, and
@@ -113,8 +210,12 @@ FILE *fopen_new(char *buf, size_t size, const char *path)
     }
     if (fd < 0) return NULL;
 #if defined _MSC_VER || defined __MINGW32__
+    /* Windows doesn't delete a file that is open, as _open() doesn't share it for deleting */
     f = _fdopen(fd, "w");
 #else
+    /* remove_stale_new_files() leaves a locked file alone. The lock goes away when the file is closed, or when the
+       program ends. A new file can always be locked. */
+    (void)flock(fd, LOCK_EX | LOCK_NB);
     f = fdopen(fd, "w");
 #endif
     if (f == NULL) {

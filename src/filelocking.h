@@ -54,7 +54,7 @@ FILE *fopen_new(char *buf, size_t size, const char *path);
 /**
  * @brief Removes the files made by fopen_new(path) that a stopped program left behind.
  *
- * Files less than an hour old are kept, as another instance may be writing them.
+ * Files less than an hour old are kept, and so are files that another instance has open.
  */
 void remove_stale_new_files(const char *path);
 

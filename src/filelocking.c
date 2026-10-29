@@ -50,6 +50,10 @@ static void Sleep(unsigned int ms)
 }
 #endif
 
+#ifndef O_NOFOLLOW
+#define O_NOFOLLOW 0
+#endif
+
 #define MAX_LOCKED_FILES 5
 
 typedef struct _lockinfo {
@@ -103,7 +107,8 @@ static int is_new_file_name(const char *name, const char *base)
 #define STALE_NEW_FILE_SECONDS 3600
 
 /* removes the files made by fopen_new(path) that a stopped program left
-   behind. Newer ones are kept as another instance may be writing them. */
+   behind. Those that are less than an hour old are kept, and so are those that another instance has open
+   (it holds a lock on them on POSIX systems, and Windows doesn't delete open files). */
 void remove_stale_new_files(const char *path)
 {
     const char *base = path, *p;
@@ -151,9 +156,19 @@ void remove_stale_new_files(const char *path)
     d = opendir(prefix_len ? prefix : ".");
     if (d == NULL) return;
     while ((e = readdir(d)) != NULL) {
+        int fd;
+
         if (!is_new_file_name(e->d_name, base)) continue;
         if (snprintf(name, sizeof(name), "%s%s", prefix, e->d_name) >= (int)sizeof(name)) continue;
-        if (stat(name, &st) == 0 && time(NULL) - st.st_mtime > STALE_NEW_FILE_SECONDS) remove(name);
+        /* look at the opened file, not at its name: it can't be exchanged for another file meanwhile. Not a symlink
+           either, and no waiting on a pipe. */
+        fd = open(name, O_RDONLY | O_NOFOLLOW | O_NONBLOCK);
+        if (fd < 0) continue;
+        /* the lock is only available if the program that created the file is gone */
+        if (fstat(fd, &st) == 0 && S_ISREG(st.st_mode) && time(NULL) - st.st_mtime > STALE_NEW_FILE_SECONDS &&
+            flock(fd, LOCK_EX | LOCK_NB) == 0)
+            remove(name);
+        close(fd);
     }
     closedir(d);
 #endif
@@ -191,8 +206,12 @@ FILE *fopen_new(char *buf, size_t size, const char *path)
     }
     if (fd < 0) return NULL;
 #if defined _MSC_VER || defined __MINGW32__
+    /* Windows doesn't delete a file that is open, as _open() doesn't share it for deleting */
     f = _fdopen(fd, "w");
 #else
+    /* remove_stale_new_files() leaves a locked file alone. The lock goes away when the file is closed, or when the
+       program ends. A new file can always be locked. */
+    (void)flock(fd, LOCK_EX | LOCK_NB);
     f = fdopen(fd, "w");
 #endif
     if (f == NULL) {
